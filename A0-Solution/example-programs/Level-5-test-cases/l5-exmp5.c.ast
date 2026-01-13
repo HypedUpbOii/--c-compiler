@@ -1,0 +1,100 @@
+**PROCEDURE: func1_
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : i2_<int>)
+           RHS (Num : 5<int>)
+         Asgn:
+           LHS (Name : f2_<float>)
+           RHS (Num : 5.00<float>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: func2_
+	Return Type: <int>
+	Formal Parameters:
+		a_  Type:<int>
+		b_  Type:<float>
+		i1_  Type:<int>
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             Arith: Plus<int>
+               L_Opd (Name : a_<int>)
+               R_Opd (Num : 10<int>))
+         Asgn:
+           LHS (Name : i1_<int>)
+           RHS (Num : 5<int>)
+         Return: 
+           Arith: Plus<int>
+             L_Opd (
+               Arith: Plus<int>
+                 L_Opd (
+                   Arith: Plus<int>
+                     L_Opd (Name : a_<int>)
+                     R_Opd (Name : i1_<int>))
+                 R_Opd (Name : i2_<int>))
+             R_Opd (Num : 2<int>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: func3_
+	Return Type: <float>
+	Formal Parameters:
+		a_  Type:<int>
+		b_  Type:<float>
+		c_  Type:<float>
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : b_<float>)
+           RHS (
+             Arith: Plus<float>
+               L_Opd (Name : b_<float>)
+               R_Opd (Name : f2_<float>))
+         Asgn:
+           LHS (Name : c_<float>)
+           RHS (
+             Arith: Plus<float>
+               L_Opd (Name : c_<float>)
+               R_Opd (Num : 10.50<float>))
+         Return: 
+           Arith: Plus<float>
+             L_Opd (Name : b_<float>)
+             R_Opd (Name : c_<float>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: func4_
+	Return Type: <int>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : i1_<int>)
+           RHS (Num : 4<int>)
+         Return: 
+           Arith: Plus<int>
+             L_Opd (Name : i1_<int>)
+             R_Opd (Name : i1_<int>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         FN CALL: func1_()
+         Asgn:
+           LHS (Name : i2_<int>)
+           RHS (
+             FN CALL: func4_())
+         Asgn:
+           LHS (Name : i2_<int>)
+           RHS (
+             FN CALL: func2_(
+             Name : i1_<int>
+             Name : f2_<float>
+             Name : i2_<int>))
+         Asgn:
+           LHS (Name : f2_<float>)
+           RHS (
+             FN CALL: func3_(
+             Name : i1_<int>
+             Name : f1_<float>
+             Name : f2_<float>))
+         Write: Name : f1_<float>
+         Write: Name : f2_<float>
+**END: Abstract Syntax Tree 

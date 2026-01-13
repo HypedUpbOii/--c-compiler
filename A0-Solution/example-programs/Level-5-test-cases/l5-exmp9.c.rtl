@@ -1,0 +1,27 @@
+**PROCEDURE: main
+**BEGIN: RTL Statements
+	iLoad:       v0 <- 2            ;; Loading integer number 2
+	store:       a_ <- v0
+	iLoad:       v0 <- 3            ;; Loading integer number 3
+	store:       D1234_ <- v0
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	iLoad:       t1 <- 5            ;; Loading integer number 5
+	sgt:         t0 <- v0 , t1
+	not:         v0 <- t0
+	bgtz:        v0 , Label2
+	iLoad:       v0 <- 10           ;; Loading integer number 10
+	store:       stemp0 <- v0
+	goto:        Label0
+	goto:        Label1
+
+  Label2:      
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	store:       stemp0 <- v0
+	goto:        Label0
+
+  Label1:      
+
+  Label0:      
+	load:        v1 <- stemp0       ;; Moving the value to be printed into register v1
+	return      v1
+**END: RTL Statements

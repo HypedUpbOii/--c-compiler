@@ -1,0 +1,10 @@
+**PROCEDURE: f_
+**BEGIN: RTL Statements
+	iLoad:       v0 <- 5        ;; Loading integer number 5
+	store:       a_ <- v0
+**END: RTL Statements
+**PROCEDURE: main
+**BEGIN: RTL Statements
+	call f_
+	call g_
+**END: RTL Statements

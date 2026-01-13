@@ -1,0 +1,23 @@
+**PROCEDURE: f1_
+	Return Type: <bool>
+	Formal Parameters:
+		p_  Type:<bool>
+**BEGIN: Abstract Syntax Tree 
+         Return: Name : p_<bool>
+**END: Abstract Syntax Tree 
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : x_<bool>)
+           RHS (
+             Condition: GT<bool>
+               L_Opd (Num : 10<int>)
+               R_Opd (Num : 5<int>))
+         Asgn:
+           LHS (Name : x_<bool>)
+           RHS (
+             FN CALL: f1_(
+             Name : x_<bool>))
+**END: Abstract Syntax Tree 

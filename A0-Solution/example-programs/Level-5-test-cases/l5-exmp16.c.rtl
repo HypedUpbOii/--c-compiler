@@ -1,0 +1,44 @@
+**PROCEDURE: main
+**BEGIN: RTL Statements
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	load:        t1 <- b_           ;; Loading variable b_ into register
+	mul:         t0 <- v0 , t1
+	store:       c_ <- t0
+	call p_
+	call p_
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	load:        t1 <- b_           ;; Loading variable b_ into register
+	mul:         t0 <- v0 , t1
+	store:       a_ <- t0
+**END: RTL Statements
+**PROCEDURE: p_
+**BEGIN: RTL Statements
+	iLoad:       v0 <- 1            ;; Loading integer number 1
+	iLoad:       t1 <- 2            ;; Loading integer number 2
+	slt:         t0 <- v0 , t1
+	not:         v0 <- t0
+	bgtz:        v0 , Label1
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	load:        t1 <- b_           ;; Loading variable b_ into register
+	mul:         t0 <- v0 , t1
+	store:       a_ <- t0
+	goto:        Label0
+
+  Label1:      
+	iLoad:       v0 <- 1            ;; Loading integer number 1
+	iLoad:       t1 <- 4            ;; Loading integer number 4
+	slt:         t0 <- v0 , t1
+	not:         v0 <- t0
+	bgtz:        v0 , Label2
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	load:        t1 <- b_           ;; Loading variable b_ into register
+	mul:         t0 <- v0 , t1
+	store:       c_ <- t0
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	store:       c_ <- v0
+	goto:        Label2
+
+  Label2:      
+
+  Label0:      
+**END: RTL Statements

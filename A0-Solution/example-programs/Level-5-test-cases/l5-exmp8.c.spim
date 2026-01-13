@@ -1,0 +1,55 @@
+
+	.data
+_str_0:	.asciiz "Hello"
+	.text 			# The .text assembler directive indicates
+	.globl f1_		# The following is the code (as opposed to data)
+f1_:                 # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)      # Save the return address
+	sw $fp, -4($sp)     # Save the frame pointer
+	sub $fp, $sp, 4     # Update the frame pointer
+	sub $sp, $sp, 12    # Make space for the locals
+# Prologue ends
+
+	lw $v0, 8($fp)      # Source:s_
+	sw $v0, -4($fp)     # Dest: $v0
+	j Label0
+Label0:
+	lw $v1, -4($fp)     # Moving the value to be printed into register a0
+	j epilogue_f1_
+epilogue_f1_:
+	add $sp, $sp, 12    # Increment stack pointer for local variables
+	lw $fp, -4($sp)     # Set $fp to $sp-4
+	lw $ra, 0($sp)      # Save ra
+	jr $ra              # Jump back to the called procedure
+# Epilogue Ends
+
+	.text 			# The .text assembler directive indicates
+	.globl main		# The following is the code (as opposed to data)
+main:                # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)      # Save the return address
+	sw $fp, -4($sp)     # Save the frame pointer
+	sub $fp, $sp, 4     # Update the frame pointer
+	sub $sp, $sp, 16    # Make space for the locals
+# Prologue ends
+
+	la $v0, _str_0      # String = "Hello"
+	sw $v0, -4($fp)     # Dest: $v0
+	lw $v0, -4($fp)     # Source:s1_
+	sw $v0, 0($sp)      # store formal parameter at sp
+	sub $sp, $sp, 4     # decrement the stack pointer by 4
+	jal f1_
+	add $sp, $sp, 4     # add the stack pointer by 4
+	move $v0, $v1       # store function call return in $v1 so that another function call can be made
+	sw $v0, -8($fp)     # Dest: $v0
+	li $v0, 4           # Loading 4 in v0 to indicate syscall to print string value
+	lw $a0, -4($fp)     # Moving the value to be printed into register a0
+	syscall
+epilogue_main:
+	add $sp, $sp, 16    # Increment stack pointer for local variables
+	lw $fp, -4($sp)     # Set $fp to $sp-4
+	lw $ra, 0($sp)      # Save ra
+	jr $ra              # Jump back to the called procedure
+# Epilogue Ends
+

@@ -1,0 +1,55 @@
+	.text 			# The .text assembler directive indicates
+	.globl f_		# The following is the code (as opposed to data)
+f_:                  # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)      # Save the return address
+	sw $fp, -4($sp)     # Save the frame pointer
+	sub $fp, $sp, 4     # Update the frame pointer
+	sub $sp, $sp, 12    # Make space for the locals
+# Prologue ends
+
+	li $v0, 5           # Source:5
+	sw $v0, -4($fp)     # Dest: $v0
+epilogue_f_:
+	add $sp, $sp, 12    # Increment stack pointer for local variables
+	lw $fp, -4($sp)     # Set $fp to $sp-4
+	lw $ra, 0($sp)      # Save ra
+	jr $ra              # Jump back to the called procedure
+# Epilogue Ends
+
+	.text 			# The .text assembler directive indicates
+	.globl g_		# The following is the code (as opposed to data)
+g_:                  # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)      # Save the return address
+	sw $fp, -4($sp)     # Save the frame pointer
+	sub $fp, $sp, 4     # Update the frame pointer
+	sub $sp, $sp, 12    # Make space for the locals
+# Prologue ends
+
+epilogue_g_:
+	add $sp, $sp, 12    # Increment stack pointer for local variables
+	lw $fp, -4($sp)     # Set $fp to $sp-4
+	lw $ra, 0($sp)      # Save ra
+	jr $ra              # Jump back to the called procedure
+# Epilogue Ends
+
+	.text 			# The .text assembler directive indicates
+	.globl main		# The following is the code (as opposed to data)
+main:                # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)      # Save the return address
+	sw $fp, -4($sp)     # Save the frame pointer
+	sub $fp, $sp, 4     # Update the frame pointer
+	sub $sp, $sp, 8     # Make space for the locals
+# Prologue ends
+
+	jal f_
+	jal g_
+epilogue_main:
+	add $sp, $sp, 8     # Increment stack pointer for local variables
+	lw $fp, -4($sp)     # Set $fp to $sp-4
+	lw $ra, 0($sp)      # Save ra
+	jr $ra              # Jump back to the called procedure
+# Epilogue Ends
+

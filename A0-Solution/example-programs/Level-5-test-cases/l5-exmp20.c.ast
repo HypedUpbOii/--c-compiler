@@ -1,0 +1,64 @@
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (Num : 1<int>)
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (Num : 2<int>)
+         Asgn:
+           LHS (Name : c_<int>)
+           RHS (Num : 3<int>)
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             Arith: Mult<int>
+               L_Opd (Name : b_<int>)
+               R_Opd (Name : c_<int>))
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             FN CALL: p_(
+             Name : c_<int>))
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (
+             Arith: Plus<int>
+               L_Opd (Name : a_<int>)
+               R_Opd (Name : c_<int>))
+         Asgn:
+           LHS (Name : c_<int>)
+           RHS (
+             FN CALL: p_(
+             Name : b_<int>))
+**END: Abstract Syntax Tree 
+**PROCEDURE: p_
+	Return Type: <int>
+	Formal Parameters:
+		k_  Type:<int>
+**BEGIN: Abstract Syntax Tree 
+         If: 
+           Condition (
+             Condition: LE<bool>
+               L_Opd (Name : k_<int>)
+               R_Opd (Num : 0<int>))
+           Then (
+             Return: Num : 1<int>)
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (
+             FN CALL: p_(
+             
+               Arith: Minus<int>
+                 L_Opd (Name : k_<int>)
+                 R_Opd (Num : 1<int>)))
+         Write: Name : b_<int>
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             Arith: Plus<int>
+               L_Opd (Name : c_<int>)
+               R_Opd (Name : b_<int>))
+**END: Abstract Syntax Tree 

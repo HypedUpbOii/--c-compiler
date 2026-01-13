@@ -1,0 +1,24 @@
+**PROCEDURE: f_
+**BEGIN: RTL Statements
+	iLoad.d:     f2 <- 3.50         ;; Loading float number 3.500000
+	store.d:     stemp0 <- f2
+	goto:        Label0
+
+  Label0:      
+	load.d:      f0 <- stemp0       ;; Moving the value to be printed into register f0
+	return      f0
+**END: RTL Statements
+**PROCEDURE: main
+**BEGIN: RTL Statements
+	iLoad.d:     f2 <- 2.00         ;; Loading float number 2.000000
+	store.d:     r_ <- f2
+	iLoad:       v0 <- 3            ;; Loading integer number 3
+	push:        v0                 ;; Push parameter onto stack
+	iLoad:       v0 <- 2            ;; Loading integer number 2
+	push:        v0                 ;; Push parameter onto stack
+	f0 = call f_
+	pop                             ;; Pop parameter 2 from stack 
+	pop                             ;; Pop parameter 3 from stack 
+	move.d:      f2 <- f0
+	store.d:     r_ <- f2
+**END: RTL Statements
