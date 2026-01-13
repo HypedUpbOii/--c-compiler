@@ -1,0 +1,38 @@
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         FN CALL: r_()
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (Num : 1<int>)
+         Asgn:
+           LHS (Name : c_<int>)
+           RHS (Num : 2<int>)
+         FN CALL: p_()
+         Write: Name : a_<int>
+         Write: Name : c_<int>
+         FN CALL: q_()
+**END: Abstract Syntax Tree 
+**PROCEDURE: p_
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (Num : 1<int>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: q_
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         FN CALL: p_()
+         Write: Name : a_<int>
+**END: Abstract Syntax Tree 
+**PROCEDURE: r_
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         FN CALL: p_()
+         Write: Name : b_<int>
+**END: Abstract Syntax Tree 

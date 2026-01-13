@@ -1,0 +1,38 @@
+	.text 			# The .text assembler directive indicates
+	.globl main		# The following is the code (as opposed to data)
+main:                    # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)          # Save the return address
+	sw $fp, -4($sp)         # Save the frame pointer
+	sub $fp, $sp, 4         # Update the frame pointer
+	sub $sp, $sp, 20        # Make space for the locals
+# Prologue ends
+
+	li $v0, 2               # Source:2
+	sw $v0, -8($fp)         # Dest: $v0
+	li $v0, 3               # Source:3
+	sw $v0, -12($fp)        # Dest: $v0
+	lw $v0, -8($fp)         # Source:a_
+	li $t1, 5               # Source:5
+	sgt $t0, $v0, $t1       # Comparing $v0 and $t1, Result in $t0
+	xori $v0, $t0, 1        # Result: $v0, Opd1: $t0
+	bgtz $v0, Label2
+	li $v0, 10              # Source:10
+	sw $v0, -4($fp)         # Dest: $v0
+	j Label0
+	j Label1
+Label2:
+	lw $v0, -8($fp)         # Source:a_
+	sw $v0, -4($fp)         # Dest: $v0
+	j Label0
+Label1:
+Label0:
+	lw $v1, -4($fp)         # Moving the value to be printed into register a0
+	j epilogue_main
+epilogue_main:
+	add $sp, $sp, 20        # Increment stack pointer for local variables
+	lw $fp, -4($sp)         # Set $fp to $sp-4
+	lw $ra, 0($sp)          # Save ra
+	jr $ra                  # Jump back to the called procedure
+# Epilogue Ends
+

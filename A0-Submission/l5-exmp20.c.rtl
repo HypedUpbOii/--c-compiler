@@ -1,0 +1,62 @@
+**PROCEDURE: main
+**BEGIN: RTL Statements
+	iLoad:       v0 <- 1            ;; Loading integer number 1
+	store:       a_ <- v0
+	iLoad:       v0 <- 2            ;; Loading integer number 2
+	store:       b_ <- v0
+	iLoad:       v0 <- 3            ;; Loading integer number 3
+	store:       c_ <- v0
+	load:        v0 <- b_           ;; Loading variable b_ into register
+	load:        t1 <- c_           ;; Loading variable c_ into register
+	mul:         t0 <- v0 , t1
+	store:       a_ <- t0
+	load:        v0 <- c_           ;; Loading variable c_ into register
+	push:        v0                 ;; Push parameter onto stack
+	v1 = call p_
+	pop                             ;; Pop parameter c_ from stack 
+	move:        v0 <- v1
+	store:       a_ <- v0
+	load:        v0 <- a_           ;; Loading variable a_ into register
+	load:        t1 <- c_           ;; Loading variable c_ into register
+	add:         t0 <- v0 , t1
+	store:       b_ <- t0
+	load:        v0 <- b_           ;; Loading variable b_ into register
+	push:        v0                 ;; Push parameter onto stack
+	v1 = call p_
+	pop                             ;; Pop parameter b_ from stack 
+	move:        v0 <- v1
+	store:       c_ <- v0
+**END: RTL Statements
+**PROCEDURE: p_
+**BEGIN: RTL Statements
+	load:        v0 <- k_           ;; Loading variable k_ into register
+	iLoad:       t1 <- 0            ;; Loading integer number 0
+	sle:         t0 <- v0 , t1
+	not:         v0 <- t0
+	bgtz:        v0 , Label1
+	iLoad:       v0 <- 1            ;; Loading integer number 1
+	store:       stemp0 <- v0
+	goto:        Label0
+	goto:        Label1
+
+  Label1:      
+	load:        v0 <- k_           ;; Loading variable k_ into register
+	iLoad:       t1 <- 1            ;; Loading integer number 1
+	sub:         t0 <- v0 , t1
+	push:        t0                 ;; Push parameter onto stack
+	v1 = call p_
+	pop                             ;; Pop parameter temp3 from stack 
+	move:        v0 <- v1
+	store:       b_ <- v0
+	iLoad:       v0 <- 1            ;; Loading 1 in v0 to indicate syscall to print integter value
+	load:        a0 <- b_           ;; Moving the value to be printed into register a0
+	write                           ;; This is where syscall will be made
+	load:        v0 <- c_           ;; Loading variable c_ into register
+	load:        t1 <- b_           ;; Loading variable b_ into register
+	add:         t0 <- v0 , t1
+	store:       a_ <- t0
+
+  Label0:      
+	load:        v1 <- stemp0       ;; Moving the value to be printed into register v1
+	return      v1
+**END: RTL Statements

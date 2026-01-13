@@ -1,0 +1,73 @@
+**PROCEDURE: f1_
+	Return Type: <int>
+	Formal Parameters:
+		b_  Type:<int>
+		c_  Type:<int>
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : d_<int>)
+           RHS (
+             Arith: Plus<int>
+               L_Opd (Name : b_<int>)
+               R_Opd (Name : c_<int>))
+         FN CALL: h_()
+         Return: 
+           Arith: Plus<int>
+             L_Opd (Name : d_<int>)
+             R_Opd (Num : 2<int>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: g_
+	Return Type: <int>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         FN CALL: h_()
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (Num : 1<int>)
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (
+             FN CALL: f1_(
+             Name : b_<int>
+             Name : b_<int>))
+         Return: Name : b_<int>
+**END: Abstract Syntax Tree 
+**PROCEDURE: h_
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : c_<int>)
+           RHS (Num : 1<int>)
+**END: Abstract Syntax Tree 
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (Num : 3<int>)
+         FN CALL: h_()
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             FN CALL: f1_(
+             Name : a_<int>
+             Name : a_<int>))
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (
+             FN CALL: g_())
+         FN CALL: h_()
+         Asgn:
+           LHS (Name : a_<int>)
+           RHS (
+             FN CALL: f1_(
+             Name : a_<int>
+             Name : a_<int>))
+         Asgn:
+           LHS (Name : b_<int>)
+           RHS (
+             FN CALL: g_())
+         Write: Name : a_<int>
+**END: Abstract Syntax Tree 

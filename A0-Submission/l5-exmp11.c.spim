@@ -1,0 +1,86 @@
+
+	.data
+_str_0:	.asciiz "Input temperature in centigrade"
+_str_1:	.asciiz "Temperature in fahrenheit is "
+	.text 			# The .text assembler directive indicates
+	.globl convert_centigrade_to_fahrenheit_		# The following is the code (as opposed to data)
+convert_centigrade_to_fahrenheit_:               # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)                                  # Save the return address
+	sw $fp, -4($sp)                                 # Save the frame pointer
+	sub $fp, $sp, 4                                 # Update the frame pointer
+	sub $sp, $sp, 32                                # Make space for the locals
+# Prologue ends
+
+	l.d $f2, 8($fp)                                 # Source:ct_
+	li.d $f4, 0.00                                  # Source:0.000000
+	c.eq.d $f2, $f4                                 # Comparing $f2 and $f4, Result in a condition flag
+	li $v0, 1                                       # Loading 1 in $v0 for floating point comparisons
+	move $t0, $zero                                 # Moving zero in the result register
+	movt $t0, $v0, 0                                # Moving 1 if comparison was true
+	xori $v0, $t0, 1                                # Result: $v0, Opd1: $t0
+	bgtz $v0, Label1
+	li.d $f2, 0.00                                  # Source:0.000000
+	s.d $f2, -24($fp)                               # Dest: $f2
+	j Label2
+Label1:
+	l.d $f2, 8($fp)                                 # Source:ct_
+	li.d $f6, 9.00                                  # Source:9.000000
+	mul.d $f4, $f2, $f6                             # Result: $f4, Opd1: $f2, Opd2:$f6
+	li.d $f6, 5.00                                  # Source:5.000000
+	div.d $f2, $f4, $f6                             # Result: $f2, Opd1: $f4, Opd2:$f6
+	li.d $f6, 32.00                                 # Source:32.000000
+	add.d $f4, $f2, $f6                             # Result: $f4, Opd1: $f2, Opd2:$f6
+	s.d $f4, -24($fp)                               # Dest: $f4
+Label2:
+	l.d $f2, -24($fp)                               # Source:stemp1
+	s.d $f2, -16($fp)                               # Dest: $f2
+	l.d $f2, -16($fp)                               # Source:ft_
+	s.d $f2, -8($fp)                                # Dest: $f2
+	j Label0
+Label0:
+	l.d $f0, -8($fp)                                # Moving the value to be printed into register a0
+	j epilogue_convert_centigrade_to_fahrenheit_
+epilogue_convert_centigrade_to_fahrenheit_:
+	add $sp, $sp, 32                                # Increment stack pointer for local variables
+	lw $fp, -4($sp)                                 # Set $fp to $sp-4
+	lw $ra, 0($sp)                                  # Save ra
+	jr $ra                                          # Jump back to the called procedure
+# Epilogue Ends
+
+	.text 			# The .text assembler directive indicates
+	.globl main		# The following is the code (as opposed to data)
+main:                                            # .globl makes main know to the outside of the program.
+# Prologue begins
+	sw $ra, 0($sp)                                  # Save the return address
+	sw $fp, -4($sp)                                 # Save the frame pointer
+	sub $fp, $sp, 4                                 # Update the frame pointer
+	sub $sp, $sp, 24                                # Make space for the locals
+# Prologue ends
+
+	li $v0, 4                                       # Loading 4 in v0 to indicate syscall to print string value
+	la $a0, _str_0                                  # String = "Input temperature in centigrade"
+	syscall
+	li $v0, 7                                       # Loading 7 in v0 to indicate syscall to read double value
+	syscall
+	s.d $f0, -8($fp)                                # Moving the read value from register f0
+	l.d $f2, -8($fp)                                # Source:in_
+	s.d $f2, -4($sp)                                # store formal parameter at sp
+	sub $sp, $sp, 8                                 # decrement the stack pointer by 8
+	jal convert_centigrade_to_fahrenheit_
+	add $sp, $sp, 8                                 # increment the stack pointer by 8
+	mov.d $f2, $f0                                  # store function call return in $f0 so that another function call can be made
+	s.d $f2, -16($fp)                               # Dest: $f2
+	li $v0, 4                                       # Loading 4 in v0 to indicate syscall to print string value
+	la $a0, _str_1                                  # String = "Temperature in fahrenheit is "
+	syscall
+	li $v0, 3                                       # Loading 3 in v0 to indicate syscall to print double value
+	l.d $f12, -16($fp)                              # Moving the value to be printed into register a0
+	syscall
+epilogue_main:
+	add $sp, $sp, 24                                # Increment stack pointer for local variables
+	lw $fp, -4($sp)                                 # Set $fp to $sp-4
+	lw $ra, 0($sp)                                  # Save ra
+	jr $ra                                          # Jump back to the called procedure
+# Epilogue Ends
+

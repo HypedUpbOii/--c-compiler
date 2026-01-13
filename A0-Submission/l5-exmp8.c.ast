@@ -1,0 +1,21 @@
+**PROCEDURE: f1_
+	Return Type: <string>
+	Formal Parameters:
+		s_  Type:<string>
+**BEGIN: Abstract Syntax Tree 
+         Return: Name : s_<string>
+**END: Abstract Syntax Tree 
+**PROCEDURE: main
+	Return Type: <void>
+	Formal Parameters:
+**BEGIN: Abstract Syntax Tree 
+         Asgn:
+           LHS (Name : s1_<string>)
+           RHS (String : "Hello"<string>)
+         Asgn:
+           LHS (Name : s2_<string>)
+           RHS (
+             FN CALL: f1_(
+             Name : s1_<string>))
+         Write: Name : s1_<string>
+**END: Abstract Syntax Tree 
