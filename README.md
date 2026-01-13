@@ -1,3 +1,3 @@
-This is the first commit in our repository
+This is the second commit in our repository
 
 -- Pranay and Sandeep
