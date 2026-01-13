@@ -1,0 +1,37 @@
+A Description of the Resources and Expected Deliverables of Assignment A0
+=========================================================================
+
+
+A. Resources
+------------
+
+This directory contains the following :
+
+ 1. This file (A0-README).
+
+ 2. A subdirectory called reference-implementations. It contains A0-sclp
+    which is a reference implementation of the full compiler for language 
+    Level  5. You can observe the AST, TAC, RTL, ASM for your input programs 
+    by giving appropriate command line switches.(Use --help option)
+
+ 3. A subdirectory called example-programs. It contains the following
+    subdirectories
+
+    - Level-5-test-cases. This subdirectory contains some valid programs
+      for level 5 of the language.
+
+    - Level-5-invalid-test-cases. This subdirectory contains some invalid 
+      programs for level 5 of the language.
+    
+B. Expected Deliverables
+-------------------------
+
+You are required to generate AST, TAC, RTL, ASM files for testcases using 
+the reference implementation by giving appropriate command line switches,
+and submit them as per the below format.
+
+You need to submit a tarred gzipped version of your directory (file name
+must be <groupid>.tar.gz) containing these generated files. On untarring, 
+it must  produce the directory `groupid'  (e.g. `group1',  `group19').
+Any deviation from this will be treated as non-submission.
+
