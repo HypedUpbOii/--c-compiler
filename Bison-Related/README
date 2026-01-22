@@ -1,0 +1,4 @@
+Place the directory 'bison' into /usr/share
+Place the directory 'libbison-dev' into /usr/share/doc
+Place liby.a into the directory /usr/lib/x86_64-linux-gnu
+
