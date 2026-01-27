@@ -81,8 +81,10 @@ Your submission will be evaluated on the following factors:
     This should  produce no output  and should finish silently  and exit
     with return value 0. Thus the sequence of commands
     
+    ```bash
     $ sclp valid_test.c
     $ echo $?
+    ```
 
     should print the number 0.
 
