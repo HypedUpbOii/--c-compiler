@@ -1,10 +1,11 @@
 %{
     #include <stdio.h>
     #include <assert.h>
+    #include <string.h>
     #define DEBUG_PRINT 0
-    void print(char* match, char* type);
-    void debug_print(char* msg);
-    void yyerror(char* err_msg);
+    void print(char* match, const char* type);
+    void debug_print(const char* msg);
+    void yyerror(char* err_match);
     unsigned int line_number = 1;
     char next_token[20];
 %}
@@ -41,24 +42,26 @@ read {print("read", "READ");}
 return {print("return", "RET");}
 
 [ \t] {debug_print("\nIgnoring for now\n");}
+({digit})+\.({digit})* {print(yytext, "FLOAT_NUM");}
 {digit}+ {print(yytext, "INT_NUM");}
+\.({digit})+ {print(yytext, "FLOAT_NUM");}
 {letter}({letter}|{digit}|"_")* {print(yytext, "NAME");} 
 \"([^\"\n])*\" {print(yytext, "STR_CONST");}
-. {yyerror("Description");}
+. {yyerror(yytext);}
 %%
 
-void print(char* match, char* type) {
+void print(char* match, const char* type) {
     printf("\tToken Name: %s\tLexeme: %s\tLineno: %d\n", type, match, line_number);
-    next_token = type;
+    strcpy(next_token, type);
 }
 
-void debug_print(char* msg) {
+void debug_print(const char* msg) {
     if (DEBUG_PRINT) {
         printf("%s", msg);
     }
 }
 
-void throw_error(char* err_msg) {
-    printf("Error: %s", err_msg);
-    assert(1==0);
+void yyerror(char* match) {
+    printf("sclp error: File: ,Line: %d, Next token: %s, Lexeme: %s\n\tDescription: Illegal character \'%c\'\n", line_number, next_token, match, match[0]);
+    exit(1);
 }
