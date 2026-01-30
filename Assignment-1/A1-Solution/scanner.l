@@ -1,4 +1,5 @@
 %{
+    #include "parser.tab.h"
     #include <stdio.h>
     #include <assert.h>
     #include <string.h>
@@ -20,36 +21,35 @@ character [.\n]
 
 %%
 \n {line_number++;}  
-"(" {print("(", "LEFT_ROUND_BRACKET");}
-")" {print(")", "RIGHT_ROUND_BRACKET");}
-"{" {print("{", "LEFT_CURLY_BRACKET");}
-"}" {print("}", "RIGHT_CURLY_BRACKET");}
-, {print(",", "COMMA");}
-; {print(";", "SEMICOLON");}
-= {print("=", "ASSIGN_OP");}
-- {print("-", "MINUS");}
-"*" {print("*", "MULT");}
-"+" {print("+", "PLUS");}
-"/" {print("/", "DIV");}
+"(" {print("(", "LEFT_ROUND_BRACKET"); return LEFT_ROUND_BRACKET;}
+")" {print(")", "RIGHT_ROUND_BRACKET"); return RIGHT_ROUND_BRACKET;}
+"{" {print("{", "LEFT_CURLY_BRACKET"); return LEFT_CURLY_BRACKET;}
+"}" {print("}", "RIGHT_CURLY_BRACKET"); return RIGHT_CURLY_BRACKET;}
+, {print(",", "COMMA"); return COMMA;}
+; {print(";", "SEMICOLON"); return SEMICOLON;}
+= {print("=", "ASSIGN_OP"); return ASSIGN_OP;}
+- {print("-", "MINUS"); return MINUS;}
+"*" {print("*", "MULT"); return MULT;}
+"+" {print("+", "PLUS"); return PLUS;}
+"/" {print("/", "DIV"); return DIV;}
 "//"[^\n]* {debug_print("\nIgnoring for now\n");}
 
-int {print("int", "INTEGER");}
-bool {print("bool", "BOOL");}
-void {print("void", "VOID");}
-string {print("string", "STRING");}
-double {print("double", "DOUBLE");}
-float {print("float", "FLOAT");}
+int {print("int", "INTEGER"); return INTEGER;}
+bool {print("bool", "BOOL"); return BOOL;}
+void {print("void", "VOID"); return VOID;}
+string {print("string", "STRING"); return STRING;}
+float {print("float", "FLOAT"); return FLOAT;}
 
-print {print("print", "WRITE");}
-read {print("read", "READ");}
-return {print("return", "RET");}
+print {print("print", "WRITE"); return WRITE;}
+read {print("read", "READ"); return READ;}
+return {print("return", "RET"); return RET;}
 
 [ \t] {debug_print("\nIgnoring for now\n");}
-({digit})+\.({digit})* {print(yytext, "FLOAT_NUM");}
-{digit}+ {print(yytext, "INT_NUM");}
-\.({digit})+ {print(yytext, "FLOAT_NUM");}
-{letter}({letter}|{digit}|"_")* {print(yytext, "NAME");} 
-\"([^\"\n])*\" {print(yytext, "STR_CONST");}
+({digit})+\.({digit})* {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
+{digit}+ {print(yytext, "INT_NUM"); return INT_NUM;}
+\.({digit})+ {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
+{letter}({letter}|{digit}|"_")* {print(yytext, "NAME"); return NAME;}
+\"([^\"\n])*\" {print(yytext, "STR_CONST"); return STR_CONST;}
 . {yyerror(yytext);}
 %%
 
