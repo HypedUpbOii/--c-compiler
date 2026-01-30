@@ -6,6 +6,8 @@
     void print(char* match, const char* type);
     void debug_print(const char* msg);
     void yyerror(char* err_match);
+    // extern char* file_name;
+    char* file_name = "example.c";
     unsigned int line_number = 1;
     char next_token[20];
 %}
@@ -29,6 +31,7 @@ character [.\n]
 "*" {print("*", "MULT");}
 "+" {print("+", "PLUS");}
 "/" {print("/", "DIV");}
+"//"[^\n]* {debug_print("\nIgnoring for now\n");}
 
 int {print("int", "INTEGER");}
 bool {print("bool", "BOOL");}
@@ -62,6 +65,6 @@ void debug_print(const char* msg) {
 }
 
 void yyerror(char* match) {
-    printf("sclp error: File: ,Line: %d, Next token: %s, Lexeme: %s\n\tDescription: Illegal character \'%c\'\n", line_number, next_token, match, match[0]);
+    printf("sclp error: File: %s,Line: %d, Next token: %s, Lexeme: %s\n\tDescription: Illegal character \'%c\'\n", file_name, line_number, next_token, match, match[0]);
     exit(1);
 }
