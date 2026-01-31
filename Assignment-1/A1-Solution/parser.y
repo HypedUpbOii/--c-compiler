@@ -1,6 +1,12 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
+    int yylex(void);
+    int yyerror(char* s);
+    extern char input_file[1024];
+    extern unsigned int line_number;
+    extern char next_token[20];
+    extern char* yytext;
 %}
 %token LEFT_ROUND_BRACKET
 %token RIGHT_ROUND_BRACKET
@@ -58,8 +64,8 @@ func_header
 ;
 
 func_def
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list RIGHT_CURLY_BRACKET
-    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list RIGHT_CURLY_BRACKET
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET
+    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET
 ;
 
 formal_param_list
@@ -141,9 +147,15 @@ expression
 ;
 
 constant_as_operand
-    : INTEGER
-    | FLOAT
+    : INT_NUM
+    | FLOAT_NUM
     | STR_CONST
 ;
-
 %%
+
+int yyerror(char* s) {
+    fprintf(stderr, "syntax error\n");
+    fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
+    exit(1);
+    return 1;
+}

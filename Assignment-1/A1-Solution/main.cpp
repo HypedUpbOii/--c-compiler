@@ -2,29 +2,29 @@
 #include <cstdlib>
 #include <argp.h>
 #include <cstring>
-#include "parser.hpp"
 using namespace std;
 
 extern FILE *yyin;
-extern int yylex();
-extern int yyparse();
-extern char* yytext();
-extern int line_number;
+extern "C" {
+    int yylex();
+    int yyparse();
+}
+extern unsigned int line_number;
 extern char next_token[20];
 
-bool show_tokens = false;
-bool stop_after_scan = false;
-bool demo_mode = false;
+int show_tokens = false;
+int stop_after_scan = false;
+int demo_mode = false;
 char input_file[1024] = "";
 
 const char* argp_program_version = "Sclp Version: A2";
-const char* argp_program_bug_address = "<23b1006@iitb.ac.in/23b1073@iitb.ac.in>"
+const char* argp_program_bug_address = "<23b1006@iitb.ac.in/23b1073@iitb.ac.in>";
 static char doc[] = "A language processor for C like language";
 static char args_doc[] = "[INPUT_FILE]";
 static struct argp_option options[] {
     {"sa-scan", 1000, 0, 0, "Stop after scanning"},
     {"show-tokens", 1001, 0, 0, "Show the tokens in FILE.toks (or out.toks)"},
-    {"demo", 'd', 0, 0, "Demo version. Use stdout for the output instead of files"}.
+    {"demo", 'd', 0, 0, "Demo version. Use stdout for the output instead of files"},
     {0}
 };
 
@@ -85,16 +85,16 @@ void process_command_options(int argc, char* argv[]) {
         }
         strcpy(input_file, args.input_file);
     }
-}
-
-int main(int argc, char* argv[]) {
-    process_command_options(argc, argv);
 
     if (show_tokens && !demo_mode && args.input_file) {
         char toks_file[1024];
         snprintf(toks_file, sizeof(toks_file), "%s.toks", args.input_file);
         freopen(toks_file, "w", stdout);
     }
+}
+
+int main(int argc, char* argv[]) {
+    process_command_options(argc, argv);
 
     if (stop_after_scan) {
         while (yylex() != 0) {}

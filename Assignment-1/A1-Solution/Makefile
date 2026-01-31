@@ -1,7 +1,10 @@
 all : sclp
 
-sclp : lex.yy.o y.tab.o main.cpp
-	gcc -o sclp lex.yy.o y.tab.o -ly -ll
+sclp : lex.yy.o y.tab.o main.o
+	g++ -o sclp lex.yy.o y.tab.o main.o -ly -ll
+
+main.o : main.cpp
+	g++ -c main.cpp
 
 y.tab.o y.tab.h : parser.y
 	yacc -dv parser.y

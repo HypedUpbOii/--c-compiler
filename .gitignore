@@ -1,7 +1,11 @@
-**/*.vscode
+**/.vscode/
+
 **/*.out
-**/*.yy.c
-**/*.yy.o
+**/*.o
+**/*.yy.[co]
 **/*.tab.[cho]
 **/*-Sol
 **/*.output
+*example*.*
+**/err.log
+**/sclp

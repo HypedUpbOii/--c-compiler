@@ -4,7 +4,7 @@
     #include <string.h>
     void print(char* match, const char* type);
     void lexerror(char* match);
-    extern bool show_tokens;
+    extern int show_tokens;
     extern char input_file[1024];
     unsigned int line_number = 1;
     char next_token[20];
@@ -29,7 +29,7 @@ character [.\n]
 "*" {print("*", "MULT"); return MULT;}
 "+" {print("+", "PLUS"); return PLUS;}
 "/" {print("/", "DIV"); return DIV;}
-"//"[^\n]* {debug_print("\nIgnoring for now\n");}
+"//"[^\n]* {}
 
 int {print("int", "INTEGER"); return INTEGER;}
 bool {print("bool", "BOOL"); return BOOL;}
@@ -41,7 +41,7 @@ print {print("print", "WRITE"); return WRITE;}
 read {print("read", "READ"); return READ;}
 return {print("return", "RET"); return RET;}
 
-[ \t] {debug_print("\nIgnoring for now\n");}
+[ \t] {}
 ({digit})+\.({digit})* {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
 {digit}+ {print(yytext, "INT_NUM"); return INT_NUM;}
 \.({digit})+ {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
