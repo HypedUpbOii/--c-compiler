@@ -1,14 +1,11 @@
 %{
-    #include "parser.tab.h"
+    #include "y.tab.h"
     #include <stdio.h>
-    #include <assert.h>
     #include <string.h>
-    #define DEBUG_PRINT 0
     void print(char* match, const char* type);
-    void debug_print(const char* msg);
-    void yyerror(char* err_match);
-    // extern char* file_name;
-    char* file_name = "example.c";
+    void lexerror(char* match);
+    extern bool show_tokens;
+    extern char input_file[1024];
     unsigned int line_number = 1;
     char next_token[20];
 %}
@@ -50,21 +47,17 @@ return {print("return", "RET"); return RET;}
 \.({digit})+ {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
 {letter}({letter}|{digit}|"_")* {print(yytext, "NAME"); return NAME;}
 \"([^\"\n])*\" {print(yytext, "STR_CONST"); return STR_CONST;}
-. {yyerror(yytext);}
+. {lexerror(yytext);}
 %%
 
 void print(char* match, const char* type) {
-    printf("\tToken Name: %s\tLexeme: %s\tLineno: %d\n", type, match, line_number);
+    if (show_tokens) {
+        printf("\tToken Name: %s\tLexeme: %s\tLineno: %d\n", type, match, line_number);
+    }
     strcpy(next_token, type);
 }
 
-void debug_print(const char* msg) {
-    if (DEBUG_PRINT) {
-        printf("%s", msg);
-    }
-}
-
-void yyerror(char* match) {
-    printf("sclp error: File: %s,Line: %d, Next token: %s, Lexeme: %s\n\tDescription: Illegal character \'%c\'\n", file_name, line_number, next_token, match, match[0]);
+void lexerror(char* match) {
+    printf("sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\tDescription: Illegal character \'%c\'\n", input_file, line_number, next_token, match, match[0]);
     exit(1);
 }
