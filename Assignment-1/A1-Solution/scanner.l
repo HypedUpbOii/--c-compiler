@@ -1,5 +1,5 @@
 %{
-    #include "parser.tab.h"
+    #include "y.tab.h"
     #include <stdio.h>
     #include <assert.h>
     #include <string.h>

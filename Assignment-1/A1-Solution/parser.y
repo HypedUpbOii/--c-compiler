@@ -58,8 +58,8 @@ func_header
 ;
 
 func_def
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET var_decl_stmt_list RIGHT_CURLY_BRACKET
-    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET var_decl_stmt_list RIGHT_CURLY_BRACKET
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list RIGHT_CURLY_BRACKET
+    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list RIGHT_CURLY_BRACKET
 ;
 
 formal_param_list
@@ -89,9 +89,14 @@ statement
     | read_statement
 ;
 
-var_decl_stmt_list
+optional_var_decl_stmt_list
     : %empty
-    | var_decl_stmt_list var_decl_stmt
+    | var_decl_stmt_list
+;
+	
+
+var_decl_stmt_list
+    : var_decl_stmt_list var_decl_stmt
     | var_decl_stmt 
 ;
 
