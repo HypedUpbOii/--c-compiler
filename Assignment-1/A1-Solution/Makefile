@@ -7,7 +7,7 @@ main.o : main.cpp
 	g++ -c main.cpp
 
 y.tab.o y.tab.h : parser.y
-	yacc -dv parser.y
+	yacc -dv -Wcounterexamples parser.y
 	gcc -c y.tab.c
 
 lex.yy.o : scanner.l y.tab.h

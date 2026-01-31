@@ -16,6 +16,8 @@ int show_tokens = false;
 int stop_after_scan = false;
 int demo_mode = false;
 char input_file[1024] = "";
+char toks_file[1024];
+FILE* fp = nullptr;
 
 const char* argp_program_version = "Sclp Version: A2";
 const char* argp_program_bug_address = "<23b1006@iitb.ac.in/23b1073@iitb.ac.in>";
@@ -87,9 +89,8 @@ void process_command_options(int argc, char* argv[]) {
     }
 
     if (show_tokens && !demo_mode && args.input_file) {
-        char toks_file[1024];
         snprintf(toks_file, sizeof(toks_file), "%s.toks", args.input_file);
-        freopen(toks_file, "w", stdout);
+        fp = freopen(toks_file, "w", stdout);
     }
 }
 

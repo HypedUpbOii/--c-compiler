@@ -7,6 +7,8 @@
     extern unsigned int line_number;
     extern char next_token[20];
     extern char* yytext;
+    extern FILE* fp;
+    extern char toks_file[1024];
 %}
 %token LEFT_ROUND_BRACKET
 %token RIGHT_ROUND_BRACKET
@@ -156,6 +158,8 @@ constant_as_operand
 int yyerror(char* s) {
     fprintf(stderr, "syntax error\n");
     fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
+    fclose(fp);
+    fopen(toks_file, "w");
     exit(1);
     return 1;
 }
