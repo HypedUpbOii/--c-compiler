@@ -4,4 +4,4 @@
 **/*.yy.o
 **/*.tab.[cho]
 **/*-Sol
-
+**/*.output
