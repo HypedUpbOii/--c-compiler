@@ -40,14 +40,24 @@
 %%
 
 program
-    : global_decl_statement_list func_def_list
-    | func_def_list
+    : func_def
+    | func_decl func_def
+    | var_list func_def
+    | func_decl var_list func_def
+    | var_list func_decl var_list func_def
 ;
 
+/*
 global_decl_statement_list
     : global_decl_statement_list func_decl 
     | global_decl_statement_list var_decl_stmt
     | func_decl
+    | var_decl_stmt
+;
+*/
+
+var_list 
+    : var_list var_decl_stmt
     | var_decl_stmt
 ;
 
@@ -56,10 +66,12 @@ func_decl
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET SEMICOLON
 ;
 
+/*
 func_def_list
     : func_def_list func_def
     | func_def
 ;
+*/
 
 func_header
     : named_type NAME
@@ -158,7 +170,7 @@ constant_as_operand
 int yyerror(char* s) {
     fprintf(stderr, "syntax error\n");
     fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
-    fclose(fp);
+    if (fp) fclose(fp);
     fopen(toks_file, "w");
     exit(1);
     return 1;
