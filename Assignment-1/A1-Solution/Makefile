@@ -14,10 +14,6 @@ lex.yy.o : scanner.l y.tab.h
 	lex scanner.l
 	gcc -c -g lex.yy.c
 
-scan : scanner.l
-	lex scanner.l
-	gcc -g lex.yy.c -ll -o scan
-
 clean :
-	rm -f *.o lex.yy.* *.tab.h *.tab.c y.output exp? a.out scan sclp
+	rm -f *.o lex.yy.* *.tab.h *.tab.c y.output *.log exp? a.out sclp
 
