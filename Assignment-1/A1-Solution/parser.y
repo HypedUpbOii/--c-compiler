@@ -169,9 +169,11 @@ constant_as_operand
 
 int yyerror(char* s) {
     fprintf(stderr, "syntax error\n");
-    fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
-    if (fp) fclose(fp);
-    fopen(toks_file, "w");
+    fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: \"%s\"\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
+    if (fp) {
+        fclose(fp);
+        fopen(toks_file, "w");
+    }
     exit(1);
     return 1;
 }

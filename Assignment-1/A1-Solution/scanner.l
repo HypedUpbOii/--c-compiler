@@ -60,9 +60,11 @@ void print(char* match, const char* type) {
 }
 
 void lexerror(char* match) {
-    printf("sclp error: File: %s, Line: %d, Next token: %s, Lexeme: %s\n\t    Description: Illegal character \'%c\'\n", input_file, line_number, next_token, match, match[0]);
-    if (fp) fclose(fp);
-    fopen(toks_file, "w");
+    printf("sclp error: File: %s, Line: %d, Next token: %s, Lexeme: \"%s\"\n\t    Description: Illegal character \'%c\'\n", input_file, line_number, next_token, match, match[0]);
+    if (fp) {
+        fclose(fp);
+        fopen(toks_file, "w");
+    }
     exit(1);
 }
 
