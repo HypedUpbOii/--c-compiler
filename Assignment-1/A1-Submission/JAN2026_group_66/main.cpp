@@ -1,20 +1,23 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
+#include <cstdlib>
 #include <argp.h>
+#include <cstring>
 using namespace std;
 
 extern FILE *yyin;
-extern int yylex();
-extern int yyparse();
+extern "C" {
+    int yylex();
+    int yyparse();
+}
+extern unsigned int line_number;
+extern char next_token[20];
 
-bool show_tokens = false;
-bool stop_after_scan = false;
-bool demo_mode = false;
-string input_file;
-static ostringstream write_buffer;
-static ofstream toks_file;
+int show_tokens = false;
+int stop_after_scan = false;
+int demo_mode = false;
+char input_file[1024] = "";
+char toks_file[1024];
+FILE* fp = nullptr;
 
 const char* argp_program_version = "Sclp Version: A2";
 const char* argp_program_bug_address = "<23b1006@iitb.ac.in/23b1073@iitb.ac.in>";
@@ -82,13 +85,12 @@ void process_command_options(int argc, char* argv[]) {
             cerr << "sclp error: File: " << input_file << " Cannot open the input file" << endl;
             exit(1);
         }
-        input_file = args.input_file;
+        strcpy(input_file, args.input_file);
     }
 
     if (show_tokens && !demo_mode && args.input_file) {
-        string toks_file_name = string(args.input_file) + ".toks";
-        toks_file = ofstream(toks_file_name);
-        std::streambuf* original_cout_buf = std::cout.rdbuf(write_buffer.rdbuf());
+        snprintf(toks_file, sizeof(toks_file), "%s.toks", args.input_file);
+        fp = freopen(toks_file, "w", stdout);
     }
 }
 
@@ -97,15 +99,9 @@ int main(int argc, char* argv[]) {
 
     if (stop_after_scan) {
         while (yylex() != 0) {}
-        toks_file << write_buffer.str();
-        toks_file.flush();
+        fflush(stdout);
         return 0;
     }
 
-    int status = yyparse();
-    if (status == 0) {
-        toks_file << write_buffer.str();
-        toks_file.flush();
-    }
-    return status;
+    return yyparse();
 }

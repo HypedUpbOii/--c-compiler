@@ -1,70 +1,63 @@
 %{
     #include "y.tab.h"
-    #include <stdio.h>
-    #include <string.h>
-    void print(char* match, const char* type);
+    #include <iostream>
+    using namespace std;
+    
+    void write_tokens(char* match, string type);
     void lexerror(char* match);
-    extern int show_tokens;
-    extern char input_file[1024];
-    extern FILE* fp;
-    extern char toks_file[1024];
+    
+    extern bool show_tokens;
+    extern string input_file;
+    
     unsigned int line_number = 1;
-    char next_token[20];
+    string next_token;
 %}
 
 digit [0-9]
-operator [-+*/]
 letter [a-zA-Z]
-quote ["]
-character [.\n]
 
 %%
-\n {line_number++;}  
-"(" {print("(", "LEFT_ROUND_BRACKET"); return LEFT_ROUND_BRACKET;}
-")" {print(")", "RIGHT_ROUND_BRACKET"); return RIGHT_ROUND_BRACKET;}
-"{" {print("{", "LEFT_CURLY_BRACKET"); return LEFT_CURLY_BRACKET;}
-"}" {print("}", "RIGHT_CURLY_BRACKET"); return RIGHT_CURLY_BRACKET;}
-, {print(",", "COMMA"); return COMMA;}
-; {print(";", "SEMICOLON"); return SEMICOLON;}
-= {print("=", "ASSIGN_OP"); return ASSIGN_OP;}
-- {print("-", "MINUS"); return MINUS;}
-"*" {print("*", "MULT"); return MULT;}
-"+" {print("+", "PLUS"); return PLUS;}
-"/" {print("/", "DIV"); return DIV;}
-"//"[^\n]* {}
+\n                              {line_number++;}  
+"("                             {write_tokens("(", "LEFT_ROUND_BRACKET"); return LEFT_ROUND_BRACKET;}
+")"                             {write_tokens(")", "RIGHT_ROUND_BRACKET"); return RIGHT_ROUND_BRACKET;}
+"{"                             {write_tokens("{", "LEFT_CURLY_BRACKET"); return LEFT_CURLY_BRACKET;}
+"}"                             {write_tokens("}", "RIGHT_CURLY_BRACKET"); return RIGHT_CURLY_BRACKET;}
+,                               {write_tokens(",", "COMMA"); return COMMA;}
+;                               {write_tokens(";", "SEMICOLON"); return SEMICOLON;}
+=                               {write_tokens("=", "ASSIGN_OP"); return ASSIGN_OP;}
+-                               {write_tokens("-", "MINUS"); return MINUS;}
+"*"                             {write_tokens("*", "MULT"); return MULT;}
+"+"                             {write_tokens("+", "PLUS"); return PLUS;}
+"/"                             {write_tokens("/", "DIV"); return DIV;}
+"//"[^\n]*                      {}
 
-int {print("int", "INTEGER"); return INTEGER;}
-bool {print("bool", "BOOL"); return BOOL;}
-void {print("void", "VOID"); return VOID;}
-string {print("string", "STRING"); return STRING;}
-float {print("float", "FLOAT"); return FLOAT;}
+int                             {write_tokens("int", "INTEGER"); return INTEGER;}
+bool                            {write_tokens("bool", "BOOL"); return BOOL;}
+void                            {write_tokens("void", "VOID"); return VOID;}
+string                          {write_tokens("string", "STRING"); return STRING;}
+float                           {write_tokens("float", "FLOAT"); return FLOAT;}
 
-print {print("print", "WRITE"); return WRITE;}
-read {print("read", "READ"); return READ;}
-return {print("return", "RET"); return RET;}
+print                           {write_tokens("print", "WRITE"); return WRITE;}
+read                            {write_tokens("read", "READ"); return READ;}
+return                          {write_tokens("return", "RET"); return RET;}
 
-[ \t] {}
-({digit})+\.({digit})* {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
-{digit}+ {print(yytext, "INT_NUM"); return INT_NUM;}
-\.({digit})+ {print(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
-{letter}({letter}|{digit}|"_")* {print(yytext, "NAME"); return NAME;}
-\"([^\"\n])*\" {print(yytext, "STR_CONST"); return STR_CONST;}
-. {lexerror(yytext);}
+[ \t]                           {}
+({digit})+\.({digit})*          {write_tokens(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
+{digit}+                        {write_tokens(yytext, "INT_NUM"); return INT_NUM;}
+\.({digit})+                    {write_tokens(yytext, "FLOAT_NUM"); return FLOAT_NUM;}
+{letter}({letter}|{digit}|"_")* {write_tokens(yytext, "NAME"); return NAME;}
+\"([^\"\n])*\"                  {write_tokens(yytext, "STR_CONST"); return STR_CONST;}
+.                               {lexerror(yytext);}
 %%
 
-void print(char* match, const char* type) {
+void write_tokens(char* match, string type) {
     if (show_tokens) {
-        printf("\tToken Name: %s\tLexeme: %s\tLineno: %d\n", type, match, line_number);
+        cout << "\tToken Name: " << type << "\tLexeme: " << match << "\tLineno: " << line_number << endl;
     }
-    strcpy(next_token, type);
+    next_token = type;
 }
 
 void lexerror(char* match) {
-    printf("sclp error: File: %s, Line: %d, Next token: %s, Lexeme: \"%s\"\n\t    Description: Illegal character \'%c\'\n", input_file, line_number, next_token, match, match[0]);
-    if (fp) {
-        fclose(fp);
-        fopen(toks_file, "w");
-    }
+    cerr << "sclp error: File: " << input_file << ", Line: " << line_number << ", Next token: " << next_token << ", Lexeme: \"" << match << "\"\n\t    Description: Illegal character \'" << match[0] << "\'" << endl;
     exit(1);
 }
-

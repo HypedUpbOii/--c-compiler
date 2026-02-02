@@ -1,14 +1,14 @@
 %{
-    #include <iostream>
-    using namespace std;
-    
+    #include <stdio.h>
+    #include <stdlib.h>
     int yylex(void);
     int yyerror(char* s);
-    
-    extern char* yytext;
-    extern string next_token;
+    extern char input_file[1024];
     extern unsigned int line_number;
-    extern string input_file;
+    extern char next_token[20];
+    extern char* yytext;
+    extern FILE* fp;
+    extern char toks_file[1024];
 %}
 %token LEFT_ROUND_BRACKET
 %token RIGHT_ROUND_BRACKET
@@ -168,8 +168,12 @@ constant_as_operand
 %%
 
 int yyerror(char* s) {
-    cerr << "syntax error" << endl;
-    cerr << "sclp error: File: " << input_file << ", Line: " << line_number << ", Next token: " << next_token << ", Lexeme \"" << yytext << "\"\n\t    Description: Cannot parse the input program" << endl;
+    fprintf(stderr, "syntax error\n");
+    fprintf(stderr, "sclp error: File: %s, Line: %d, Next token: %s, Lexeme: \"%s\"\n\t    Description: Cannot parse the input program\n", input_file, line_number, next_token, yytext);
+    if (fp) {
+        fclose(fp);
+        fopen(toks_file, "w");
+    }
     exit(1);
     return 1;
 }
