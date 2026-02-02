@@ -1,7 +1,6 @@
 %{
     #include "y.tab.h"
     #include <stdio.h>
-    #include <string.h>
     void print(char* match, const char* type);
     void lexerror(char* match);
     extern int show_tokens;
