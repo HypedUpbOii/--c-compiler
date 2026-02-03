@@ -31,6 +31,19 @@ letter [a-zA-Z]
 "/"                             {write_tokens("/", "DIV"); return DIV;}
 "//"[^\n]*                      {}
 
+'>'				{write_tokens(">", "GREATER_THAN"); return GREATER_THAN;}
+'>='				{write_tokens(">=", "GREATER_THAN_EQUAL"); return GREATER_THAN_EQUAL;}
+'<'				{write_tokens("<", "LESS_THAN"); return LESS_THAN;}
+'<='				{write_tokens("<=", "LESS_THAN_EQUAL"); return LESS_THAN_EQUAL;}
+'=='				{write_tokens("==", "EQUAL"); return EQUAL;}
+'!='				{write_tokens("!=", "NOT_EQUAL"); return NOT_EQUAL;}
+'?'				{write_tokens("?", "QUESTION_MARK"); return QUESTION_MARK;}
+':'				{write_tokens(":", "COLON"); return COLON;}
+'&&'				{write_tokens("&&", "AND"); return AND;}
+'||'				{write_tokens("||", "OR"); return OR;}
+'!'				{write_tokens("!", "NOT"); return NOT;}
+'&'				{write_tokens("&", "ADDRESSOF"); return ADDRESSOF;}
+
 int                             {write_tokens("int", "INTEGER"); return INTEGER;}
 bool                            {write_tokens("bool", "BOOL"); return BOOL;}
 void                            {write_tokens("void", "VOID"); return VOID;}

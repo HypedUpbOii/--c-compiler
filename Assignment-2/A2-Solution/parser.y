@@ -21,22 +21,38 @@
 %token MULT
 %token PLUS
 %token DIV
+%token GREATER_THAN
+%token GREATER_THAN_EQUAL
+%token LESS_THAN
+%token LESS_THAN_EQUAL
+%token EQUAL
+%token NOT_EQUAL
+%token QUESTION_MARK
+%token COLON
+%token AND
+%token OR
+%token NOT
+%token ADDRESSOF
 %token INTEGER
 %token BOOL
 %token VOID
 %token STRING
-%token DOUBLE
 %token FLOAT
 %token WRITE
 %token READ
 %token RET
+%token FLOAT_NUM
 %token INT_NUM
+%token FLOAT_NUM
 %token NAME
 %token STR_CONST
-%token FLOAT_NUM
+
+%left OR
+%left AND
+
 %left PLUS MINUS
 %left MULT DIV
-%right UMINUS
+%right UMINUS NOT
 %%
 
 program
@@ -158,6 +174,20 @@ expression
     | LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET
     | NAME
     | constant_as_operand
+    | expression QUESTION_MARK expression COLON expression
+    | expression AND expression
+    | expression OR expression
+    | NOT expression
+    | rel_expression
+;
+
+rel_expression
+    : expression LESS_THAN expression
+    | expression LESS_THAN_EQUAL expression
+    | expression GREATER_THAN expression
+    | expression GREATER_THAN_EQUAL expression
+    | expression EQUAL expression
+    | expression NOT_EQUAL expression
 ;
 
 constant_as_operand
