@@ -47,8 +47,16 @@
 %token NAME
 %token STR_CONST
 
+%right ASSIGN_OP
+
+%nonassoc QUESTION_MARK COLON
+
 %left OR
 %left AND
+
+%left EQUAL NOT_EQUAL
+%left GREATER_THAN_EQUAL LESS_THAN_EQUAL
+%left GREATER_THAN LESS_THAN
 
 %left PLUS MINUS
 %left MULT DIV
