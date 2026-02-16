@@ -1,0 +1,102 @@
+%option c++
+%option noyywrap
+%option yylineno
+%option warn nodefault
+
+%{
+    #include "parser.tab.hh"
+    #include "lexer.hpp"
+
+    #ifdef YY_DECL
+    #undef YY_DECL
+    #endif
+    #define YY_DECL parser::Parser::symbol_type Lexer::yylex()
+    #define yyterminate() return parser::Parser::make_YYEOF(loc)
+
+    using parser::Parser;
+%}
+
+digit [0-9]
+letter [a-zA-Z_]
+
+%%
+[ \t\r]+                            ;
+\n                                  ;
+"//"[^\n]*                          ;
+
+case parser::Parser::token::GREATER_THAN_EQUAL:
+    return Parser::make_GREATER_THAN_EQUAL(loc);
+case parser::Parser::token::LESS_THAN_EQUAL:
+    return Parser::make_LESS_THAN_EQUAL(loc);
+case parser::Parser::token::EQUAL:
+    return Parser::make_EQUAL(loc);
+case parser::Parser::token::NOT_EQUAL:
+    return Parser::make_NOT_EQUAL(loc);
+case parser::Parser::token::AND:
+    return Parser::make_AND(loc);
+case parser::Parser::token::OR:
+    return Parser::make_OR(loc);
+
+case parser::Parser::token::GREATER_THAN:
+    return Parser::make_GREATER_THAN(loc);
+case parser::Parser::token::LESS_THAN:
+    return Parser::make_LESS_THAN(loc);
+case parser::Parser::token::QUESTION_MARK:
+    return Parser::make_QUESTION_MARK(loc);
+case parser::Parser::token::COLON:
+    return Parser::make_COLON(loc);
+case parser::Parser::token::NOT:
+    return Parser::make_NOT(loc);
+case parser::Parser::token::LEFT_ROUND_BRACKET:
+    return Parser::make_LEFT_ROUND_BRACKET(loc);
+case parser::Parser::token::RIGHT_ROUND_BRACKET:
+    return Parser::make_RIGHT_ROUND_BRACKET(loc);
+case parser::Parser::token::LEFT_CURLY_BRACKET:
+    return Parser::make_LEFT_CURLY_BRACKET(loc);
+case parser::Parser::token::RIGHT_CURLY_BRACKET:
+    return Parser::make_RIGHT_CURLY_BRACKET(loc);
+case parser::Parser::token::COMMA:
+    return Parser::make_COMMA(loc);
+case parser::Parser::token::SEMICOLON:
+    return Parser::make_SEMICOLON(loc);
+case parser::Parser::token::ASSIGN_OP:
+    return Parser::make_ASSIGN_OP(loc);
+case parser::Parser::token::MINUS:
+    return Parser::make_MINUS(loc);
+case parser::Parser::token::MULT:
+    return Parser::make_MULT(loc);
+case parser::Parser::token::PLUS:
+    return Parser::make_PLUS(loc);
+case parser::Parser::token::DIV:
+    return Parser::make_DIV(loc);
+
+case parser::Parser::token::INTEGER:
+    return Parser::make_INTEGER(loc);
+case parser::Parser::token::BOOL:
+    return Parser::make_BOOL(loc);
+case parser::Parser::token::VOID:
+    return Parser::make_VOID(loc);
+case parser::Parser::token::STRING:
+    return Parser::make_STRING(loc);
+case parser::Parser::token::FLOAT:
+    return Parser::make_FLOAT(loc);
+
+case parser::Parser::token::WRITE:
+    return Parser::make_WRITE(loc);
+case parser::Parser::token::READ:
+    return Parser::make_READ(loc);
+case parser::Parser::token::RET:
+    return Parser::make_RET(loc);
+
+case parser::Parser::token::FLOAT_NUM:
+    return Parser::make_FLOAT_NUM(std::stod(YYText()), loc);
+case parser::Parser::token::INT_NUM:
+    return Parser::make_INT_NUM(std::stoi(YYText()), loc);
+
+case parser::Parser::token::NAME:
+    return Parser::make_NAME(std::string(YYText()), loc);
+case parser::Parser::token::STR_CONST:
+    return Parser::make_STR_CONST(std::string(YYText()), loc);
+
+.                                   {lexerror();}
+%%

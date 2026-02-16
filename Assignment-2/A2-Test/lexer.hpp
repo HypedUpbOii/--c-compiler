@@ -1,18 +1,23 @@
 #pragma once
-#include <iostream>
 #include "parser.tab.hh"
+#include <iostream>
+#ifndef yyFlexLexer
+#include <FlexLexer.h>
+#endif
 
 using namespace std;
 
-class Lexer {
+class Lexer : public yyFlexLexer {
 private:
     string input_file;
     string next_token;
     std::ostream& outstream;
 
-public:
     parser::location loc;
-    Lexer(const std::string&, std::ostream& stream);
+public:
+    Lexer(std::istream* in, std::string, std::ostream& stream);
+
+    parser::Parser::symbol_type nextToken();
 
     void write_token(const string& type);
     void lexerror();

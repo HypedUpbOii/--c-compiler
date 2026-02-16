@@ -1,5 +1,5 @@
-%language "c++"
 %require "3.2"
+%language "c++"
 
 %define api.namespace {parser}
 %define api.parser.class {Parser}
@@ -15,10 +15,15 @@
 
 %code {
     #include "lexer.hpp"
-    parser::Parser::symbol_type yylex(Lexer&);
+    static parser::Parser::symbol_type
+    yylex(Lexer& lexer) {
+        return lexer.nextToken();
+    }
 }
 
 %param { Lexer& lexer }
+
+%token ERROR
 
 %token <int> INT_NUM
 %token <float> FLOAT_NUM
@@ -31,7 +36,6 @@
 %token GREATER_THAN_EQUAL LESS_THAN_EQUAL
 %token EQUAL NOT_EQUAL
 %token AND OR NOT
-%token ADDRESSOF
 %token SEMICOLON COMMA
 %token LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET
 %token LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET
