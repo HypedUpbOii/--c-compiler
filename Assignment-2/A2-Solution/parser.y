@@ -1,5 +1,6 @@
 %{
     #include <iostream>
+    #include "symbol_table.hpp"
     using namespace std;
     
     int yylex(void);
@@ -9,7 +10,19 @@
     extern string next_token;
     extern unsigned int line_number;
     extern string input_file;
+
+    extern SymbolTable * global_sym_tab;
+    extern SymbolTable * curr_sym_tab;
+
+    extern std::string err_msg;
 %}
+
+%union {
+    int ival;
+    float fval;
+    string sval;
+}
+
 %token LEFT_ROUND_BRACKET
 %token RIGHT_ROUND_BRACKET
 %token LEFT_CURLY_BRACKET
@@ -49,18 +62,17 @@
 
 %right ASSIGN_OP
 
-%nonassoc QUESTION_MARK COLON
+%right NOT
+%nonassoc QUESTION_MARK COLON GREATER_THAN LESS_THAN GREATER_THAN_EQUAL LESS_THAN_EQUAL
 
 %left OR
 %left AND
 
 %left EQUAL NOT_EQUAL
-%left GREATER_THAN_EQUAL LESS_THAN_EQUAL
-%left GREATER_THAN LESS_THAN
 
 %left PLUS MINUS
 %left MULT DIV
-%right UMINUS NOT
+%right UMINUS
 %%
 
 program
@@ -137,20 +149,25 @@ optional_var_decl_stmt_list
     : %empty
     | var_decl_stmt_list
 ;
-	
 
 var_decl_stmt_list
     : var_decl_stmt_list var_decl_stmt
-    | var_decl_stmt 
+    | var_decl_stmt
 ;
 
 var_decl_stmt
-    : named_type var_decl_item_list SEMICOLON
+    : named_type var_decl_item_list SEMICOLON {
+
+    }
 ;
 
 var_decl_item_list
-    : var_decl_item_list COMMA NAME
-    | NAME
+    : var_decl_item_list COMMA NAME {
+        $$ = $
+    }
+    | NAME {
+        $$ = vector<string>({yyval.sval});
+    }
 ;
 
 named_type

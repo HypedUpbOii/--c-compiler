@@ -1,9 +1,9 @@
 #include "symbol_table.hpp"
 #include <iostream>
 
-STE::STE(std::string n, DataType dt) : name(n), type(dt) {}
+SymbolTableEntry::SymbolTableEntry(std::string n, DataType dt) : name(n), type(dt) {}
 
-DataType STE::get_type() const { return type; }
+DataType SymbolTableEntry::get_type() const { return type; }
 
 SymbolTable::SymbolTable(SymbolTable * p) : parent(p) {}
 
@@ -22,14 +22,14 @@ void SymbolTable::insert(std::string name, DataType dt) {
 		exit(1);
 	}
 
-	entries[name] = new STE(name, dt);
+	entries[name] = new SymbolTableEntry(name, dt);
 }
 
 // recursively look up in ancestor scopes
-STE* SymbolTable::lookup(std::string name) {
+SymbolTableEntry* SymbolTable::lookup(std::string name) {
     if (entries.find(name) != entries.end()) return entries[name];
 
     if (parent != nullptr) return parent->lookup(name);
 
-    return nullptr;
+	return nullptr;
 }

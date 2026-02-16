@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <argp.h>
+#include "symbol_table.hpp"
 using namespace std;
 
 extern FILE *yyin;
@@ -101,6 +102,11 @@ int main(int argc, char* argv[]) {
         toks_file.flush();
         return 0;
     }
+
+    SymbolTable * global_sym_tab = new SymbolTable();
+    SymbolTable * curr_sym_tab = global_sym_tab;
+
+    std::string err_msg = "";
 
     int status = yyparse();
     if (status == 0) {
