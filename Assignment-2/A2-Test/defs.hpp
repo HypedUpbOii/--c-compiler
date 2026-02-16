@@ -3,3 +3,4 @@
 #include "output_hander.hpp"
 #include "lexer.hpp"
 #include "parser.tab.hh"
+#include "location.hh"

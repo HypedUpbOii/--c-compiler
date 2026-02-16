@@ -1,8 +1,7 @@
 #include "defs.hpp"
 
-int check_ast() {
-    return 0;
-}
+extern FILE* yyin;
+parser::Parser::symbol_type yylex(Lexer&);
 
 int main(int argc, char* argv[]) {
     ArgumentHandler args_handler(argc, argv);
@@ -11,20 +10,22 @@ int main(int argc, char* argv[]) {
     std::ostream& tok_stream = out_handler.tokenStream();
     std::ostream& ast_stream = out_handler.astStream();
 
-    std::ifstream in(args.input_file);
-    if (!in) {
+    FILE* file = fopen(args.input_file.c_str(), "r");
+    if (!file) {
         std::cerr << "sclp error: File: " << args.input_file << " Cannot open the input file" << std::endl;
         return 1;
     }
+    yyin = file;
 
-    Lexer lexer(&in, tok_stream);
+    Lexer lexer(args.input_file, tok_stream);
     if (args.stop_after_scan) {
         while (true) {
-            auto sym = lexer.yylex();
+            auto sym = yylex(lexer);
             if (sym.kind() == parser::Parser::symbol_kind::S_YYEOF)
                 break;
         }
         out_handler.commitTokens();
+        fclose(file);
         return 0;
     }
 
@@ -32,9 +33,11 @@ int main(int argc, char* argv[]) {
 
     int result = parser.parse();
     if (args.stop_after_parse) {
+        fclose(file);
         return result;
     }
 
     out_handler.commitAst();
-    return check_ast();
+    fclose(file);
+    return 0;
 }
