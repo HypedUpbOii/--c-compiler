@@ -9,3 +9,5 @@ struct Arguments {
     bool show_ast = false;
     bool demo_mode = false;
 };
+
+enum class DataType {INT, FLOAT, BOOL, STRING, VOID};
