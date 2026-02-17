@@ -1,7 +1,7 @@
 #pragma once
-#include "types.hpp"
 #include <string>
 #include <map>
+#include "common_utils.hpp"
 
 class SymbolTableEntry{
 	std::string name;
@@ -15,6 +15,7 @@ public:
 class SymbolTable{
 	std::map<std::string, SymbolTableEntry*> entries;
     SymbolTable* parent;
+	bool encounteredDuplicate;
 public:
 	SymbolTable(SymbolTable * p = nullptr);
 	~SymbolTable();
