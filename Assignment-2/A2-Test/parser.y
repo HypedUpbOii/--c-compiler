@@ -141,7 +141,10 @@ formal_param_list
 ;
 
 formal_param
-    : param_type NAME
+    : param_type NAME {
+        curr_sym_tab->insert($2, $1);
+        // std::cout << "inserted formal param " << $2 << " of type " << type_to_string($1) << std::endl;
+    }
 ;
 
 param_type
@@ -204,11 +207,11 @@ assignment_statement
     : NAME { 
         SymbolTableEntry * entry = curr_sym_tab->lookup($1);
         if (entry == nullptr) {
-            std::cerr << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " not declared" << std::endl;
+            std::cerr << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " not declared" << std::endl;
             exit(1);
         }
 
-        std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
+        std::cout << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
     } ASSIGN_OP expression SEMICOLON
 ;
 
@@ -230,13 +233,13 @@ expression
     | NAME {
         SymbolTableEntry * entry = curr_sym_tab->lookup($1);
         if (entry == nullptr) {
-            std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " not declared" << std::endl;
+            std::cout << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " not declared" << std::endl;
             exit(1);
         }
 
         // build node
 
-        std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
+        std::cout << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
     }
     | constant_as_operand
     | expression QUESTION_MARK expression COLON expression
