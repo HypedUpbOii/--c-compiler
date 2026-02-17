@@ -24,7 +24,7 @@
     }
 
     SymbolTable * global_sym_tab = new SymbolTable();
-    SymbolTable * curr_sym_tab = global_sym_tab;
+    SymbolTable * local_sym_tab = new SymbolTable(global_sym_tab);
 
     //extern "C" {
     //    extern int yylineno;
@@ -67,13 +67,13 @@
 %type <DataType> param_type
 %type <std::vector<std::string>> var_decl_item_list
 
-%right ASSIGN_OP
+%nonassoc ASSIGN_OP
 %nonassoc QUESTION_MARK COLON
 %left OR
 %left AND
-%left EQUAL NOT_EQUAL
-%left GREATER_THAN_EQUAL LESS_THAN_EQUAL
-%left GREATER_THAN LESS_THAN
+%nonassoc EQUAL NOT_EQUAL
+%nonassoc GREATER_THAN_EQUAL LESS_THAN_EQUAL
+%nonassoc GREATER_THAN LESS_THAN
 
 %left PLUS MINUS
 %left MULT DIV
@@ -98,8 +98,8 @@ global_decl_statement_list
 */
 
 var_list 
-    : var_list var_decl_stmt
-    | var_decl_stmt
+    : var_list global_var_decl_stmt
+    | global_var_decl_stmt
 ;
 
 func_decl
@@ -120,18 +120,14 @@ func_header
 
 func_def
     : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
-        curr_sym_tab = new SymbolTable(global_sym_tab);
     }
     optional_var_decl_stmt_list statement_list 
     RIGHT_CURLY_BRACKET {
-        curr_sym_tab = global_sym_tab;
     }
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
-        curr_sym_tab = new SymbolTable(global_sym_tab);
     }
     optional_var_decl_stmt_list statement_list 
     RIGHT_CURLY_BRACKET {
-        curr_sym_tab = global_sym_tab;
     }
 ;
 
@@ -142,7 +138,7 @@ formal_param_list
 
 formal_param
     : param_type NAME {
-        curr_sym_tab->insert($2, $1);
+        local_sym_tab->insert($2, $1);
         // std::cout << "inserted formal param " << $2 << " of type " << type_to_string($1) << std::endl;
     }
 ;
@@ -179,11 +175,18 @@ var_decl_stmt_list
 var_decl_stmt
     : named_type var_decl_item_list SEMICOLON {
         for (const auto & var_name : $2){
-            curr_sym_tab->insert(var_name, $1);
+            local_sym_tab->insert(var_name, $1);
             // std::cout << "success, var_name " << var_name << " declared as " << type_to_string($1) << std::endl;
         }
     }
 ;
+
+global_var_decl_stmt
+    : named_type var_decl_item_list SEMICOLON {
+        for (const auto & var_name : $2){
+            global_sym_tab->insert(var_name, $1);
+        }
+    }
 
 var_decl_item_list
     : var_decl_item_list COMMA NAME {
@@ -205,7 +208,7 @@ named_type
 
 assignment_statement
     : NAME { 
-        SymbolTableEntry * entry = curr_sym_tab->lookup($1);
+        SymbolTableEntry * entry = local_sym_tab->lookup($1);
         if (entry == nullptr) {
             std::cerr << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " not declared" << std::endl;
             exit(1);
@@ -231,7 +234,7 @@ expression
     | MINUS expression {}
     | LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET
     | NAME {
-        SymbolTableEntry * entry = curr_sym_tab->lookup($1);
+        SymbolTableEntry * entry = local_sym_tab->lookup($1);
         if (entry == nullptr) {
             std::cout << "Semantic Analysis : Line " << lexer.lineno() << " Variable " << $1 << " not declared" << std::endl;
             exit(1);
