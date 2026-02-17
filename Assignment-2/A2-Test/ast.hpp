@@ -2,7 +2,7 @@
 #include "common_utils.hpp"
 #include "symbol_table.hpp"
 #include <string>
-#include <ostream>
+#include <iostream>
 #include <vector>
 #include <set>
 #include <iomanip>
@@ -10,35 +10,25 @@
 
 class ASTNode {
 public:
-    virtual bool validateNode();
-    virtual void printTree(std::ostream&, int);
+    virtual bool validateNode() = 0;
+    virtual void printTree(std::ostream&, int) = 0;
     virtual ~ASTNode() = default;
 };
 
-class ProgramNode : public ASTNode {
+class ExprNode : public ASTNode {
 public:
-    std::vector<std::unique_ptr<FunctionNode>> funcs;
-    bool hasFuncDecl;
-    SymbolTable* global;
-
-    ProgramNode();
-    void setSymbolTable(SymbolTable*);
-    bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    DataType exprType; // to be set in validateNode() except for literals
+    virtual ~ExprNode() = default;
 };
 
-class FunctionNode : public ASTNode {
+class VariableExprNode : public ExprNode {
 public:
-    DataType returnType;
-    std::vector<std::pair<std::string, DataType>> parameters;
     std::string name;
-    std::vector<std::unique_ptr<StmtNode>> statements;
-    SymbolTable* local;
+    SymbolTableEntry* steEntry;
 
-    FunctionNode();
-    void setSymbolTable(SymbolTable*);
-    bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    VariableExprNode(std::string, SymbolTableEntry*);
+    bool validateNode();
+    void printTree(std::ostream&, int) override;
 };
 
 class StmtNode : public ASTNode {
@@ -53,7 +43,37 @@ public:
 
     AssignStmtNode(std::unique_ptr<VariableExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
+};
+
+class FunctionNode : public ASTNode {
+public:
+    DataType returnType;
+    std::vector<std::pair<std::string, DataType>> parameters;
+    std::string name;
+    std::vector<std::unique_ptr<StmtNode>> statements;
+    SymbolTable* local;
+
+    FunctionNode(DataType ret, 
+        std::vector<std::pair<std::string, DataType>> params,
+        std::string nam, 
+        std::vector<std::unique_ptr<StmtNode>> stmts, 
+        SymbolTable* loc);
+    bool validateNode() override;
+    void printTree(std::ostream&, int) override;
+};
+
+class ProgramNode : public ASTNode {
+public:
+    std::vector<std::unique_ptr<FunctionNode>> funcs;
+    bool hasFuncDecl;
+    SymbolTable* global;
+
+    ProgramNode();
+    ~ProgramNode() override;
+    void setSymbolTable(SymbolTable*);
+    bool validateNode() override;
+    void printTree(std::ostream&, int) override;
 };
 
 class ReadStmtNode : public StmtNode {
@@ -62,7 +82,7 @@ public:
 
     ReadStmtNode(std::unique_ptr<VariableExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class PrintStmtNode : public StmtNode {
@@ -71,13 +91,7 @@ public:
 
     PrintStmtNode(std::unique_ptr<ExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
-};
-
-class ExprNode : public ASTNode {
-public:
-    DataType exprType; // to be set in validateNode() except for literals
-    virtual ~ExprNode() = default;
+    void printTree(std::ostream&, int) override;
 };
 
 class BinaryExprNode : public ExprNode {
@@ -86,9 +100,9 @@ public:
     std::unique_ptr<ExprNode> leftOp;
     std::unique_ptr<ExprNode> rightOp;
 
-    BinaryExprNode::BinaryExprNode(BinaryOperator, std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>);
+    BinaryExprNode(BinaryOperator, std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class UnaryExprNode : public ExprNode {
@@ -98,7 +112,7 @@ public:
 
     UnaryExprNode(UnaryOperator, std::unique_ptr<ExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class TernaryExprNode : public ExprNode {
@@ -109,13 +123,13 @@ public:
 
     TernaryExprNode(std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class LiteralExprNode : public ExprNode {
 public:
-    virtual ~LiteralExprNode() = default;
     bool validateNode() override;
+    virtual ~LiteralExprNode() = default;
 };
 
 class IntExprNode : public LiteralExprNode {
@@ -123,7 +137,7 @@ public:
     int value;
 
     IntExprNode(int);
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class FloatExprNode : public LiteralExprNode {
@@ -131,7 +145,7 @@ public:
     float value;
 
     FloatExprNode(float);
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };
 
 class StringExprNode : public LiteralExprNode {
@@ -139,15 +153,5 @@ public:
     std::string value;
 
     StringExprNode(std::string);
-    virtual void printTree(std::ostream&, int) override;
-};
-
-class VariableExprNode : public ExprNode {
-public:
-    std::string name;
-    SymbolTableEntry* steEntry;
-
-    VariableExprNode(std::string, SymbolTableEntry*);
-    bool validateNode();
-    virtual void printTree(std::ostream&, int) override;
+    void printTree(std::ostream&, int) override;
 };

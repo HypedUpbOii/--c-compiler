@@ -1,5 +1,7 @@
 #include "defs.hpp"
 
+extern SymbolTable* local_sym_tab;
+
 int main(int argc, char* argv[]) {
     ArgumentHandler args_handler(argc, argv);
     const Arguments args = args_handler.return_arguments();
@@ -30,6 +32,7 @@ int main(int argc, char* argv[]) {
     int result = parser.parse();
     if (args.stop_after_parse) {
         out_handler.commitTokens();
+        delete local_sym_tab;
         return result;
     }
 
@@ -37,8 +40,9 @@ int main(int argc, char* argv[]) {
         ast.printTree(ast_stream, 0);
         out_handler.commitTokens();
         out_handler.commitAst();
+        delete local_sym_tab;
         return 0;
-    } else {
-        return 1;
     }
+
+    return 0;
 }

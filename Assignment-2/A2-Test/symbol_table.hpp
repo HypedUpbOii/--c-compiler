@@ -15,6 +15,7 @@ public:
 class SymbolTable{
 	std::map<std::string, SymbolTableEntry*> entries;
     SymbolTable* parent;
+	bool encounteredDuplicate;
 public:
 	SymbolTable(SymbolTable * p = nullptr);
 	~SymbolTable();

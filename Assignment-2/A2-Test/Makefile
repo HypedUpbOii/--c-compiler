@@ -1,9 +1,9 @@
 all : sclp
 
-sclp : clean lex.yy.o parser.tab.o lexer.o main.o symbol_table.o argument_handler.o output_handler.o
-	g++ -g -o sclp lex.yy.o parser.tab.o lexer.o main.o symbol_table.o argument_handler.o output_handler.o -ly -ll
+sclp : lex.yy.o parser.tab.o common_utils.o lexer.o main.o symbol_table.o ast.o argument_handler.o output_handler.o
+	g++ -g -o sclp lex.yy.o common_utils.o parser.tab.o lexer.o main.o symbol_table.o ast.o argument_handler.o output_handler.o -ly -ll
 
-main.o : main.cpp
+main.o : main.cpp defs.hpp
 	g++ -c -g main.cpp
 
 parser.tab.o : parser.tab.cc
@@ -16,16 +16,22 @@ lex.yy.o : scanner.l parser.tab.hh
 	flex scanner.l
 	g++ -c -g lex.yy.cc
 
-lexer.o : lexer.cpp
+lexer.o : lexer.cpp lexer.hpp
 	g++ -c -g lexer.cpp
 
 symbol_table.o: symbol_table.hpp symbol_table.cpp
 	g++ -c -g symbol_table.cpp
 
-argument_handler.o : argument_handler.cpp
+ast.o: ast.hpp ast.cpp
+	g++ -c -g ast.cpp
+
+common_utils.o : common_utils.cpp common_utils.hpp
+	g++ -c -g common_utils.cpp
+
+argument_handler.o : argument_handler.cpp argument_handler.hpp
 	g++ -c -g argument_handler.cpp
 
-output_handler.o : output_handler.cpp
+output_handler.o : output_handler.cpp output_handler.hpp
 	g++ -c -g output_handler.cpp
 
 clean :

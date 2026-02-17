@@ -4,8 +4,7 @@ int o;
 bool d;
 // int hehe(int c);
 // nirol
-void main(int b, string c) {
+void main(int c, int b) {
     a = -12;
-    d = (a > b) || (a < b) && (a >= b) || (a <= b) && (a == b) || (a != b);
     print a + b - 10020;
 }

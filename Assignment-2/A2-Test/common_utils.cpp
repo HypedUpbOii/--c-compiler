@@ -27,5 +27,6 @@ std::string op_to_string(BinaryOperator op) {
 
         case BinaryOperator::OR : return "OR";
         case BinaryOperator::AND : return "AND";
+        default : return "kys";
     }
 }

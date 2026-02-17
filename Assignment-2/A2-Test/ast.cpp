@@ -1,12 +1,20 @@
 #include "ast.hpp"
 
+extern SymbolTable* local_sym_tab;
+
 ProgramNode::ProgramNode() : hasFuncDecl(false), global(nullptr) {}
 
 void ProgramNode::setSymbolTable(SymbolTable* symtab) { global = symtab; }
 
 bool ProgramNode::validateNode() {
-    if (hasFuncDecl) return false;
-    if (funcs.size() != 1) return false;
+    if (hasFuncDecl) {
+        std::cerr << "sclp error: Higher level feature detected: with function declaration" << std::endl;
+        exit(1);
+    }
+    if (funcs.size() != 1) {
+        std::cerr << "sclp error: More than one function definition" << std::endl;
+        exit(1);
+    }
     return funcs[0]->validateNode();
 }
 
@@ -16,13 +24,22 @@ void ProgramNode::printTree(std::ostream& out, int tab) {
     }
 }
 
-FunctionNode::FunctionNode() : local(nullptr) {}
+ProgramNode::~ProgramNode() {
+    delete global;
+}
 
-void FunctionNode::setSymbolTable(SymbolTable* symtab) { local = symtab; }
+FunctionNode::FunctionNode(DataType ret, std::vector<std::pair<std::string, DataType>> params, std::string nam, std::vector<std::unique_ptr<StmtNode>> stmts, SymbolTable* loc) 
+    : returnType(ret), parameters(params), name(nam), statements(std::move(stmts)), local(loc) {}
 
 bool FunctionNode::validateNode() {
-    if (name != "main") return false;
-    if (returnType != DataType::VOID) return false;
+    if (name != "main") {
+        std::cerr << "sclp error: No function with name main found" << std::endl;
+        exit(1);
+    }
+    if (returnType != DataType::VOID) {
+        std::cerr << "sclp error: Function named main is not returning void" << std::endl;  
+        exit(1);      
+    }
 
     for (auto& stmt_node : statements)
         if (!stmt_node->validateNode()) return false;
@@ -50,8 +67,16 @@ AssignStmtNode::AssignStmtNode(std::unique_ptr<VariableExprNode> t, std::unique_
 }
 
 bool AssignStmtNode::validateNode() {
-    if (!target->validateNode() || !value->validateNode()) return false;
-    return target->steEntry->get_type() == value->exprType;
+    if (!target->validateNode() || !value->validateNode()) {
+        std::cerr << "sclp error: Target/Value are invalid" << std::endl;
+        exit(1);
+    }
+    if (target->steEntry->get_type() == value->exprType) {
+        return true;
+    } else {
+        std::cerr << "sclp error: LHS and RHS have different types" << std::endl;
+        exit(1);
+    }
 }
 
 void AssignStmtNode::printTree(std::ostream& out, int tab) {
@@ -71,7 +96,12 @@ ReadStmtNode::ReadStmtNode(std::unique_ptr<VariableExprNode> t){
 bool ReadStmtNode::validateNode(){
     if (!target->validateNode()) return false;
 
-    return target->exprType == DataType::INT || target->exprType == DataType::FLOAT;
+    if (target->exprType == DataType::INT || target->exprType == DataType::FLOAT) {
+        return true;
+    } else {
+        std::cerr << "sclp error: Can read only int / float values" << std::endl;
+        exit(1);
+    }
 }
 
 void ReadStmtNode::printTree(std::ostream& out, int tab) {
@@ -87,7 +117,12 @@ PrintStmtNode::PrintStmtNode(std::unique_ptr<ExprNode> t) {
 bool PrintStmtNode::validateNode(){
     if (!target->validateNode()) return false;
 
-    return target->exprType == DataType::INT || target->exprType == DataType::FLOAT || target->exprType == DataType::STRING;
+    if (target->exprType == DataType::INT || target->exprType == DataType::FLOAT || target->exprType == DataType::STRING) {
+        return true;
+    } else {
+        std::cerr << "sclp error: Can't print bools or other weird types" << std::endl;
+        exit(1);
+    }
 }
 
 void PrintStmtNode::printTree(std::ostream& out, int tab) {
@@ -105,13 +140,26 @@ BinaryExprNode::BinaryExprNode(BinaryOperator oper, std::unique_ptr<ExprNode> le
 bool BinaryExprNode::validateNode(){
     if (!leftOp->validateNode() || !rightOp->validateNode()) return false;
 
-    if (leftOp->exprType != rightOp->exprType) return false;
+    if (leftOp->exprType != rightOp->exprType) {
+        std::cerr << "sclp error: Operand types must match" << std::endl;
+        exit(1);
+    }
     exprType = leftOp->exprType;
 
     if (op == BinaryOperator::OR || op == BinaryOperator::AND) {
-        return leftOp->exprType == DataType::BOOL;
+        if (leftOp->exprType == DataType::BOOL) {
+            return true;
+        } else {
+            std::cerr << "sclp error: Incompatible type with boolean operator" << std::endl;
+            exit(1);
+        }
     } else {
-        return leftOp->exprType == DataType::INT || leftOp->exprType == DataType::FLOAT;
+        if (leftOp->exprType == DataType::INT || leftOp->exprType == DataType::FLOAT) {
+            return true;
+        } else {
+            std::cerr << "sclp error: Incompatible type with arithmetic operator" << std::endl;
+            exit(1);
+        }
     }
 }
 
@@ -147,12 +195,20 @@ bool UnaryExprNode::validateNode() {
 
     if (op == UnaryOperator::NOT) {
         exprType = operand->exprType;
-        return operand->exprType == DataType::BOOL;
-    }
-
-    if (op == UnaryOperator::UMINUS) {
+        if (operand->exprType == DataType::BOOL) {
+            return true;
+        } else {
+            std::cerr << "sclp error: Incompatible unary operand with NOT operator" << std::endl;
+            exit(1);
+        }
+    } else {
         exprType = operand->exprType;
-        return operand->exprType == DataType::INT || operand->exprType == DataType::FLOAT;
+        if (operand->exprType == DataType::INT || operand->exprType == DataType::FLOAT) {
+            return true;
+        } else {
+            std::cerr << "sclp error: Incompatible unary operand with UMINUS operator" << std::endl;
+            exit(1);
+        }
     }
 }
 
@@ -160,12 +216,12 @@ void UnaryExprNode::printTree(std::ostream& out, int tab) {
     out << std::endl << std::string(tab, ' ');
     if (op == UnaryOperator::UMINUS) {
         out << "Arith: Uminus" << type_to_string(exprType) << std::endl;
-        out << "  L_Opd (";
+        out << std::string(tab, ' ') << "  L_Opd (";
         operand->printTree(out, tab + 4);
         out << ")";
     } else {
         out << "Condition: NOT" << type_to_string(exprType) << std::endl;
-        out << "  L_Opd (";
+        out << std::string(tab, ' ') << "  L_Opd (";
         operand->printTree(out, tab + 4);
         out << ")";
     }
@@ -180,10 +236,18 @@ TernaryExprNode::TernaryExprNode(std::unique_ptr<ExprNode> cond, std::unique_ptr
 bool TernaryExprNode::validateNode(){
     if (!condition->validateNode() || !trueExpr->validateNode() || !falseExpr->validateNode()) return false;
     
-    if (condition->exprType != DataType::BOOL) return false;
+    if (condition->exprType != DataType::BOOL) {
+        std::cerr << "sclp error: Condition must be of type bool" << std::endl;
+        exit(1);
+    }
 
     exprType = trueExpr->exprType;
-    return trueExpr->exprType == falseExpr->exprType;
+    if (trueExpr->exprType == falseExpr->exprType) {
+        return true;
+    } else {
+        std::cerr << "sclp error: Both branches have different types" << std::endl;
+        exit(1);
+    }
 }
 
 void TernaryExprNode::printTree(std::ostream& out, int tab) {
@@ -215,13 +279,18 @@ void StringExprNode::printTree(std::ostream& out, int tab) {
     out << "String : " << value << type_to_string(exprType);
 }
 
-VariableExprNode::VariableExprNode(std::string name, SymbolTableEntry* steEntry) {
+VariableExprNode::VariableExprNode(std::string nam, SymbolTableEntry* entry) : name(nam), steEntry(entry) {
     if (steEntry == nullptr) return;
     exprType = steEntry->get_type();
 }
 
 bool VariableExprNode::validateNode(){
-    return steEntry != nullptr;
+    if (steEntry != nullptr) {
+        return true;
+    } else {
+        std::cerr << "sclp error: Could not look up variable " << name << std::endl;
+        exit(1);
+    }
 }
 
 void VariableExprNode::printTree(std::ostream& out, int tab) {
