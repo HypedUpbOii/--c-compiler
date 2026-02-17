@@ -2,18 +2,40 @@
 
 extern SymbolTable* local_sym_tab;
 
-ProgramNode::ProgramNode() : hasFuncDecl(false), global(nullptr) {}
+ProgramNode::ProgramNode() : global(nullptr) {
+    funcs = std::vector<std::unique_ptr<FunctionNode>>();
+    func_decls = std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>();
+}
 
 void ProgramNode::setSymbolTable(SymbolTable* symtab) { global = symtab; }
 
 bool ProgramNode::validateNode() {
-    if (hasFuncDecl) {
+    if (func_decls.size() > 1) {
         std::cerr << "sclp error: Higher level feature detected: with function declaration" << std::endl;
         exit(1);
     }
     if (funcs.size() != 1) {
         std::cerr << "sclp error: More than one function definition" << std::endl;
         exit(1);
+    }
+    if (func_decls.size() == 1) {
+        if (funcs[0]->name == std::get<1>(func_decls[0]) && funcs[0]->returnType == std::get<0>(func_decls[0])) {
+            if (std::get<2>(func_decls[0]).size() != funcs[0]->parameters.size()) {
+                std::cerr << "sclp error: Signature of declaration and definition do not match" << std::endl;
+                exit(1);
+            }
+            if (funcs[0]->parameters.size() != 0) {
+                for (int i = 0; i < funcs[0]->parameters.size(); ++i) {
+                    if (std::get<2>(func_decls[0])[i] != funcs[0]->parameters[i].second) {
+                        std::cerr << "sclp error: Signature of declaration and definition do not match" << std::endl;
+                        exit(1);
+                    }
+                }
+            }
+        } else {
+            std::cerr << "sclp error: Name and return type of declaration not the same as definition" << std::endl;
+            exit(1);
+        }
     }
     return funcs[0]->validateNode();
 }
@@ -81,11 +103,11 @@ bool AssignStmtNode::validateNode() {
 
 void AssignStmtNode::printTree(std::ostream& out, int tab) {
     out << std::string(tab, ' ') << "Asgn:" << std::endl;
-    out << std::string(tab, ' ') << "\tLHS (";
-    target->printTree(out, tab + 2);
+    out << std::string(tab, ' ') << "  LHS (";
+    target->printTree(out, tab + 6);
     out << ")" << std::endl;
-    out << std::string(tab, ' ') << "\tRHS (";
-    value->printTree(out, tab + 2);
+    out << std::string(tab, ' ') << "  RHS (";
+    value->printTree(out, tab + 6);
     out << ")" << std::endl;
 }
 
@@ -144,7 +166,19 @@ bool BinaryExprNode::validateNode(){
         std::cerr << "sclp error: Operand types must match" << std::endl;
         exit(1);
     }
-    exprType = leftOp->exprType;
+
+    switch(op) {
+        case BinaryOperator::PLUS :
+        case BinaryOperator::MINUS :
+        case BinaryOperator::MULT :
+        case BinaryOperator::DIVIDE : {
+            exprType = leftOp->exprType;
+            break;
+        }
+
+        default :
+            exprType = DataType::BOOL;
+    }
 
     if (op == BinaryOperator::OR || op == BinaryOperator::AND) {
         if (leftOp->exprType == DataType::BOOL) {
@@ -193,8 +227,8 @@ UnaryExprNode::UnaryExprNode(UnaryOperator o, std::unique_ptr<ExprNode> oper) {
 bool UnaryExprNode::validateNode() {
     if (!operand->validateNode()) return false;
 
+    exprType = operand->exprType;
     if (op == UnaryOperator::NOT) {
-        exprType = operand->exprType;
         if (operand->exprType == DataType::BOOL) {
             return true;
         } else {
@@ -202,7 +236,6 @@ bool UnaryExprNode::validateNode() {
             exit(1);
         }
     } else {
-        exprType = operand->exprType;
         if (operand->exprType == DataType::INT || operand->exprType == DataType::FLOAT) {
             return true;
         } else {
@@ -267,7 +300,7 @@ void IntExprNode::printTree(std::ostream& out, int tab) {
     out << "Num : " << value << type_to_string(exprType);
 }
 
-FloatExprNode::FloatExprNode(float f) : value(f) {exprType = DataType::FLOAT;}
+FloatExprNode::FloatExprNode(double f) : value(f) {exprType = DataType::FLOAT;}
 
 void FloatExprNode::printTree(std::ostream& out, int tab) {
     out << "Num : " << std::fixed << std::setprecision(2) << value << type_to_string(exprType);

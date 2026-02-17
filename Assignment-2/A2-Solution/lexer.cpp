@@ -101,20 +101,22 @@ parser::Parser::symbol_type Lexer::nextToken() {
             write_token("RET");
             return parser::Parser::make_RET(loc);
 
-        case parser::Parser::token::FLOAT_NUM:
+        case parser::Parser::token::FLOAT_NUM: {
             write_token("FLOAT_NUM");
-            return parser::Parser::make_FLOAT_NUM(std::stod(YYText()), loc);
-        case parser::Parser::token::INT_NUM:
+            return parser::Parser::make_FLOAT_NUM(string_to_double(YYText()), loc);
+        }
+        case parser::Parser::token::INT_NUM: {
             write_token("INT_NUM");
-            return parser::Parser::make_INT_NUM(std::stoi(YYText()), loc);
-
-        case parser::Parser::token::NAME:
+            return parser::Parser::make_INT_NUM(string_to_int(std::string(YYText())), loc);
+        }
+        case parser::Parser::token::NAME: {
             write_token("NAME");
             return parser::Parser::make_NAME(std::string(YYText()), loc);
-        case parser::Parser::token::STR_CONST:
+        }
+        case parser::Parser::token::STR_CONST: {
             write_token("STR_CONST");
             return parser::Parser::make_STR_CONST(std::string(YYText()), loc);
-
+        }
         case parser::Parser::token::ERROR:
             lexerror();
     }
@@ -147,4 +149,36 @@ void parser::Parser::error(const location_type& loc, const std::string& msg) {
               << ", Lexeme: \"" << lexer.YYText()
               << "\"\n\t    Description: Cannot parse the input program" << std::endl;
     exit(1);
+}
+
+int string_to_int(std::string num) {
+    int ret = 0;
+    for (char c : num) {
+        ret *= 10;
+        ret += c - '0';
+    }
+    return ret;
+}
+
+double string_to_double(std::string num) {
+    double ret = 0.0;
+    int i;
+    for (i = 0; i < num.size(); i++) {
+        if (num[i] == '.') {
+            break;
+        }
+        ret *= 10.0;
+        ret += (double)(num[i] - '0');
+    }
+
+    double other_half = 0.0;
+    double power = 1.0;
+    for (int j = i + 1; j < num.size(); j++) {
+        other_half *= 10.0;
+        other_half += (double)(num[j] - '0');
+        power *= 10;
+    }
+
+    ret += other_half / power;
+    return ret;
 }

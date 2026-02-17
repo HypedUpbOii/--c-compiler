@@ -33,7 +33,7 @@
 %token ERROR
 
 %token <int> INT_NUM
-%token <float> FLOAT_NUM
+%token <double> FLOAT_NUM
 %token <std::string> NAME
 %token <std::string> STR_CONST
 
@@ -41,12 +41,9 @@
 %token ASSIGN_OP
 %token GREATER_THAN LESS_THAN
 %token GREATER_THAN_EQUAL LESS_THAN_EQUAL
-%token EQUAL NOT_EQUAL
-%token AND OR NOT
 %token SEMICOLON COMMA
 %token LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET
 %token LEFT_CURLY_BRACKET RIGHT_CURLY_BRACKET
-%token QUESTION_MARK COLON
 
 %token INTEGER BOOL VOID STRING FLOAT
 %token WRITE READ RET
@@ -66,6 +63,7 @@
 %type <std::unique_ptr<ExprNode>> expression
 %type <std::unique_ptr<ExprNode>> constant_as_operand
 %type <std::unique_ptr<ExprNode>> rel_expression
+%type <std::tuple<DataType, std::string, std::vector<DataType>>> func_decl
 
 %nonassoc ASSIGN_OP
 %nonassoc QUESTION_MARK COLON
@@ -86,7 +84,7 @@ program
         ast.setSymbolTable(global_sym_tab);
     }
     | func_decl func_def {
-        ast.hasFuncDecl = true;
+        ast.func_decls.push_back($1);
         ast.funcs.push_back(std::move($2));
         ast.setSymbolTable(global_sym_tab);
     }
@@ -95,12 +93,12 @@ program
         ast.setSymbolTable(global_sym_tab);
     }
     | func_decl var_list func_def {
-        ast.hasFuncDecl = true;
+        ast.func_decls.push_back($1);
         ast.funcs.push_back(std::move($3));
         ast.setSymbolTable(global_sym_tab);
     }
     | var_list func_decl var_list func_def {
-        ast.hasFuncDecl = true;
+        ast.func_decls.push_back($2);
         ast.funcs.push_back(std::move($4));
         ast.setSymbolTable(global_sym_tab);
     }
@@ -121,8 +119,16 @@ var_list
 ;
 
 func_decl
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET SEMICOLON
-    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET SEMICOLON
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET SEMICOLON {
+        std::vector<DataType> param_types = std::vector<DataType>();
+        for (auto [s, t] : $3) {
+            param_types.push_back(t);
+        }
+        $$ = std::make_tuple($1.first, $1.second, param_types);
+    }
+    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET SEMICOLON {
+        $$ = std::make_tuple($1.first, $1.second, std::vector<DataType>());
+    }
 ;
 
 /*
@@ -271,7 +277,7 @@ expression
     | expression DIV expression {
         $$ = std::make_unique<BinaryExprNode>(BinaryOperator::DIVIDE, std::move($1), std::move($3));
     }
-    | MINUS expression {
+    | MINUS expression %prec UMINUS {
         $$ = std::make_unique<UnaryExprNode>(UnaryOperator::UMINUS, std::move($2));
     }
     | LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET {

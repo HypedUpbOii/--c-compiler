@@ -1,5 +1,5 @@
 %option c++
-%option noyywrap
+%option noyywrap yylineno
 %option warn nodefault
 
 %{

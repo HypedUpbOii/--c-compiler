@@ -66,7 +66,7 @@ public:
 class ProgramNode : public ASTNode {
 public:
     std::vector<std::unique_ptr<FunctionNode>> funcs;
-    bool hasFuncDecl;
+    std::vector<std::tuple<DataType, std::string, std::vector<DataType>>> func_decls;
     SymbolTable* global;
 
     ProgramNode();
@@ -142,9 +142,9 @@ public:
 
 class FloatExprNode : public LiteralExprNode {
 public:
-    float value;
+    double value;
 
-    FloatExprNode(float);
+    FloatExprNode(double);
     void printTree(std::ostream&, int) override;
 };
 

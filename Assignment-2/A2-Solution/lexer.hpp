@@ -20,3 +20,6 @@ public:
     void write_token(const std::string& type);
     void lexerror();
 };
+
+int string_to_int(std::string num);
+double string_to_double(std::string num);
