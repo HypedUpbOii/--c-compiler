@@ -5,20 +5,18 @@
 #include <FlexLexer.h>
 #endif
 
-using namespace std;
-
 class Lexer : public yyFlexLexer {
 private:
-    string input_file;
-    string next_token;
-    std::ostream& outstream;
+std::ostream& outstream;
+parser::location loc;
 
-    parser::location loc;
 public:
     Lexer(std::istream* in, std::string, std::ostream& stream);
+    std::string input_file;
+    std::string next_token;
 
     parser::Parser::symbol_type nextToken();
 
-    void write_token(const string& type);
+    void write_token(const std::string& type);
     void lexerror();
 };
