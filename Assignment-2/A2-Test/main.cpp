@@ -24,16 +24,21 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    parser::Parser parser(lexer);
+    ProgramNode ast = ProgramNode();
+    parser::Parser parser(lexer, ast);
 
     int result = parser.parse();
     if (args.stop_after_parse) {
         out_handler.commitTokens();
-        out_handler.commitAst();
         return result;
     }
 
-    out_handler.commitTokens();
-    out_handler.commitAst();
-    return 0;
+    if (ast.validateNode()) {
+        ast.printTree(ast_stream, 0);
+        out_handler.commitTokens();
+        out_handler.commitAst();
+        return 0;
+    } else {
+        return 1;
+    }
 }

@@ -10,7 +10,15 @@ struct Arguments {
     bool demo_mode = false;
 };
 
-enum class DataType {INT, FLOAT, BOOL, STRING, VOID};
+enum class DataType {
+    INT,
+    FLOAT,
+    BOOL,
+    STRING,
+    VOID
+};
+
+std::string type_to_string(DataType t);
 
 enum class BinaryOperator {
     PLUS,
@@ -28,6 +36,8 @@ enum class BinaryOperator {
     OR,
     AND
 };
+
+std::string op_to_string(BinaryOperator op);
 
 enum class UnaryOperator {
     NOT,

@@ -111,11 +111,9 @@ parser::Parser::symbol_type Lexer::nextToken() {
         case parser::Parser::token::NAME:
             write_token("NAME");
             return parser::Parser::make_NAME(std::string(YYText()), loc);
-        case parser::Parser::token::STR_CONST: {
+        case parser::Parser::token::STR_CONST:
             write_token("STR_CONST");
-            std::string str = std::string(YYText());
-            return parser::Parser::make_STR_CONST(str.substr(1, str.length() - 1), loc);
-        }
+            return parser::Parser::make_STR_CONST(std::string(YYText()), loc);
 
         case parser::Parser::token::ERROR:
             lexerror();

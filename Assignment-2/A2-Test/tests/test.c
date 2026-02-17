@@ -1,8 +1,11 @@
-int a = 500;
-int b = 5000;
-print "HELLO WORLD I AM PRO";
+int a;
+int b;
+int o;
+bool d;
+// int hehe(int c);
 // nirol
-string main(int b, string c) {
-    print 500;
-    read a;
+void main(int b, string c) {
+    a = -12;
+    d = (a > b) || (a < b) && (a >= b) || (a <= b) && (a == b) || (a != b);
+    print a + b - 10020;
 }

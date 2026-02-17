@@ -11,7 +11,7 @@
 %code requires {
     #include <iostream>
     #include "common_utils.hpp"
-    // #include "ast.hpp"
+    #include "ast.hpp"
     #include "symbol_table.hpp"
     class Lexer;
 }
@@ -19,28 +19,16 @@
 %code {
     #include "lexer.hpp"
     static parser::Parser::symbol_type
-    yylex(Lexer& lexer) {
+    yylex(Lexer& lexer, ProgramNode& ast) {
         return lexer.nextToken();
     }
 
-    SymbolTable * global_sym_tab = new SymbolTable();
-    SymbolTable * local_sym_tab = new SymbolTable(global_sym_tab);
-
-    //extern "C" {
-    //    extern int yylineno;
-    //}
-
-    std::string type_to_string(DataType t) {
-        switch(t) {
-            case DataType::INT : return "int";
-            case DataType::FLOAT : return "float";
-            case DataType::STRING : return "string";
-            default : return "unknown";
-        }
-    }
+    SymbolTable* global_sym_tab = new SymbolTable();
+    SymbolTable* local_sym_tab = new SymbolTable(global_sym_tab);
 }
 
 %param { Lexer& lexer }
+%param { ProgramNode& ast }
 
 %token ERROR
 
@@ -119,15 +107,11 @@ func_header
 ;
 
 func_def
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
+    
     }
-    optional_var_decl_stmt_list statement_list 
-    RIGHT_CURLY_BRACKET {
-    }
-    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
-    }
-    optional_var_decl_stmt_list statement_list 
-    RIGHT_CURLY_BRACKET {
+    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
+        
     }
 ;
 
