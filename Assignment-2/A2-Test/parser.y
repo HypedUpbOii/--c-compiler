@@ -9,7 +9,10 @@
 %locations
 
 %code requires {
-    #include <string>
+    #include <iostream>
+    #include "common_utils.hpp"
+    // #include "ast.hpp"
+    #include "symbol_table.hpp"
     class Lexer;
 }
 
@@ -18,6 +21,22 @@
     static parser::Parser::symbol_type
     yylex(Lexer& lexer) {
         return lexer.nextToken();
+    }
+
+    SymbolTable * global_sym_tab = new SymbolTable();
+    SymbolTable * curr_sym_tab = global_sym_tab;
+
+    //extern "C" {
+    //    extern int yylineno;
+    //}
+
+    std::string type_to_string(DataType t) {
+        switch(t) {
+            case DataType::INT : return "int";
+            case DataType::FLOAT : return "float";
+            case DataType::STRING : return "string";
+            default : return "unknown";
+        }
     }
 }
 
@@ -43,6 +62,10 @@
 
 %token INTEGER BOOL VOID STRING FLOAT
 %token WRITE READ RET
+
+%type <DataType> named_type
+%type <DataType> param_type
+%type <std::vector<std::string>> var_decl_item_list
 
 %right ASSIGN_OP
 %nonassoc QUESTION_MARK COLON
@@ -96,8 +119,20 @@ func_header
 ;
 
 func_def
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET
-    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
+        curr_sym_tab = new SymbolTable(global_sym_tab);
+    }
+    optional_var_decl_stmt_list statement_list 
+    RIGHT_CURLY_BRACKET {
+        curr_sym_tab = global_sym_tab;
+    }
+    | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
+        curr_sym_tab = new SymbolTable(global_sym_tab);
+    }
+    optional_var_decl_stmt_list statement_list 
+    RIGHT_CURLY_BRACKET {
+        curr_sym_tab = global_sym_tab;
+    }
 ;
 
 formal_param_list
@@ -110,10 +145,10 @@ formal_param
 ;
 
 param_type
-    : INTEGER
-    | FLOAT
-    | BOOL
-    | STRING
+    : INTEGER   { $$ = DataType::INT; }
+    | FLOAT     { $$ = DataType::FLOAT; }
+    | BOOL      { $$ = DataType::BOOL; }
+    | STRING    { $$ = DataType::STRING; }
 ;
 
 statement_list
@@ -139,24 +174,42 @@ var_decl_stmt_list
 ;
 
 var_decl_stmt
-    : named_type var_decl_item_list SEMICOLON
+    : named_type var_decl_item_list SEMICOLON {
+        for (const auto & var_name : $2){
+            curr_sym_tab->insert(var_name, $1);
+            // std::cout << "success, var_name " << var_name << " declared as " << type_to_string($1) << std::endl;
+        }
+    }
 ;
 
 var_decl_item_list
-    : var_decl_item_list COMMA NAME
-    | NAME
+    : var_decl_item_list COMMA NAME {
+        $$ = std::move($1);
+        $$.push_back($3);
+    }
+    | NAME { 
+        $$ = std::vector<std::string>({ $1 });
+    }
 ;
 
 named_type
-    : INTEGER
-    | FLOAT
-    | VOID
-    | STRING
-    | BOOL
+    : INTEGER   { $$ = DataType::INT; }
+    | FLOAT     { $$ = DataType::FLOAT; }
+    | VOID      { $$ = DataType::VOID; }
+    | STRING    { $$ = DataType::STRING; }
+    | BOOL      { $$ = DataType::BOOL; }
 ;
 
 assignment_statement
-    : NAME ASSIGN_OP expression SEMICOLON
+    : NAME { 
+        SymbolTableEntry * entry = curr_sym_tab->lookup($1);
+        if (entry == nullptr) {
+            std::cerr << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " not declared" << std::endl;
+            exit(1);
+        }
+
+        std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
+    } ASSIGN_OP expression SEMICOLON
 ;
 
 print_statement
@@ -174,7 +227,17 @@ expression
     | expression DIV expression
     | MINUS expression {}
     | LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET
-    | NAME
+    | NAME {
+        SymbolTableEntry * entry = curr_sym_tab->lookup($1);
+        if (entry == nullptr) {
+            std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " not declared" << std::endl;
+            exit(1);
+        }
+
+        // build node
+
+        std::cout << "Semantic Analysis : Line " << 0 << " Variable " << $1 << " declared of type " << type_to_string(entry->get_type()) << std::endl;
+    }
     | constant_as_operand
     | expression QUESTION_MARK expression COLON expression
     | expression AND expression

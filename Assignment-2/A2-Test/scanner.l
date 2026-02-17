@@ -1,8 +1,10 @@
 %option c++
 %option noyywrap
 %option warn nodefault
+%option yylineno
 
 %{
+    #include "common_utils.hpp"
     #include "parser.tab.hh"
     #include "lexer.hpp"
 %}
