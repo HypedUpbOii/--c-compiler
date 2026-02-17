@@ -1,5 +1,5 @@
 #pragma once
-#include "types.hpp"
+#include "common_utils.hpp"
 #include "symbol_table.hpp"
 #include <string>
 #include <memory>
@@ -7,7 +7,7 @@
 class ASTNode {
 public:
     bool validateNode();
-    bool printNode();
+    bool printNode(std::ostream&);
     virtual ~ASTNode() = default;
 };
 
@@ -24,21 +24,26 @@ class AssignStmtNode : public StmtNode {
 public:
     std::unique_ptr<VariableExprNode> target;
     std::unique_ptr<ExprNode> value;
+
+    AssignStmtNode(std::unique_ptr<VariableExprNode> t, std::unique_ptr<ExprNode> v);
 };
 
 class ReadStmtNode : public StmtNode {
 public:
     std::unique_ptr<VariableExprNode> target;
+
+    ReadStmtNode(std::unique_ptr<VariableExprNode> t);
 };
 
 class PrintStmtNode : public StmtNode {
 public:
     std::unique_ptr<ExprNode> target;
+    PrintStmtNode(std::unique_ptr<ExprNode> t);
 };
 
 class ExprNode : public ASTNode {
 public:
-    DataType exprType;
+    DataType exprType; // to be set in validateNode()
     virtual ~ExprNode() = default; 
 };
 
@@ -47,6 +52,8 @@ public:
     BinaryOperator op;
     std::unique_ptr<ExprNode> leftOp;
     std::unique_ptr<ExprNode> rightOp;
+
+    BinaryExprNode::BinaryExprNode(BinaryOperator oper, std::unique_ptr<ExprNode> left, std::unique_ptr<ExprNode> right);
 };
 
 class UnaryExprNode : public ExprNode {
