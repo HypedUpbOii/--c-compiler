@@ -66,16 +66,17 @@
 %type <std::tuple<DataType, std::string, std::vector<DataType>>> func_decl
 
 %nonassoc ASSIGN_OP
-%nonassoc QUESTION_MARK COLON
+%right QUESTION_MARK COLON
 %left OR
 %left AND
+%right NOT
 %nonassoc EQUAL NOT_EQUAL
 %nonassoc GREATER_THAN_EQUAL LESS_THAN_EQUAL
 %nonassoc GREATER_THAN LESS_THAN
 
 %left PLUS MINUS
 %left MULT DIV
-%right UMINUS NOT
+%right UMINUS
 %%
 
 program

@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "common_utils.hpp"
 
 extern SymbolTable* local_sym_tab;
 
@@ -278,7 +279,7 @@ bool TernaryExprNode::validateNode(){
     if (trueExpr->exprType == falseExpr->exprType) {
         return true;
     } else {
-        std::cerr << "sclp error: Both branches have different types" << std::endl;
+        std::cerr << "sclp error: Both branches have different types" << type_to_string(trueExpr->exprType) << " and " << type_to_string(falseExpr->exprType) << std::endl;
         exit(1);
     }
 }
