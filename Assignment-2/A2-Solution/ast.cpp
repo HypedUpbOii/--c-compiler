@@ -319,6 +319,10 @@ VariableExprNode::VariableExprNode(std::string nam, SymbolTableEntry* entry) : n
 }
 
 bool VariableExprNode::validateNode(){
+    if (name == "main") {
+        std::cerr << "sclp error: Cannot have variable named main" << std::endl;
+        exit(1);
+    }
     if (steEntry != nullptr) {
         return true;
     } else {
