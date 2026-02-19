@@ -12,3 +12,5 @@
 **/err.log
 **/sclp
 **/*.swp
+**/*.toks
+**/*.ast
