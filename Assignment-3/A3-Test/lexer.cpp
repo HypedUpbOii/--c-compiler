@@ -25,7 +25,6 @@ parser::Parser::symbol_type Lexer::nextToken() {
         case parser::Parser::token::OR:
             write_token("OR");
             return parser::Parser::make_OR(loc);
-
         case parser::Parser::token::GREATER_THAN:
             write_token("GREATER_THAN");
             return parser::Parser::make_GREATER_THAN(loc);
@@ -53,6 +52,15 @@ parser::Parser::symbol_type Lexer::nextToken() {
         case parser::Parser::token::RIGHT_CURLY_BRACKET:
             write_token("RIGHT_CURLY_BRACKET");
             return parser::Parser::make_RIGHT_CURLY_BRACKET(loc);
+        case parser::Parser::token::LEFT_SQUARE_BRACKET:
+            write_token("LEFT_SQUARE_BRACKET");
+            return parser::Parser::make_LEFT_SQUARE_BRACKET(loc);
+        case parser::Parser::token::RIGHT_SQUARE_BRACKET:
+            write_token("RIGHT_SQUARE_BRACKET");
+            return parser::Parser::make_RIGHT_SQUARE_BRACKET(loc);
+        case parser::Parser::token::ADDRESS_OF:
+            write_token("ADDRESS_OF");
+            return parser::Parser::make_ADDRESS_OF(loc);
         case parser::Parser::token::COMMA:
             write_token("COMMA");
             return parser::Parser::make_COMMA(loc);
@@ -74,7 +82,6 @@ parser::Parser::symbol_type Lexer::nextToken() {
         case parser::Parser::token::DIV:
             write_token("DIV");
             return parser::Parser::make_DIV(loc);
-
         case parser::Parser::token::INTEGER:
             write_token("INTEGER");
             return parser::Parser::make_INTEGER(loc);
@@ -90,35 +97,43 @@ parser::Parser::symbol_type Lexer::nextToken() {
         case parser::Parser::token::FLOAT:
             write_token("FLOAT");
             return parser::Parser::make_FLOAT(loc);
-
         case parser::Parser::token::WRITE:
             write_token("WRITE");
             return parser::Parser::make_WRITE(loc);
         case parser::Parser::token::READ:
             write_token("READ");
             return parser::Parser::make_READ(loc);
-        case parser::Parser::token::RET:
-            write_token("RET");
-            return parser::Parser::make_RET(loc);
-
-        case parser::Parser::token::FLOAT_NUM: {
+        case parser::Parser::token::RETURN:
+            write_token("RETURN");
+            return parser::Parser::make_RETURN(loc);
+        case parser::Parser::token::IF:
+            write_token("IF");
+            return parser::Parser::make_IF(loc);
+        case parser::Parser::token::ELSE:
+            write_token("ELSE");
+            return parser::Parser::make_ELSE(loc);
+        case parser::Parser::token::WHILE:
+            write_token("WHILE");
+            return parser::Parser::make_WHILE(loc);
+        case parser::Parser::token::DO_WHILE:
+            write_token("DO_WHILE");
+            return parser::Parser::make_DO_WHILE(loc);
+        case parser::Parser::token::FLOAT_NUM:
             write_token("FLOAT_NUM");
-            return parser::Parser::make_FLOAT_NUM(std::strtod(YYText(), nullptr), loc);
-        }
-        case parser::Parser::token::INT_NUM: {
+            return parser::Parser::make_FLOAT_NUM(std::strtod(YYText()), loc);
+        case parser::Parser::token::INT_NUM:
             write_token("INT_NUM");
             return parser::Parser::make_INT_NUM(std::atoi(YYText()), loc);
-        }
-        case parser::Parser::token::NAME: {
+        case parser::Parser::token::NAME:
             write_token("NAME");
             return parser::Parser::make_NAME(std::string(YYText()), loc);
-        }
-        case parser::Parser::token::STR_CONST: {
+        case parser::Parser::token::STR_CONST:
             write_token("STR_CONST");
             return parser::Parser::make_STR_CONST(std::string(YYText()), loc);
-        }
+
         case parser::Parser::token::ERROR:
             lexerror();
+
     }
 
     return parser::Parser::make_YYEOF(loc);

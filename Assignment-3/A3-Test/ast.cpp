@@ -3,10 +3,6 @@
 
 extern SymbolTable* local_sym_tab;
 
-ExprNode::~ExprNode() {
-    delete place;
-}
-
 ProgramNode::ProgramNode() : global(nullptr) {
     funcs = std::vector<std::unique_ptr<FunctionNode>>();
     func_decls = std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>();
@@ -51,19 +47,6 @@ void ProgramNode::printTree(std::ostream& out, int tab) {
     }
 }
 
-void ProgramNode::generateTAC() {
-    for (auto & func : funcs) {
-        // each func has its own TAC object (temp numbers are shared tho)
-        func->generateTAC();
-    }
-}
-
-void ProgramNode::printTAC(std::ostream& out) {
-    for (auto& func : funcs) {
-        func->printTAC(out);
-    }
-}
-
 ProgramNode::~ProgramNode() {
     delete global;
 }
@@ -101,19 +84,6 @@ void FunctionNode::printTree(std::ostream& out, int tab) {
     out << std::string(tab, ' ') << "**END: Abstract Syntax Tree" << std::endl;
 }
 
-void FunctionNode::generateTAC() {
-    for (auto& stmt : statements) {
-        stmt->generateTAC(tac);
-    }
-}
-
-void FunctionNode::printTAC(std::ostream& out) {
-    out << "**PROCEDURE: " << name << std::endl;
-    out << "**BEGIN: Three Address Code Statements" << std::endl;
-    tac.print(out);
-    out << "**END: Three Addresss Code Statements" << std::endl;
-}
-
 AssignStmtNode::AssignStmtNode(std::unique_ptr<VariableExprNode> t, std::unique_ptr<ExprNode> v){
     target = std::move(t);
     value = std::move(v);
@@ -142,15 +112,6 @@ void AssignStmtNode::printTree(std::ostream& out, int tab) {
     out << ")" << std::endl;
 }
 
-void AssignStmtNode::generateTAC(TAC& tac) {
-    target->generateTAC(tac);
-    value->generateTAC(tac);
-    Asgn_TAC_Stmt* stmt = new Asgn_TAC_Stmt(target->place, value->place);
-    tac.addTACStatements(value->code);
-    value->code.clear();
-    tac.addTACStatement(stmt);
-}
-
 ReadStmtNode::ReadStmtNode(std::unique_ptr<VariableExprNode> t){
     target = std::move(t);
 }
@@ -172,14 +133,6 @@ void ReadStmtNode::printTree(std::ostream& out, int tab) {
     out << std::endl;
 }
 
-void ReadStmtNode::generateTAC(TAC& tac) {
-    target->generateTAC(tac);
-    IO_TAC_Stmt* stmt = new IO_TAC_Stmt(false, target->place);
-    tac.addTACStatements(target->code);
-    target->code.clear();
-    tac.addTACStatement(stmt);
-}
-
 PrintStmtNode::PrintStmtNode(std::unique_ptr<ExprNode> t) {
     target = std::move(t);
 }
@@ -199,14 +152,6 @@ void PrintStmtNode::printTree(std::ostream& out, int tab) {
     out << std::string(tab, ' ') << "Write: ";
     target->printTree(out, tab + 2);
     out << std::endl;
-}
-
-void PrintStmtNode::generateTAC(TAC& tac) {
-    target->generateTAC(tac);
-    IO_TAC_Stmt* stmt = new IO_TAC_Stmt(true, target->place);
-    tac.addTACStatements(target->code);
-    target->code.clear();
-    tac.addTACStatement(stmt);
 }
 
 BinaryExprNode::BinaryExprNode(BinaryOperator oper, std::unique_ptr<ExprNode> left, std::unique_ptr<ExprNode> right) {
@@ -275,19 +220,6 @@ void BinaryExprNode::printTree(std::ostream& out, int tab) {
     out << ")";
 }
 
-void BinaryExprNode::generateTAC(TAC& tac) {
-    leftOp->generateTAC(tac);
-    rightOp->generateTAC(tac);
-    place = tac.genNewTemporary();
-    Compute_TAC_Stmt* stmt = new Compute_TAC_Stmt(place, leftOp->place, op, rightOp->place);
-
-    tac.addTACStatements(leftOp->code);
-    leftOp->code.clear();
-    tac.addTACStatements(rightOp->code);
-    rightOp->code.clear();
-    tac.addTACStatement(stmt);
-}
-
 UnaryExprNode::UnaryExprNode(UnaryOperator o, std::unique_ptr<ExprNode> oper) {
     op = o;
     operand = std::move(oper);
@@ -329,15 +261,6 @@ void UnaryExprNode::printTree(std::ostream& out, int tab) {
     }
 }
 
-void UnaryExprNode::generateTAC(TAC& tac) {
-    operand->generateTAC(tac);
-    place = tac.genNewTemporary();
-    Compute_TAC_Stmt* stmt = new Compute_TAC_Stmt(place, op, operand->place);
-    tac.addTACStatements(operand->code);
-    operand->code.clear();
-    tac.addTACStatement(stmt);
-}
-
 TernaryExprNode::TernaryExprNode(std::unique_ptr<ExprNode> cond, std::unique_ptr<ExprNode> tExpr, std::unique_ptr<ExprNode> fExpr) {
     condition = std::move(cond);
     trueExpr = std::move(tExpr);
@@ -370,46 +293,6 @@ void TernaryExprNode::printTree(std::ostream& out, int tab) {
     out << ")";
 }
 
-void TernaryExprNode::generateTAC(TAC& tac) {
-    condition->generateTAC(tac);
-    place = tac.genNewSTemporary();
-    Label_TAC_Opd* false_label = tac.genNewLabel();
-    Label_TAC_Opd* exit_label = tac.genNewLabel();
-    trueExpr->generateTAC(tac);
-    falseExpr->generateTAC(tac);
-
-    Temporary_TAC_Opd* opp_cond = tac.genNewTemporary();
-    Compute_TAC_Stmt* negate_stmt = new Compute_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
-    If_Goto_TAC_Stmt* go_to_false = new If_Goto_TAC_Stmt(opp_cond, false_label);
-    Goto_TAC_Stmt* go_to_exit = new Goto_TAC_Stmt(exit_label);
-    Asgn_TAC_Stmt* set_true_val = new Asgn_TAC_Stmt(place, trueExpr->place);
-    Asgn_TAC_Stmt* set_false_val = new Asgn_TAC_Stmt(place, falseExpr->place);
-    Label_TAC_Stmt* false_branch = new Label_TAC_Stmt(false_label);
-    Label_TAC_Stmt* exit_branch = new Label_TAC_Stmt(exit_label);
-
-    // Clears done to avoid exponential memory blowup
-    // Only clear children once used
-    for (auto stmt : condition->code) {
-        code.push_back(stmt);
-    }
-    condition->code.clear();
-    code.push_back(negate_stmt);
-    code.push_back(go_to_false);
-    for (auto stmt : trueExpr->code) {
-        code.push_back(stmt);
-    }
-    trueExpr->code.clear();
-    code.push_back(set_true_val);
-    code.push_back(go_to_exit);
-    code.push_back(false_branch);
-    for (auto stmt : falseExpr->code) {
-        code.push_back(stmt);
-    }
-    falseExpr->code.clear();
-    code.push_back(set_false_val);
-    code.push_back(exit_branch);
-}
-
 bool LiteralExprNode::validateNode() {return true;}
 
 IntExprNode::IntExprNode(int i) : value(i) {exprType = DataType::INT;}
@@ -418,28 +301,16 @@ void IntExprNode::printTree(std::ostream& out, int tab) {
     out << "Num : " << value << type_to_string(exprType);
 }
 
-void IntExprNode::generateTAC(TAC& tac) {
-    place = new Int_Const_TAC_Opd(value);
-}
-
 FloatExprNode::FloatExprNode(double f) : value(f) {exprType = DataType::FLOAT;}
 
 void FloatExprNode::printTree(std::ostream& out, int tab) {
     out << "Num : " << std::fixed << std::setprecision(2) << value << type_to_string(exprType);
 }
 
-void FloatExprNode::generateTAC(TAC& tac) {
-    place = new Double_Const_TAC_Opd(value);
-}
-
 StringExprNode::StringExprNode(std::string s) : value(s) {exprType = DataType::STRING;}
 
 void StringExprNode::printTree(std::ostream& out, int tab) {
     out << "String : " << value << type_to_string(exprType);
-}
-
-void StringExprNode::generateTAC(TAC& tac) {
-    place = new String_Const_TAC_Opd(value);
 }
 
 VariableExprNode::VariableExprNode(std::string nam, SymbolTableEntry* entry) : name(nam), steEntry(entry) {
@@ -462,8 +333,4 @@ bool VariableExprNode::validateNode(){
 
 void VariableExprNode::printTree(std::ostream& out, int tab) {
     out << "Name : " << name << "_" << type_to_string(exprType);
-}
-
-void VariableExprNode::generateTAC(TAC& tac) {
-    place = new Variable_TAC_Opd(steEntry);
 }

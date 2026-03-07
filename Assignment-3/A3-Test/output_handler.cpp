@@ -11,12 +11,11 @@ static NullStream null_stream;
 OutputHandler::OutputHandler(const Arguments& args)
     : demo_mode(args.demo_mode), token_stream(&null_stream), ast_stream(&null_stream) {
     if (args.demo_mode) {
-        if (args.show_tokens)
+        if (args.show_tokens) {
             token_stream = &std::cout;
+        }
         if (args.show_ast)
             ast_stream = &std::cout;
-        if (args.show_tac)
-            tac_stream = &std::cout;
         return;
     }
 
@@ -31,12 +30,6 @@ OutputHandler::OutputHandler(const Arguments& args)
         std::ofstream(ast_file, std::ios::trunc);
         ast_stream = &ast_buffer;
     }
-
-    if (args.show_tac) {
-        tac_file = args.input_file + ".tac";
-        std::ofstream(tac_file, std::ios::trunc);
-        tac_stream = &tac_buffer;
-    }
 }
 
 std::ostream& OutputHandler::tokenStream() {
@@ -45,10 +38,6 @@ std::ostream& OutputHandler::tokenStream() {
 
 std::ostream& OutputHandler::astStream() {
     return *ast_stream;
-}
-
-std::ostream& OutputHandler::tacStream() {
-    return *tac_stream;
 }
 
 void OutputHandler::commitTokens() {
@@ -65,18 +54,8 @@ void OutputHandler::commitAst() {
     if (demo_mode)
         return;
 
-    if (!ast_file.empty()) {
+    if (!toks_file.empty()) {
         std::ofstream ast(ast_file, std::ios::trunc);
         ast << ast_buffer.str();
-    }
-}
-
-void OutputHandler::commitTac() {
-    if (demo_mode)
-        return;
-
-    if (!tac_file.empty()) {
-        std::ofstream ast(tac_file, std::ios::trunc);
-        ast << tac_buffer.str();
     }
 }

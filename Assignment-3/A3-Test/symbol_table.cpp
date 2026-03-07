@@ -5,8 +5,6 @@ SymbolTableEntry::SymbolTableEntry(std::string n, DataType dt) : name(n), type(d
 
 DataType SymbolTableEntry::get_type() const { return type; }
 
-std::string SymbolTableEntry::get_name() const { return name; }
-
 SymbolTable::SymbolTable(SymbolTable * p) : parent(p), encounteredDuplicate(false) {}
 
 SymbolTable::~SymbolTable() {

@@ -10,7 +10,6 @@ class SymbolTableEntry{
 public:
 	SymbolTableEntry(std::string n, DataType dt);
 	DataType get_type() const;
-	std::string get_name() const;
 };
 
 class SymbolTable{

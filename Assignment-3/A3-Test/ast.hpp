@@ -1,7 +1,6 @@
 #pragma once
 #include "common_utils.hpp"
 #include "symbol_table.hpp"
-#include "tac.hpp"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -13,18 +12,13 @@ class ASTNode {
 public:
     virtual bool validateNode() = 0;
     virtual void printTree(std::ostream&, int) = 0;
-    virtual void generateTAC(TAC&) = 0;
     virtual ~ASTNode() = default;
 };
 
 class ExprNode : public ASTNode {
 public:
-    // delete in destructor
-    TAC_Opd* place;
-    // clear vector after used
-    std::vector<TAC_Stmt*> code;
     DataType exprType; // to be set in validateNode() except for literals
-    ~ExprNode();
+    virtual ~ExprNode() = default;
 };
 
 class VariableExprNode : public ExprNode {
@@ -35,7 +29,6 @@ public:
     VariableExprNode(std::string, SymbolTableEntry*);
     bool validateNode();
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class StmtNode : public ASTNode {
@@ -51,12 +44,9 @@ public:
     AssignStmtNode(std::unique_ptr<VariableExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
-class FunctionNode {
-private:
-    TAC tac;
+class FunctionNode : public ASTNode {
 public:
     DataType returnType;
     std::vector<std::pair<std::string, DataType>> parameters;
@@ -69,25 +59,21 @@ public:
         std::string nam, 
         std::vector<std::unique_ptr<StmtNode>> stmts, 
         SymbolTable* loc);
-    bool validateNode();
-    void printTree(std::ostream&, int);
-    void generateTAC();
-    void printTAC(std::ostream&);
+    bool validateNode() override;
+    void printTree(std::ostream&, int) override;
 };
 
-class ProgramNode {
+class ProgramNode : public ASTNode {
 public:
     std::vector<std::unique_ptr<FunctionNode>> funcs;
     std::vector<std::tuple<DataType, std::string, std::vector<DataType>>> func_decls;
     SymbolTable* global;
 
     ProgramNode();
-    ~ProgramNode();
+    ~ProgramNode() override;
     void setSymbolTable(SymbolTable*);
-    bool validateNode();
-    void printTree(std::ostream&, int);
-    void generateTAC();
-    void printTAC(std::ostream&);
+    bool validateNode() override;
+    void printTree(std::ostream&, int) override;
 };
 
 class ReadStmtNode : public StmtNode {
@@ -97,7 +83,6 @@ public:
     ReadStmtNode(std::unique_ptr<VariableExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class PrintStmtNode : public StmtNode {
@@ -107,7 +92,6 @@ public:
     PrintStmtNode(std::unique_ptr<ExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class BinaryExprNode : public ExprNode {
@@ -119,7 +103,6 @@ public:
     BinaryExprNode(BinaryOperator, std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class UnaryExprNode : public ExprNode {
@@ -130,7 +113,6 @@ public:
     UnaryExprNode(UnaryOperator, std::unique_ptr<ExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class TernaryExprNode : public ExprNode {
@@ -142,7 +124,6 @@ public:
     TernaryExprNode(std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>, std::unique_ptr<ExprNode>);
     bool validateNode() override;
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class LiteralExprNode : public ExprNode {
@@ -157,7 +138,6 @@ public:
 
     IntExprNode(int);
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class FloatExprNode : public LiteralExprNode {
@@ -166,7 +146,6 @@ public:
 
     FloatExprNode(double);
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };
 
 class StringExprNode : public LiteralExprNode {
@@ -175,5 +154,4 @@ public:
 
     StringExprNode(std::string);
     void printTree(std::ostream&, int) override;
-    void generateTAC(TAC&) override;
 };

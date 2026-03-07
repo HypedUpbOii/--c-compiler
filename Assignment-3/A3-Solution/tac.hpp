@@ -1,0 +1,173 @@
+#pragma once
+#include "common_utils.hpp"
+#include "symbol_table.hpp"
+#include <vector>
+#include <string>
+#include <array>
+#include <iostream>
+#include <memory>
+
+enum class OpdType {
+    INT_CONST,
+    DOUBLE_CONST,
+    STRING_CONST,
+    LABEL,
+    TEMPORARY,
+    VARIABLE
+};
+
+class TAC_Opd {
+protected:
+    OpdType opd_type;
+public:
+    virtual std::string get_name() = 0;
+};
+
+class Array_Acces_TAC_Opd : public TAC_Opd {
+public:
+    // TODO
+};
+
+class Double_Const_TAC_Opd : public TAC_Opd {
+private:
+    double value;
+public:
+    Double_Const_TAC_Opd(double val);
+    std::string get_name() override;
+};
+
+class Int_Const_TAC_Opd : public TAC_Opd {
+private:
+    int value;
+public:
+    Int_Const_TAC_Opd(int val);
+    std::string get_name() override;
+};
+
+class String_Const_TAC_Opd : public TAC_Opd {
+private:
+    std::string value;
+public:
+    String_Const_TAC_Opd(const std::string& val);
+    std::string get_name() override;
+};
+
+class Label_TAC_Opd : public TAC_Opd {
+private:
+    unsigned int label_num;
+public:
+    Label_TAC_Opd(unsigned int num);
+    std::string get_name() override;
+};
+
+class Pointer_Deref_TAC_Opd : public TAC_Opd {
+public:
+    // TODO
+};
+
+class Temporary_TAC_Opd : public TAC_Opd {
+private:
+    unsigned int temp_num;
+    bool is_special;
+public:
+    Temporary_TAC_Opd(unsigned int num, bool is_special = false);
+    std::string get_name() override;
+};
+
+class Variable_TAC_Opd : public TAC_Opd {
+private:
+    SymbolTableEntry* symtab_entry;
+public:
+    Variable_TAC_Opd(SymbolTableEntry* symtab_entry);
+    std::string get_name() override;
+};
+
+class TAC_Stmt {
+protected:
+    // these pointers are "owned" by the corresponding ast expr node and deleted by them
+    TAC_Opd* result;
+    TAC_Opd* oper1;
+    TAC_Opd* oper2;
+public:
+    virtual void print(std::ostream&) = 0;
+};
+
+class Asgn_TAC_Stmt : public TAC_Stmt {
+public:
+    Asgn_TAC_Stmt(TAC_Opd* dest, TAC_Opd* src);
+    void print(std::ostream&) override;
+};
+
+class Call_TAC_Stmt : public TAC_Stmt {
+public:
+    // TODO
+    // each function will have a label
+    // just jump to that label
+    // parameters are evaluated before calling
+};
+
+class Compute_TAC_Stmt : public TAC_Stmt {
+private:
+    BinaryOperator bin_op;
+    UnaryOperator un_op;
+    bool is_binary;
+public:
+    Compute_TAC_Stmt(TAC_Opd* result, TAC_Opd* oper1, BinaryOperator op, TAC_Opd* oper2);
+    Compute_TAC_Stmt(TAC_Opd* result, UnaryOperator op, TAC_Opd* oper);
+    void print(std::ostream&) override;
+};
+
+class Goto_TAC_Stmt : public TAC_Stmt {
+public:
+    Goto_TAC_Stmt(Label_TAC_Opd* label);
+    void print(std::ostream&) override;
+};
+
+class If_Goto_TAC_Stmt : public TAC_Stmt {
+public:
+    If_Goto_TAC_Stmt(Temporary_TAC_Opd* cond, Label_TAC_Opd* label);
+    void print(std::ostream&) override;
+};
+
+class IO_TAC_Stmt : public TAC_Stmt {
+private:
+    bool is_write;
+public:
+    IO_TAC_Stmt(bool is_write, TAC_Opd* oper);
+    void print(std::ostream&) override;
+};
+
+class Label_TAC_Stmt : public TAC_Stmt {
+public:
+    Label_TAC_Stmt(Label_TAC_Opd* label);
+    void print(std::ostream&) override;
+};
+
+class NOP_TAC_Stmt : public TAC_Stmt {
+public:
+    // TODO
+};
+
+class Return_TAC_Stmt : public TAC_Stmt {
+public:
+    // TODO:
+    // store results in a stemp
+    // then go back to frame pointer etc
+};
+
+class TAC {
+private:
+    std::vector<TAC_Stmt*> tac_code;
+    static unsigned int temp_number;
+    static unsigned int stemp_number;
+    static unsigned int label_number;
+public:
+    Temporary_TAC_Opd* genNewTemporary();
+    Temporary_TAC_Opd* genNewSTemporary();
+    Label_TAC_Opd* genNewLabel();
+    // use std::move() for the argument
+    void addTACStatement(TAC_Stmt*);
+    void addTACStatements(const std::vector<TAC_Stmt*>& stmts);
+    void print(std::ostream&);
+    ~TAC();
+};

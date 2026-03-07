@@ -31,6 +31,9 @@ letter [a-zA-Z_]
 ")"                                 {return parser::Parser::token::RIGHT_ROUND_BRACKET;}
 "{"                                 {return parser::Parser::token::LEFT_CURLY_BRACKET;}
 "}"                                 {return parser::Parser::token::RIGHT_CURLY_BRACKET;}
+"["                                 {return parser::Parser::token::LEFT_SQUARE_BRACKET;}
+"]"                                 {return parser::Parser::token::RIGHT_SQUARE_BRACKET;}
+"&"                                 {return parser::Parser::token::ADDRESSOF;}
 ","                                 {return parser::Parser::token::COMMA;}
 ";"                                 {return parser::Parser::token::SEMICOLON;}
 "="                                 {return parser::Parser::token::ASSIGN_OP;}
@@ -47,7 +50,11 @@ float                               {return parser::Parser::token::FLOAT;}
 
 print                               {return parser::Parser::token::WRITE;}
 read                                {return parser::Parser::token::READ;}
-return                              {return parser::Parser::token::RET;}
+return                              {return parser::Parser::token::RETURN;}
+if                                  {return parser::Parser::token::IF;}
+else                                {return parser::Parser::token::ELSE;}
+while                               {return parser::Parser::token::WHILE;}
+do                                  {return parser::Parser::token::DO;}
 
 ({digit}+\.{digit}*)|(\.{digit}+)   {return parser::Parser::token::FLOAT_NUM;}
 {digit}+                            {return parser::Parser::token::INT_NUM;}

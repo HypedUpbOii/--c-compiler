@@ -8,7 +8,6 @@ int main(int argc, char* argv[]) {
     OutputHandler out_handler(args);
     std::ostream& tok_stream = out_handler.tokenStream();
     std::ostream& ast_stream = out_handler.astStream();
-    std::ostream& tac_stream = out_handler.tacStream();
 
     std::ifstream in(args.input_file);
     if (!in) {
@@ -31,25 +30,19 @@ int main(int argc, char* argv[]) {
     parser::Parser parser(lexer, ast);
 
     int result = parser.parse();
-    out_handler.commitTokens();
-    delete local_sym_tab;
-
     if (args.stop_after_parse) {
+        out_handler.commitTokens();
+        delete local_sym_tab;
         return result;
     }
 
     if (ast.validateNode()) {
         ast.printTree(ast_stream, 0);
+        out_handler.commitTokens();
         out_handler.commitAst();
-    }
-
-    if (args.stop_after_ast) {
+        delete local_sym_tab;
         return 0;
     }
-
-    ast.generateTAC();
-    ast.printTAC(tac_stream);
-    out_handler.commitTac();
 
     return 0;
 }
