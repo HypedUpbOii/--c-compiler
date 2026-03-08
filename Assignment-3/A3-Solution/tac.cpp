@@ -60,7 +60,9 @@ Double_Const_TAC_Opd::Double_Const_TAC_Opd(double val) : value(val) {
 }
 
 std::string Double_Const_TAC_Opd::get_name() {
-    return std::to_string(value);
+    char buffer[64];
+    std::snprintf(buffer, sizeof(buffer), "%.2f", value);
+    return std::string(buffer);
 }
 
 Int_Const_TAC_Opd::Int_Const_TAC_Opd(int val) : value(val) {

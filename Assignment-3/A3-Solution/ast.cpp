@@ -111,7 +111,7 @@ void FunctionNode::printTAC(std::ostream& out) {
     out << "**PROCEDURE: " << name << std::endl;
     out << "**BEGIN: Three Address Code Statements" << std::endl;
     tac.print(out);
-    out << "**END: Three Addresss Code Statements" << std::endl;
+    out << "**END: Three Address Code Statements" << std::endl;
 }
 
 AssignStmtNode::AssignStmtNode(std::unique_ptr<VariableExprNode> t, std::unique_ptr<ExprNode> v){
@@ -281,11 +281,11 @@ void BinaryExprNode::generateTAC(TAC& tac) {
     place = tac.genNewTemporary();
     Compute_TAC_Stmt* stmt = new Compute_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
-    tac.addTACStatements(leftOp->code);
+    for (auto s : leftOp->code) code.push_back(s);
     leftOp->code.clear();
-    tac.addTACStatements(rightOp->code);
+    for (auto s : rightOp->code) code.push_back(s);
     rightOp->code.clear();
-    tac.addTACStatement(stmt);
+    code.push_back(stmt);
 }
 
 UnaryExprNode::UnaryExprNode(UnaryOperator o, std::unique_ptr<ExprNode> oper) {
@@ -333,9 +333,10 @@ void UnaryExprNode::generateTAC(TAC& tac) {
     operand->generateTAC(tac);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt* stmt = new Compute_TAC_Stmt(place, op, operand->place);
-    tac.addTACStatements(operand->code);
+
+    for (auto s : operand->code) code.push_back(s);
     operand->code.clear();
-    tac.addTACStatement(stmt);
+    code.push_back(stmt);
 }
 
 TernaryExprNode::TernaryExprNode(std::unique_ptr<ExprNode> cond, std::unique_ptr<ExprNode> tExpr, std::unique_ptr<ExprNode> fExpr) {

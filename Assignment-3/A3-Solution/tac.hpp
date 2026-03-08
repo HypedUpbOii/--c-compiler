@@ -6,6 +6,7 @@
 #include <array>
 #include <iostream>
 #include <memory>
+#include <cstdio>
 
 enum class OpdType {
     INT_CONST,
