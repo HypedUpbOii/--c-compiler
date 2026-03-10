@@ -15,6 +15,10 @@ ProgramNode::ProgramNode() : global(nullptr) {
 void ProgramNode::setSymbolTable(SymbolTable* symtab) { global = symtab; }
 
 bool ProgramNode::validateNode() {
+    if (global->hasDuplicate()) {
+        std::cerr << "sclp error: Redeclaration of variable" << std::endl;
+        exit(1);
+    }
     if (func_decls.size() > 1) {
         std::cerr << "sclp error: Higher level feature detected: with function declaration" << std::endl;
         exit(1);
@@ -72,6 +76,10 @@ FunctionNode::FunctionNode(DataType ret, std::vector<std::pair<std::string, Data
     : returnType(ret), parameters(params), name(nam), statements(std::move(stmts)), local(loc) {}
 
 bool FunctionNode::validateNode() {
+    if (local->hasDuplicate()) {
+        std::cerr << "sclp error: Redeclaration of variable" << std::endl;
+        exit(1);
+    }
     if (name != "main") {
         std::cerr << "sclp error: No function with name main found" << std::endl;
         exit(1);

@@ -19,11 +19,30 @@ SymbolTable::~SymbolTable() {
 
 // insertion always happens in the current scope
 void SymbolTable::insert(std::string name, DataType dt) {
+	if (procedures.find(name) != procedures.end()) {
+		encounteredDuplicate = true;
+	}
+
 	if (entries.find(name) != entries.end()) {
 		encounteredDuplicate = true;
 	}
 
 	entries[name] = new SymbolTableEntry(name, dt);
+}
+
+
+void SymbolTable::insertProcedure(std::string name, std::pair<DataType, std::vector<DataType>> signature) {
+	// first check if any variable has the same name
+	if (entries.find(name) != entries.end()) {
+		encounteredDuplicate = true;
+	}
+
+	// then check if any function has the same name (No overloading present)
+	if (procedures.find(name) != procedures.end()) {
+		encounteredDuplicate = true;
+	}
+
+	procedures[name] = signature;
 }
 
 // recursively look up in ancestor scopes
@@ -33,4 +52,8 @@ SymbolTableEntry * SymbolTable::lookup(std::string name) {
     if (parent != nullptr) return parent->lookup(name);
 
 	return nullptr;
+}
+
+bool SymbolTable::hasDuplicate() {
+	return encounteredDuplicate;
 }
