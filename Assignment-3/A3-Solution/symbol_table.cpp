@@ -21,10 +21,12 @@ SymbolTable::~SymbolTable() {
 void SymbolTable::insert(std::string name, DataType dt) {
 	if (procedures.find(name) != procedures.end()) {
 		encounteredDuplicate = true;
+		std::cerr << "found procedure with name " << name << " which conflicts with variable name" << std::endl;  
 	}
 
 	if (entries.find(name) != entries.end()) {
 		encounteredDuplicate = true;
+		std::cerr << "found variable with name " << name << " which conflicts with variable name" << std::endl;  
 	}
 
 	entries[name] = new SymbolTableEntry(name, dt);
@@ -35,11 +37,13 @@ void SymbolTable::insertProcedure(std::string name, std::pair<DataType, std::vec
 	// first check if any variable has the same name
 	if (entries.find(name) != entries.end()) {
 		encounteredDuplicate = true;
+		std::cerr << "found variable with name " << name << " which conflicts with procedure name" << std::endl;  
 	}
 
 	// then check if any function has the same name (No overloading present)
-	if (procedures.find(name) != procedures.end()) {
+	if (procedures.find(name) != procedures.end() && signature != procedures[name]) {
 		encounteredDuplicate = true;
+		std::cerr << "found procedure with name " << name << " which conflicts with procedure name (different decl)" << std::endl;
 	}
 
 	procedures[name] = signature;

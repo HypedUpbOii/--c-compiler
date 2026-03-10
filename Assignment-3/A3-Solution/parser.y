@@ -148,15 +148,18 @@ func_header
 ;
 
 func_def
-    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
-        std::vector<DataType> param_types = std::vector<DataType>();
-        for (auto [s, t] : $3) {
-            param_types.push_back(t);
+    : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET { 
+            local_sym_tab = new SymbolTable(global_sym_tab);
+            std::vector<DataType> param_types = std::vector<DataType>();
+            for (auto [n, t] : $3) {
+                param_types.push_back(t);
+                // add params to the symbol table 
+                local_sym_tab->insert(n, t);
+            }
+            global_sym_tab->insertProcedure($1.second, std::make_pair($1.first, param_types));
+        } optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
+            $$ = std::make_unique<FunctionNode>($1.first, $3, $1.second, std::move($8), local_sym_tab);
         }
-        $$ = std::make_unique<FunctionNode>($1.first, $3, $1.second, std::move($7), local_sym_tab);
-        local_sym_tab = new SymbolTable(global_sym_tab);
-        global_sym_tab->insertProcedure($1.second, std::make_pair($1.first, param_types));
-    }
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET optional_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
         $$ = std::make_unique<FunctionNode>($1.first, std::vector<std::pair<std::string, DataType>>(), $1.second, std::move($6), local_sym_tab);
         local_sym_tab = new SymbolTable(global_sym_tab);
@@ -176,7 +179,6 @@ formal_param_list
 
 formal_param
     : param_type NAME {
-        local_sym_tab->insert($2, $1);
         $$ = std::make_pair($2, $1);
     }
 ;
