@@ -9,7 +9,7 @@ NullStream::NullStream() : std::ostream(&buffer) {}
 static NullStream null_stream;
 
 OutputHandler::OutputHandler(const Arguments& args)
-    : demo_mode(args.demo_mode), token_stream(&null_stream), ast_stream(&null_stream) {
+    : demo_mode(args.demo_mode), token_stream(&null_stream), ast_stream(&null_stream), tac_stream(&null_stream) {
     if (args.demo_mode) {
         if (args.show_tokens)
             token_stream = &std::cout;

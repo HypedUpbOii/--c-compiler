@@ -170,5 +170,6 @@ public:
     void addTACStatement(TAC_Stmt*);
     void addTACStatements(const std::vector<TAC_Stmt*>& stmts);
     void print(std::ostream&);
+    bool isEmpty();
     ~TAC();
 };

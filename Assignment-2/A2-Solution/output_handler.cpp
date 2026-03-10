@@ -54,7 +54,7 @@ void OutputHandler::commitAst() {
     if (demo_mode)
         return;
 
-    if (!toks_file.empty()) {
+    if (!ast_file.empty()) {
         std::ofstream ast(ast_file, std::ios::trunc);
         ast << ast_buffer.str();
     }

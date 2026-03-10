@@ -49,6 +49,10 @@ void TAC::print(std::ostream& out) {
     }
 }
 
+bool TAC::isEmpty() {
+    return tac_code.empty();
+}
+
 TAC::~TAC() {
     for (auto ptr : tac_code) {
         delete ptr;

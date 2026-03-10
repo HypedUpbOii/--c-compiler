@@ -108,6 +108,8 @@ void FunctionNode::generateTAC() {
 }
 
 void FunctionNode::printTAC(std::ostream& out) {
+    if (tac.isEmpty()) return;
+    
     out << "**PROCEDURE: " << name << std::endl;
     out << "**BEGIN: Three Address Code Statements" << std::endl;
     tac.print(out);
