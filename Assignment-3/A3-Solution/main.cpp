@@ -32,7 +32,6 @@ int main(int argc, char* argv[]) {
 
     int result = parser.parse();
     out_handler.commitTokens();
-    delete local_sym_tab;
 
     if (args.stop_after_parse) {
         return result;
@@ -50,6 +49,8 @@ int main(int argc, char* argv[]) {
     ast.generateTAC();
     ast.printTAC(tac_stream);
     out_handler.commitTac();
+
+    delete local_sym_tab;
 
     return 0;
 }
