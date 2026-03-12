@@ -16,7 +16,6 @@ public:
 
 class SymbolTable{
 	std::map<std::string, SymbolTableEntry*> entries;
-	std::map<std::string, std::pair<DataType, std::vector<DataType>>> procedures;
     SymbolTable* parent;
 	bool encounteredDuplicate;
 public:
@@ -24,7 +23,7 @@ public:
 	~SymbolTable();
 
 	void insert(std::string name, DataType dt);
-	void insertProcedure(std::string name, std::pair<DataType, std::vector<DataType>> signature);
 	SymbolTableEntry* lookup(std::string name);
 	bool hasDuplicate();
+	bool hasFuncVarConflict(const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>&);
 };

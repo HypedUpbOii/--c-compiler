@@ -19,6 +19,24 @@ bool ProgramNode::validateNode() {
         std::cerr << "sclp error: Redeclaration of variable" << std::endl;
         exit(1);
     }
+    std::vector<std::tuple<DataType, std::string, std::vector<DataType>>> func_defs;
+    for (auto& func : funcs) {
+        std::vector<DataType> params;
+        for (auto& [var, type] : func->parameters) {
+            params.push_back(type);
+        }
+        func_defs.emplace_back(func->returnType, func->name, params);
+    }
+    if (global->hasFuncVarConflict(func_decls) || global->hasFuncVarConflict(func_defs)) {
+        std::cerr << "sclp error: Variable has the same name as a procedure" << std::endl;
+        exit(1);
+    }
+    for (auto& func : funcs) {
+        if (func->checkFuncVarConflict(func_decls) || func->checkFuncVarConflict(func_defs)) {
+            std::cerr << "sclp error: Variable has the same name as a procedure" << std::endl;
+            exit(1);
+        }
+    }
     if (func_decls.size() > 1) {
         std::cerr << "sclp error: Higher level feature detected: with function declaration" << std::endl;
         exit(1);
@@ -74,6 +92,10 @@ ProgramNode::~ProgramNode() {
 
 FunctionNode::FunctionNode(DataType ret, std::vector<std::pair<std::string, DataType>> params, std::string nam, std::vector<std::unique_ptr<StmtNode>> stmts, SymbolTable* loc) 
     : returnType(ret), parameters(params), name(nam), statements(std::move(stmts)), local(loc) {}
+
+bool FunctionNode::checkFuncVarConflict(const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>& decls) {
+    return local->hasFuncVarConflict(decls);
+}
 
 bool FunctionNode::validateNode() {
     if (local->hasDuplicate()) {

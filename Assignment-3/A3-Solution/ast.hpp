@@ -70,6 +70,7 @@ public:
         std::vector<std::unique_ptr<StmtNode>> stmts, 
         SymbolTable* loc);
     bool validateNode();
+    bool checkFuncVarConflict(const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>&);
     void printTree(std::ostream&, int);
     void generateTAC();
     void printTAC(std::ostream&);

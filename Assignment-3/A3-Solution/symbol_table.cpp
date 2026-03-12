@@ -19,34 +19,12 @@ SymbolTable::~SymbolTable() {
 
 // insertion always happens in the current scope
 void SymbolTable::insert(std::string name, DataType dt) {
-	if (procedures.find(name) != procedures.end()) {
-		encounteredDuplicate = true;
-		std::cerr << "found procedure with name " << name << " which conflicts with variable name" << std::endl;  
-	}
-
 	if (entries.find(name) != entries.end()) {
 		encounteredDuplicate = true;
 		std::cerr << "found variable with name " << name << " which conflicts with variable name" << std::endl;  
 	}
 
 	entries[name] = new SymbolTableEntry(name, dt);
-}
-
-
-void SymbolTable::insertProcedure(std::string name, std::pair<DataType, std::vector<DataType>> signature) {
-	// first check if any variable has the same name
-	if (entries.find(name) != entries.end()) {
-		encounteredDuplicate = true;
-		std::cerr << "found variable with name " << name << " which conflicts with procedure name" << std::endl;  
-	}
-
-	// then check if any function has the same name (No overloading present)
-	if (procedures.find(name) != procedures.end() && signature != procedures[name]) {
-		encounteredDuplicate = true;
-		std::cerr << "found procedure with name " << name << " which conflicts with procedure name (different decl)" << std::endl;
-	}
-
-	procedures[name] = signature;
 }
 
 // recursively look up in ancestor scopes
@@ -60,4 +38,14 @@ SymbolTableEntry * SymbolTable::lookup(std::string name) {
 
 bool SymbolTable::hasDuplicate() {
 	return encounteredDuplicate;
+}
+
+bool SymbolTable::hasFuncVarConflict(const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>& decls) {
+	for (auto& [type, name, params] : decls) {
+		if (entries.find(name) != entries.end()) {
+			return true;
+		}
+	}
+
+	return false;
 }
