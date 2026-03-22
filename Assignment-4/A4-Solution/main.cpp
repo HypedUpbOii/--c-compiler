@@ -1,18 +1,19 @@
 #include "defs.hpp"
 
-extern SymbolTable* local_sym_tab;
+extern SymbolTable *local_sym_tab;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     ArgumentHandler args_handler(argc, argv);
     const Arguments args = args_handler.return_arguments();
     OutputHandler out_handler(args);
-    std::ostream& tok_stream = out_handler.tokenStream();
-    std::ostream& ast_stream = out_handler.astStream();
-    std::ostream& tac_stream = out_handler.tacStream();
+    std::ostream &tok_stream = out_handler.tokenStream();
+    std::ostream &ast_stream = out_handler.astStream();
+    std::ostream &tac_stream = out_handler.tacStream();
 
     std::ifstream in(args.input_file);
     if (!in) {
-        std::cerr << "sclp error: File: " << args.input_file << " Cannot open the input file" << std::endl;
+        std::cerr << "sclp error: File: " << args.input_file
+                  << " Cannot open the input file" << std::endl;
         return 1;
     }
 
@@ -23,7 +24,8 @@ int main(int argc, char* argv[]) {
             if (sym.kind() == parser::Parser::symbol_kind::S_YYEOF)
                 break;
         }
-        out_handler.commitTokens();
+        out_handler.commitTokens();HoneySandy
+        
         return 0;
     }
 

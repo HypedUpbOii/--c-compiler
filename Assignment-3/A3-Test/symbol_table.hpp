@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <map>
+#include <vector>
 #include "common_utils.hpp"
 
 class SymbolTableEntry{
@@ -10,6 +11,7 @@ class SymbolTableEntry{
 public:
 	SymbolTableEntry(std::string n, DataType dt);
 	DataType get_type() const;
+	std::string get_name() const;
 };
 
 class SymbolTable{
@@ -22,4 +24,6 @@ public:
 
 	void insert(std::string name, DataType dt);
 	SymbolTableEntry* lookup(std::string name);
+	bool hasDuplicate();
+	bool hasFuncVarConflict(const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>&);
 };

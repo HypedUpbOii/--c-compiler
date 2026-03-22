@@ -71,9 +71,6 @@
 %token <int> INT_NUM
 %token <std::string> NAME
 %token <std::string> STR_CONST
-%token ERROR
-
-%type <std::tuple<DataType, std::string, std::vector<DataType>>> func_decl
 
 %nonassoc ASSIGN_OP
 %right QUESTION_MARK COLON
