@@ -14,8 +14,6 @@ Label_TAC_Opd *TAC::genNewLabel() { return new Label_TAC_Opd(label_number++); }
 
 TAC::TAC() : temp_number(0), stemp_number(0) {}
 
-void TAC::addTACStatement(TAC_Stmt *stmt) { tac_code.push_back(stmt); }
-
 void TAC::addTACStatements(const std::vector<TAC_Stmt *> &stmts) {
     for (auto stmt : stmts) {
         tac_code.push_back(stmt);
@@ -158,7 +156,7 @@ void Goto_TAC_Stmt::print(std::ostream &out) {
     out << "\tgoto " << result->get_name() << std::endl;
 }
 
-If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(Temporary_TAC_Opd *cond,
+If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(TAC_Opd *cond,
                                    Label_TAC_Opd *label) {
     result = cond;
     oper1 = label;

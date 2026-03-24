@@ -168,7 +168,7 @@ class Goto_TAC_Stmt : public TAC_Stmt {
 
 class If_Goto_TAC_Stmt : public TAC_Stmt {
   public:
-    If_Goto_TAC_Stmt(Temporary_TAC_Opd *cond, Label_TAC_Opd *label);
+    If_Goto_TAC_Stmt(TAC_Opd *cond, Label_TAC_Opd *label);
     void print(std::ostream &) override;
 };
 
@@ -210,8 +210,6 @@ class TAC {
     Temporary_TAC_Opd *genNewTemporary();
     Temporary_TAC_Opd *genNewSTemporary();
     Label_TAC_Opd *genNewLabel();
-    // use std::move() for the argument
-    void addTACStatement(TAC_Stmt *);
     void addTACStatements(const std::vector<TAC_Stmt *> &stmts);
     void print(std::ostream &);
     bool isEmpty();

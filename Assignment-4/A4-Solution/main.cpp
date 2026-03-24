@@ -24,13 +24,13 @@ int main(int argc, char *argv[]) {
             if (sym.kind() == parser::Parser::symbol_kind::S_YYEOF)
                 break;
         }
-        out_handler.commitTokens();HoneySandy
+        out_handler.commitTokens();
         
         return 0;
     }
 
-    ProgramNode ast = ProgramNode();
-    parser::Parser parser(lexer, ast);
+    Program program = Program();
+    parser::Parser parser(lexer, program);
 
     int result = parser.parse();
     out_handler.commitTokens();
@@ -39,18 +39,23 @@ int main(int argc, char *argv[]) {
         return result;
     }
 
-    if (ast.validateNode()) {
-        ast.printTree(ast_stream, 0);
-        out_handler.commitAst();
-    }
+    program.validateProgram();
+    program.print(ast_stream);
+    out_handler.commitAst();
 
     if (args.stop_after_ast) {
         return 0;
     }
 
-    ast.generateTAC();
-    ast.printTAC(tac_stream);
+    program.generateTAC();
+    program.printTAC(tac_stream);
     out_handler.commitTac();
+
+    if (args.stop_after_tac) {
+        return 0;
+    }
+
+    // do rtl stuff here
 
     delete local_sym_tab;
 
