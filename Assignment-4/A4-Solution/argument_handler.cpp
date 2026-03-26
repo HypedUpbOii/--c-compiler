@@ -44,15 +44,15 @@ error_t ArgumentHandler::parse_opt(int key, char *arg,
     case 1003:
         self->args.stop_after_tac = true;
         break;
-    
+
     case 1004:
         self->args.show_tokens = true;
         break;
-    
+
     case 1005:
         self->args.show_ast = true;
         break;
-    
+
     case 1006:
         self->args.show_tac = true;
         break;

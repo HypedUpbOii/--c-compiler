@@ -58,9 +58,9 @@ parser::Parser::symbol_type Lexer::nextToken() {
     case parser::Parser::token::RIGHT_SQUARE_BRACKET:
         write_token("RIGHT_SQUARE_BRACKET");
         return parser::Parser::make_RIGHT_SQUARE_BRACKET(loc);
-    case parser::Parser::token::ADDRESS_OF:
-        write_token("ADDRESS_OF");
-        return parser::Parser::make_ADDRESS_OF(loc);
+    case parser::Parser::token::ADDRESSOF:
+        write_token("ADDRESSOF");
+        return parser::Parser::make_ADDRESSOF(loc);
     case parser::Parser::token::COMMA:
         write_token("COMMA");
         return parser::Parser::make_COMMA(loc);
@@ -115,12 +115,12 @@ parser::Parser::symbol_type Lexer::nextToken() {
     case parser::Parser::token::WHILE:
         write_token("WHILE");
         return parser::Parser::make_WHILE(loc);
-    case parser::Parser::token::DO_WHILE:
-        write_token("DO_WHILE");
-        return parser::Parser::make_DO_WHILE(loc);
+    case parser::Parser::token::DO:
+        write_token("DO");
+        return parser::Parser::make_DO(loc);
     case parser::Parser::token::FLOAT_NUM:
         write_token("FLOAT_NUM");
-        return parser::Parser::make_FLOAT_NUM(std::strtod(YYText()), loc);
+        return parser::Parser::make_FLOAT_NUM(std::strtod(YYText(), nullptr), loc);
     case parser::Parser::token::INT_NUM:
         write_token("INT_NUM");
         return parser::Parser::make_INT_NUM(std::atoi(YYText()), loc);

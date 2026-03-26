@@ -156,8 +156,7 @@ void Goto_TAC_Stmt::print(std::ostream &out) {
     out << "\tgoto " << result->get_name() << std::endl;
 }
 
-If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(TAC_Opd *cond,
-                                   Label_TAC_Opd *label) {
+If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(TAC_Opd *cond, Label_TAC_Opd *label) {
     result = cond;
     oper1 = label;
     oper2 = nullptr;

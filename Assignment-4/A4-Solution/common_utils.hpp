@@ -27,10 +27,10 @@ class DataType {
 
     DataType(const BaseType & = BaseType::VOID, int = 0,
              const std::vector<int> & = std::vector<int>());
-    bool operator==(DataType);
-    bool operator!=(DataType);
-    bool operator==(BaseType);
-    bool operator!=(BaseType);
+    bool operator==(DataType) const;
+    bool operator!=(DataType) const;
+    bool operator==(BaseType) const;
+    bool operator!=(BaseType) const;
     DataType &operator=(const DataType &);
     DataType &operator=(const BaseType &);
 };

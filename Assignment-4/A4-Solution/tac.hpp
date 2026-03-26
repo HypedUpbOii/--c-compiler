@@ -207,6 +207,7 @@ class TAC {
     static unsigned int label_number;
 
   public:
+    TAC();
     Temporary_TAC_Opd *genNewTemporary();
     Temporary_TAC_Opd *genNewSTemporary();
     Label_TAC_Opd *genNewLabel();

@@ -1,7 +1,5 @@
 #include "defs.hpp"
 
-extern SymbolTable *local_sym_tab;
-
 int main(int argc, char *argv[]) {
     ArgumentHandler args_handler(argc, argv);
     const Arguments args = args_handler.return_arguments();
@@ -9,6 +7,7 @@ int main(int argc, char *argv[]) {
     std::ostream &tok_stream = out_handler.tokenStream();
     std::ostream &ast_stream = out_handler.astStream();
     std::ostream &tac_stream = out_handler.tacStream();
+    std::ostream &rtl_stream = out_handler.rtlStream();
 
     std::ifstream in(args.input_file);
     if (!in) {
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
                 break;
         }
         out_handler.commitTokens();
-        
+
         return 0;
     }
 
@@ -56,8 +55,8 @@ int main(int argc, char *argv[]) {
     }
 
     // do rtl stuff here
-
-    delete local_sym_tab;
-
+    // program.generateRTL();
+    // program.printRTL(rtl_stream);
+    // out_handler.commitRtl();
     return 0;
 }

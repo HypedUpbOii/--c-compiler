@@ -9,20 +9,20 @@ std::string type_to_string(DataType t) {
 DataType::DataType(const BaseType &t, int level, const std::vector<int> &dims)
     : base(t), pointer_level(level), array_dimensions(dims) {}
 
-bool DataType::operator==(DataType t) {
+bool DataType::operator==(DataType t) const {
     return ((this->base == t.base) &&
             (this->pointer_level == t.pointer_level) &&
             (this->array_dimensions == t.array_dimensions));
 }
 
-bool DataType::operator!=(DataType t) { return !(*this == t); }
+bool DataType::operator!=(DataType t) const { return !(*this == t); }
 
-bool DataType::operator==(BaseType t) {
+bool DataType::operator==(BaseType t) const {
     return ((this->base == t) && (this->pointer_level == 0) &&
             this->array_dimensions.empty());
 }
 
-bool DataType::operator!=(BaseType t) { return !(*this == t); }
+bool DataType::operator!=(BaseType t) const { return !(*this == t); }
 
 DataType &DataType::operator=(const DataType &t) {
     if (this == &t) {

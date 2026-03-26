@@ -2,7 +2,13 @@
 
 Expression_Ast::~Expression_Ast() { delete place; }
 
+bool Expression_Ast::isLvalue() { return false; }
+
 // Function call
+Function_Call_Ast::Function_Call_Ast(
+    std::string nam, SymbolTableEntry *entry,
+    std::vector<std::unique_ptr<Expression_Ast>> args)
+    : name(nam), funcEntry(entry), arguments(std::move(args)) {}
 
 // Name/Variable class
 Name_Expr_Ast::Name_Expr_Ast(std::string nam, SymbolTableEntry *ste)
@@ -24,7 +30,13 @@ std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &) {
     return std::vector<TAC_Stmt *>();
 }
 
+bool Name_Expr_Ast::isLvalue() { return true; }
+
 // Literal class
+template class Literal_Expr_Ast<int>;
+template class Literal_Expr_Ast<double>;
+template class Literal_Expr_Ast<std::string>;
+
 template <typename T>
 Literal_Expr_Ast<T>::Literal_Expr_Ast(T val) : value(val) {}
 
@@ -84,6 +96,12 @@ void Binary_Expr_Ast::printChildren(std::ostream &out, int tab) {
 }
 
 // Array Access class
+Array_Access_Expr_Ast::Array_Access_Expr_Ast(
+    std::string nam, SymbolTableEntry *entry,
+    std::vector<std::unique_ptr<Expression_Ast>> &dim_accessed)
+    : name(nam), steEntry(entry), dims(std::move(dim_accessed)) {}
+
+bool Array_Access_Expr_Ast::isLvalue() { return true; }
 
 // Boolean Expression class
 Boolean_Expr_Ast::Boolean_Expr_Ast(std::unique_ptr<Expression_Ast> oper1,
@@ -250,7 +268,7 @@ void Ternary_Expr_Ast::validateNode() {
 
 void Ternary_Expr_Ast::printTree(std::ostream &out, int tab) {
     condition->printTree(out, tab + 4);
-    out << std::endl << std::string(tab + 4, ' ') << "True__Part (";
+    out << std::endl << std::string(tab + 4, ' ') << "True_Part (";
     trueExpr->printTree(out, tab + 6);
     out << ")" << std::endl << std::string(tab + 4, ' ') << "False_Part (";
     falseExpr->printTree(out, tab + 6);
@@ -297,9 +315,18 @@ std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac) {
 
 // Unary Expressions
 // Address Expression
+Address_Expr_Ast::Address_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
+    : operand(std::move(oper)) {}
 
 // Pointer Deref Expression
+Pointer_Deref_Expr_Ast::Pointer_Deref_Expr_Ast(std::string nam,
+                                               SymbolTableEntry *entry,
+                                               int level)
+    : name(nam), steEntry(entry), pointerLevel(level) {}
 
+bool Pointer_Deref_Expr_Ast::isLvalue() { return true; }
+
+// Unary Minus Expression
 UMinus_Expr_Ast::UMinus_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
     : operand(std::move(oper)) {}
 
@@ -372,8 +399,9 @@ std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac) {
     return result;
 }
 
+// Statements
 // Assignment Statment class
-Assignment_Stmt_Ast::Assignment_Stmt_Ast(std::unique_ptr<Name_Expr_Ast> dst,
+Assignment_Stmt_Ast::Assignment_Stmt_Ast(std::unique_ptr<Expression_Ast> dst,
                                          std::unique_ptr<Expression_Ast> src)
     : target(std::move(dst)), value(std::move(src)) {}
 
@@ -381,7 +409,7 @@ void Assignment_Stmt_Ast::validateNode() {
     target->validateNode();
     value->validateNode();
 
-    if (target->steEntry->get_type() != value->exprType) {
+    if (!target->isLvalue() || target->exprType != value->exprType) {
         exit_with_err_msg("sclp error: LHS and RHS have different types");
     }
 }
@@ -389,9 +417,9 @@ void Assignment_Stmt_Ast::validateNode() {
 void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "Asgn:" << std::endl
         << std::string(tab, ' ') << "  LHS (";
-    target->printTree(out, tab + 6);
+    target->printTree(out, tab + 4);
     out << ")" << std::endl << std::string(tab, ' ') << "  RHS (";
-    value->printTree(out, tab + 6);
+    value->printTree(out, tab + 4);
     out << ")" << std::endl;
 }
 
@@ -439,7 +467,6 @@ std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac) {
     Label_TAC_Opd *check_cond = tac.genNewLabel();
     Label_TAC_Opd *exit_label = tac.genNewLabel();
 
-    Temporary_TAC_Opd *opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -519,6 +546,9 @@ std::vector<TAC_Stmt *> Read_Stmt_Ast::generateTAC(TAC &tac) {
 }
 
 // Return Statement class
+Return_Stmt_Ast::Return_Stmt_Ast(std::unique_ptr<Expression_Ast> ret,
+                                 std::string func)
+    : return_value(std::move(ret)), func_name(func) {}
 
 // Selection Statement class
 Selection_Stmt_Ast::Selection_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
@@ -590,11 +620,8 @@ std::vector<TAC_Stmt *> Selection_Stmt_Ast::generateTAC(TAC &tac) {
 
 // Sequence Statement class
 Sequence_Stmt_Ast::Sequence_Stmt_Ast(
-    std::vector<std::unique_ptr<Statement_Ast>> &statements) {
-    for (auto &ptr : statements) {
-        statement_list.push_back(std::move(ptr));
-    }
-}
+    std::vector<std::unique_ptr<Statement_Ast>> &statements)
+    : statement_list(std::move(statements)) {}
 
 void Sequence_Stmt_Ast::validateNode() {
     for (auto &ptr : statement_list) {
@@ -650,8 +677,18 @@ std::vector<TAC_Stmt *> Write_Stmt_Ast::generateTAC(TAC &tac) {
     return result;
 }
 
-// Function Ast class
+// Call Stmt class
+Call_Stmt_Ast::Call_Stmt_Ast(std::unique_ptr<Function_Call_Ast> call)
+    : func_call(std::move(call)) {}
 
+void Call_Stmt_Ast::validateNode() {
+    func_call->validateNode();
+    if (func_call->exprType != BaseType::VOID) {
+        exit_with_err_msg("sclp error: Return type of function ignored");
+    }
+}
+
+// Function Ast class
 Function_Ast::Function_Ast(DataType ret,
                            std::vector<std::pair<std::string, DataType>> params,
                            std::string nam,
@@ -660,21 +697,10 @@ Function_Ast::Function_Ast(DataType ret,
     : returnType(ret), parameters(params), name(nam),
       statements(std::move(stmts)), local(loc) {}
 
-bool Function_Ast::checkFuncVarConflict(
-    const std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>
-        &decls) {
-    return local->hasFuncVarConflict(decls);
-}
-
-void Function_Ast::validateNode() {
+void Function_Ast::validateFunction() {
     if (local->hasDuplicate())
-        exit_with_err_msg("sclp error: Redeclaration of variable");
-    if (name != "main")
-        exit_with_err_msg("sclp error: No function with name main found");
-    if (returnType != BaseType::VOID)
         exit_with_err_msg(
-            "sclp error: Function named main is not returning void");
-
+            "sclp error: Redeclaration of variable outside function");
     for (auto &stmt_node : statements)
         stmt_node->validateNode();
 }
@@ -716,90 +742,46 @@ void Function_Ast::printTAC(std::ostream &out) {
 Function_Ast::~Function_Ast() { delete local; }
 
 // Program class (please change in A5)
+Program::Program() : global(new SymbolTable()) {}
 
-Program::Program() : global(nullptr) {
-    funcs = std::vector<std::unique_ptr<Function_Ast>>();
-    func_decls =
-        std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>();
+void Program::addFunctions(
+    std::vector<std::unique_ptr<Function_Ast>> func_list) {
+    for (auto &ptr : func_list) {
+        original_func_order.push_back(ptr->name);
+        funcs.emplace(ptr->name, std::move(ptr));
+    }
 }
-
-void Program::setSymbolTable(SymbolTable *symtab) { global = symtab; }
 
 void Program::validateProgram() {
     if (global->hasDuplicate()) {
         exit_with_err_msg("sclp error: Redeclaration of variable");
     }
-    std::vector<std::tuple<DataType, std::string, std::vector<DataType>>>
-        func_defs;
-    for (auto &func : funcs) {
-        std::vector<DataType> params;
-        for (auto &[var, type] : func->parameters) {
-            params.push_back(type);
-        }
-        func_defs.emplace_back(func->returnType, func->name, params);
+    // Check if main type exists
+    if (funcs.find("main") == funcs.end()) {
+        exit_with_err_msg("sclp error: No main function defined");
     }
-    if (global->hasFuncVarConflict(func_decls) ||
-        global->hasFuncVarConflict(func_defs)) {
+    if (funcs["main"]->returnType != BaseType::VOID) {
         exit_with_err_msg(
-            "sclp error: Variable has the same name as a procedure");
+            "sclp error: Main function must have return type void");
     }
-    for (auto &func : funcs) {
-        if (func->checkFuncVarConflict(func_decls) ||
-            func->checkFuncVarConflict(func_defs)) {
-            exit_with_err_msg(
-                "sclp error: Variable has the same name as a procedure");
-        }
-    }
-    if (func_decls.size() > 1) {
-        exit_with_err_msg("sclp error: Higher level feature detected: with "
-                          "function declaration");
-    }
-    if (funcs.size() != 1) {
-        exit_with_err_msg("sclp error: More than one function definition");
-    }
-    if (func_decls.size() == 1) {
-        if (funcs[0]->name == std::get<1>(func_decls[0]) &&
-            funcs[0]->returnType == std::get<0>(func_decls[0])) {
-            if (std::get<2>(func_decls[0]).size() !=
-                funcs[0]->parameters.size()) {
-                exit_with_err_msg("sclp error: Signature of declaration and "
-                                  "definition do not match");
-            }
-            if (funcs[0]->parameters.size() != 0) {
-                for (int i = 0; i < funcs[0]->parameters.size(); ++i) {
-                    if (std::get<2>(func_decls[0])[i] !=
-                        funcs[0]->parameters[i].second) {
-                        exit_with_err_msg(
-                            "sclp error: Signature of declaration and "
-                            "definition do not match");
-                    }
-                }
-            }
-        } else {
-            exit_with_err_msg("sclp error: Name and return type of declaration "
-                              "not the same as definition");
-        }
-    }
-    funcs[0]->validateNode();
+    for (const auto &[name, func] : funcs)
+        func->validateFunction();
 }
 
 void Program::print(std::ostream &out) {
-    for (auto &func : funcs) {
+    for (auto const &[name, func] : funcs)
         func->printTree(out);
-    }
 }
 
+// each func has its own TAC object (only labels are shared)
 void Program::generateTAC() {
-    for (auto &func : funcs) {
-        // each func has its own TAC object (temp numbers are shared tho)
+    for (auto const &[name, func] : funcs)
         func->generateTAC();
-    }
 }
 
 void Program::printTAC(std::ostream &out) {
-    for (auto &func : funcs) {
+    for (auto const &[name, func] : funcs)
         func->printTAC(out);
-    }
 }
 
 Program::~Program() { delete global; }
