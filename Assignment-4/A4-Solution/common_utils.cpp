@@ -121,3 +121,19 @@ static std::array<std::string> reg_symbols = {
 std::string reg_to_symbols(Register r){
     return reg_symbols.at(static_cast<int>(r));
 }
+
+static std::array<std::string> arith_op_rtl_strings = {"add", "sub", "mul", "div"};
+static std::array<std::string> rel_op_rtl_strings = {"slt", "sle", "sgt", "sge", "seq", "sne"};
+static std::array<std::string> bool_op_rtl_strings = {"or", "and"};
+
+std::string arith_op_to_rtl_string(ArithmeticOperator op) {
+    return arith_op_rtl_strings.at(static_cast<int>(op));
+}
+
+std::string rel_op_to_rtl_string(RelationalOperator op) {
+    return rel_op_rtl_strings.at(static_cast<int>(op));
+}
+
+std::string bool_op_to_rtl_string(BooleanOperator op) {
+    return bool_op_rtl_strings.at(static_cast<int>(op));
+}

@@ -64,14 +64,40 @@ public:
 
 
 class Compute_RTL_Stmt : public RTL_Stmt {
-    bool is_arith;
-    bool is_bool;
-    bool is_rel;
-    bool is_unary;
+    bool isfloat;
+};
+
+class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
+    ArithmeticOperator operator;
 public:
-    // TODO : Write constructors for each type of operator
-    Compute_RTL_Stmt(RTL_Opd * res, RTL_Opd * op1, RTL_Opd * op2);
-    void print(std::ostream &) override;
+    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator oper, bool is_float);
+    void print(std::ostream & out) override;
+};
+
+class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
+    BooleanOperator operator;
+public:
+    Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator oper);
+    void print(std::ostream & out) override;
+};
+
+class Relational_RTL_Stmt : public Compute_RTL_Stmt {
+    RelationalOperator operator;
+public:
+    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator oper, bool is_float);
+    void print(std::ostream & out) override;
+};
+
+class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
+public:
+    UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op, bool is_float);
+    void print(std::ostream & out) override;
+};
+
+class Not_RTL_Stmt : public Compute_RTL_Stmt {
+public:
+    Not_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op);
+    void print(std::ostream & out) override;
 };
 
 
@@ -109,8 +135,16 @@ public:
 
 
 class Transfer_RTL_Stmt : public RTL_Stmt {
+    OpdType dest_type;
+    OpdType src_type;
+    bool isfloat;
 public:
-    Transfer_RTL_Stmt(RTL_Opd * dest, RTL_Opd * src);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd * src);
+    Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src, bool is_float);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src, bool is_float);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd * src);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_Opd * src);
+
     void print(std::ostream &) override;
 };
 
@@ -122,13 +156,12 @@ class NOP_RTL_Stmt : public RTL_Stmt {
 
 class Read_RTL_Stmt : public RTL_Stmt {
 public:
-    Read_RTL_Stmt(RTL_Opd * op);
+    Read_RTL_Stmt();
     void print(std::ostream &) override;
 };
 
 
 class Write_RTL_Stmt : public RTL_Stmt {
 public:
-    Write_RTL_Stmt(RTL_Opd * op);
     void print(std::ostream &) override;
 };
