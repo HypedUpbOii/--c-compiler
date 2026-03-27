@@ -14,7 +14,8 @@ enum class OpdType {
     STRING_CONST,
     LABEL,
     TEMPORARY,
-    VARIABLE
+    VARIABLE,
+    REGISTER
 };
 
 class TAC_Opd {

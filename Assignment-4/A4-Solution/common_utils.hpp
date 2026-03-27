@@ -64,4 +64,34 @@ enum class UnaryOperator : int { UMINUS, NOT };
 std::string unary_op_to_string(UnaryOperator op);
 std::string unary_op_to_symbol(UnaryOperator op);
 
+enum class Register : int {
+    none,
+    empty,
+    v0,                     // expression result
+    v1,                     // function result
+    
+    a0, a1, a2, a3,         // argument registers
+    
+    t0, t1, t2, t3, t4,     // temporary
+    t5, t6, t7, t8, t9,
+
+    s0, s1, s2, s3,         // saved
+    s4, s5, s6, s7,
+
+    mfc,
+    mtc,
+
+    f0, f2, f4, f6, f8,     // float registers
+    f10, f12, f14, f16, f18,
+    f20, f22, f24, f26, f28,
+    f30,
+
+    gp, sp, fp,
+    ra
+};
+
+enum class RegisterType : int {
+    int, float
+};
+
 void exit_with_err_msg(std::string msg);
