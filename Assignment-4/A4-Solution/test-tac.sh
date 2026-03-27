@@ -1,9 +1,9 @@
-reference=../../Assignment-3/A3-Resources-x86_64/reference-implementations/A3-sclp
+reference=A4-sclp
 our=sclp
 
 make
 
-for file in ../../Assignment-3/A3-Resources-x86_64/example-programs/tests/*.c; do
+for file in tests/*.c; do
     echo "Checking file $file"
 
     # run their implementation

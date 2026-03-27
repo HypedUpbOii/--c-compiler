@@ -441,7 +441,7 @@ if_statement
 ;
 
 do_while_statement
-    : DO statement WHILE LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET statement {
+    : DO statement WHILE LEFT_ROUND_BRACKET expression RIGHT_ROUND_BRACKET SEMICOLON {
         $$ = std::make_unique<Do_While_Stmt_Ast>(std::move($5), std::move($2));
     }
 ;

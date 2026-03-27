@@ -440,7 +440,7 @@ std::vector<TAC_Stmt *> Assignment_Stmt_Ast::generateTAC(TAC &tac) {
 // Iteration Statement class
 Iteration_Stmt_Ast::Iteration_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
                                        std::unique_ptr<Statement_Ast> bod)
-    : condition(std::move(cond)), body(std::move(body)) {}
+    : condition(std::move(cond)), body(std::move(bod)) {}
 
 void Iteration_Stmt_Ast::validateNode() {
     condition->validateNode();
@@ -455,7 +455,7 @@ void While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "While:" << std::endl
         << std::string(tab, ' ') << "  Condition (";
     condition->printTree(out, tab + 6);
-    out << ")" << std::endl << std::string(tab, ' ') << "  Body (";
+    out << ")" << std::endl << std::string(tab, ' ') << "  Body (" << std::endl;
     body->printTree(out, tab + 6);
     out << ")" << std::endl;
 }
@@ -489,7 +489,7 @@ std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac) {
 
 void Do_While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "Do:" << std::endl
-        << std::string(tab, ' ') << "  Body (";
+        << std::string(tab, ' ') << "  Body (" << std::endl;
     body->printTree(out, tab + 6);
     out << ")" << std::endl << std::string(tab, ' ') << "  While Condition (";
     condition->printTree(out, tab + 6);
@@ -573,13 +573,13 @@ void Selection_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "If:" << std::endl
         << std::string(tab, ' ') << "  Condition (";
     condition->printTree(out, tab + 6);
-    out << ")" << std::endl << std::string(tab, ' ') << "  Then (";
+    out << ")" << std::endl << std::string(tab, ' ') << "  Then (" << std::endl;
     then_stmt->printTree(out, tab + 6);
-    out << ")" << std::endl;
+    out << ")";
     if (else_stmt != nullptr) {
-        out << std::string(tab, ' ') << "  Else (";
+        out << std::string(tab, ' ') << "  Else (" << std::endl;
         else_stmt->printTree(out, tab + 6);
-        out << ")" << std::endl;
+        out << ")";
     }
 }
 
