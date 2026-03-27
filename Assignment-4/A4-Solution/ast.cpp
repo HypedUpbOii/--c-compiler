@@ -420,7 +420,7 @@ void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
     target->printTree(out, tab + 4);
     out << ")" << std::endl << std::string(tab, ' ') << "  RHS (";
     value->printTree(out, tab + 4);
-    out << ")" << std::endl;
+    out << ")";
 }
 
 std::vector<TAC_Stmt *> Assignment_Stmt_Ast::generateTAC(TAC &tac) {
@@ -457,7 +457,7 @@ void While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     condition->printTree(out, tab + 6);
     out << ")" << std::endl << std::string(tab, ' ') << "  Body (" << std::endl;
     body->printTree(out, tab + 6);
-    out << ")" << std::endl;
+    out << ")";
 }
 
 std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac) {
@@ -493,7 +493,7 @@ void Do_While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     body->printTree(out, tab + 6);
     out << ")" << std::endl << std::string(tab, ' ') << "  While Condition (";
     condition->printTree(out, tab + 6);
-    out << ")" << std::endl;
+    out << ")";
 }
 
 std::vector<TAC_Stmt *> Do_While_Stmt_Ast::generateTAC(TAC &tac) {
@@ -531,7 +531,7 @@ void Read_Stmt_Ast::validateNode() {
 void Read_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "Read: ";
     target->printTree(out, tab + 2);
-    out << std::endl;
+    out;
 }
 
 std::vector<TAC_Stmt *> Read_Stmt_Ast::generateTAC(TAC &tac) {
@@ -577,7 +577,7 @@ void Selection_Stmt_Ast::printTree(std::ostream &out, int tab) {
     then_stmt->printTree(out, tab + 6);
     out << ")";
     if (else_stmt != nullptr) {
-        out << std::string(tab, ' ') << "  Else (" << std::endl;
+        out << std::endl << std::string(tab, ' ') << "  Else (" << std::endl;
         else_stmt->printTree(out, tab + 6);
         out << ")";
     }
@@ -630,9 +630,15 @@ void Sequence_Stmt_Ast::validateNode() {
 }
 
 void Sequence_Stmt_Ast::printTree(std::ostream &out, int tab) {
-    for (auto &ptr : statement_list) {
-        ptr->printTree(out, tab);
+    if (statement_list.empty())
+        return;
+
+    for (auto it = statement_list.begin();
+         it != std::prev(statement_list.end()); ++it) {
+        (*it)->printTree(out, tab);
+        out << std::endl;
     }
+    statement_list.back()->printTree(out, tab);
 }
 
 std::vector<TAC_Stmt *> Sequence_Stmt_Ast::generateTAC(TAC &tac) {
@@ -663,7 +669,6 @@ void Write_Stmt_Ast::validateNode() {
 void Write_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "Write: ";
     target->printTree(out, tab + 2);
-    out << std::endl;
 }
 
 std::vector<TAC_Stmt *> Write_Stmt_Ast::generateTAC(TAC &tac) {
@@ -719,6 +724,7 @@ void Function_Ast::printTree(std::ostream &out) {
         << std::endl;
     for (auto &stmt : statements) {
         stmt->printTree(out, tab + 9);
+        out << std::endl;
     }
     out << std::string(tab, ' ') << "**END: Abstract Syntax Tree" << std::endl;
 }
