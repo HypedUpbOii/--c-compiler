@@ -91,6 +91,9 @@ class Variable_TAC_Opd : public TAC_Opd {
     std::string get_name() override;
 };
 
+// ----------------------------------------------------------------------------
+class RTL;
+
 class TAC_Stmt {
   protected:
     // these pointers are "owned" by the corresponding ast expr node and deleted
@@ -101,12 +104,14 @@ class TAC_Stmt {
 
   public:
     virtual void print(std::ostream &) = 0;
+    virtual void generateRTL(RTL &) = 0;
 };
 
 class Asgn_TAC_Stmt : public TAC_Stmt {
   public:
     Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Call_TAC_Stmt : public TAC_Stmt {
@@ -130,6 +135,7 @@ class Bool_Comp_TAC_Stmt : public Compute_TAC_Stmt {
     Bool_Comp_TAC_Stmt(TAC_Opd *result, TAC_Opd *oper1, BooleanOperator op,
                        TAC_Opd *oper2);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Arith_Comp_TAC_Stmt : public Compute_TAC_Stmt {
@@ -140,6 +146,7 @@ class Arith_Comp_TAC_Stmt : public Compute_TAC_Stmt {
     Arith_Comp_TAC_Stmt(TAC_Opd *result, TAC_Opd *oper1, ArithmeticOperator op,
                         TAC_Opd *oper2);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Rel_Comp_TAC_Stmt : public Compute_TAC_Stmt {
@@ -150,6 +157,7 @@ class Rel_Comp_TAC_Stmt : public Compute_TAC_Stmt {
     Rel_Comp_TAC_Stmt(TAC_Opd *result, TAC_Opd *oper1, RelationalOperator op,
                       TAC_Opd *oper2);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Unary_Comp_TAC_Stmt : public Compute_TAC_Stmt {
@@ -159,18 +167,21 @@ class Unary_Comp_TAC_Stmt : public Compute_TAC_Stmt {
   public:
     Unary_Comp_TAC_Stmt(TAC_Opd *result, UnaryOperator op, TAC_Opd *oper);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Goto_TAC_Stmt : public TAC_Stmt {
   public:
     Goto_TAC_Stmt(Label_TAC_Opd *label);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class If_Goto_TAC_Stmt : public TAC_Stmt {
   public:
     If_Goto_TAC_Stmt(TAC_Opd *cond, Label_TAC_Opd *label);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class IO_TAC_Stmt : public TAC_Stmt {
@@ -180,12 +191,14 @@ class IO_TAC_Stmt : public TAC_Stmt {
   public:
     IO_TAC_Stmt(bool is_write, TAC_Opd *oper);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class Label_TAC_Stmt : public TAC_Stmt {
   public:
     Label_TAC_Stmt(Label_TAC_Opd *label);
     void print(std::ostream &) override;
+    void generateRTL(RTL & __rtl) override;
 };
 
 class NOP_TAC_Stmt : public TAC_Stmt {
@@ -213,6 +226,7 @@ class TAC {
     Label_TAC_Opd *genNewLabel();
     void addTACStatements(const std::vector<TAC_Stmt *> &stmts);
     void print(std::ostream &);
+    void generateRTL(RTL &);
     bool isEmpty();
     ~TAC();
 };

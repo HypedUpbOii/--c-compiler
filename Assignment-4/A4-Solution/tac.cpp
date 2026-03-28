@@ -1,4 +1,5 @@
 #include "tac.hpp"
+#include "rtl.hpp"
 
 unsigned int TAC::label_number = 0;
 
@@ -83,6 +84,8 @@ std::string Variable_TAC_Opd::get_name() {
     return symtab_entry->get_name() + "_";
 }
 
+// ------------------------------------------------------------------------------
+
 Asgn_TAC_Stmt::Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src) {
     result = dest;
     oper1 = src;
@@ -92,6 +95,10 @@ Asgn_TAC_Stmt::Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src) {
 void Asgn_TAC_Stmt::print(std::ostream &out) {
     out << "\t" << result->get_name() << " = " << oper1->get_name()
         << std::endl;
+}
+
+void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
+
 }
 
 Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
@@ -107,6 +114,10 @@ void Bool_Comp_TAC_Stmt::print(std::ostream &out) {
         << bool_op_to_symbol(op) << " " << oper2->get_name() << std::endl;
 }
 
+void Bool_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
+
+}
+
 Arith_Comp_TAC_Stmt::Arith_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
                                          ArithmeticOperator a_op, TAC_Opd *op2)
     : op(a_op) {
@@ -118,6 +129,10 @@ Arith_Comp_TAC_Stmt::Arith_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
 void Arith_Comp_TAC_Stmt::print(std::ostream &out) {
     out << "\t" << result->get_name() << " = " << oper1->get_name() << " "
         << arith_op_to_symbol(op) << " " << oper2->get_name() << std::endl;
+}
+
+void Arith_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
+
 }
 
 Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
@@ -133,6 +148,10 @@ void Rel_Comp_TAC_Stmt::print(std::ostream &out) {
         << rel_op_to_symbol(op) << " " << oper2->get_name() << std::endl;
 }
 
+void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
+
+}
+
 Unary_Comp_TAC_Stmt::Unary_Comp_TAC_Stmt(TAC_Opd *res, UnaryOperator u_op,
                                          TAC_Opd *oper)
     : op(u_op) {
@@ -146,6 +165,10 @@ void Unary_Comp_TAC_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
+void Unary_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
+
+}
+
 Goto_TAC_Stmt::Goto_TAC_Stmt(Label_TAC_Opd *l) {
     result = l;
     oper1 = nullptr;
@@ -154,6 +177,10 @@ Goto_TAC_Stmt::Goto_TAC_Stmt(Label_TAC_Opd *l) {
 
 void Goto_TAC_Stmt::print(std::ostream &out) {
     out << "\tgoto " << result->get_name() << std::endl;
+}
+
+void Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
+
 }
 
 If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(TAC_Opd *cond,
@@ -168,6 +195,10 @@ void If_Goto_TAC_Stmt::print(std::ostream &out) {
         << std::endl;
 }
 
+void If_Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
+
+}
+
 IO_TAC_Stmt::IO_TAC_Stmt(bool write, TAC_Opd *oper) : is_write(write) {
     result = oper;
     oper1 = nullptr;
@@ -179,6 +210,10 @@ void IO_TAC_Stmt::print(std::ostream &out) {
         << std::endl;
 }
 
+void IO_TAC_Stmt::generateRTL(RTL & __rtl) {
+
+}
+
 Label_TAC_Stmt::Label_TAC_Stmt(Label_TAC_Opd *label) {
     result = label;
     oper1 = nullptr;
@@ -187,4 +222,8 @@ Label_TAC_Stmt::Label_TAC_Stmt(Label_TAC_Opd *label) {
 
 void Label_TAC_Stmt::print(std::ostream &out) {
     out << result->get_name() << ":" << std::endl;
+}
+
+void Label_TAC_Stmt::generateRTL(RTL & __rtl) {
+
 }

@@ -38,12 +38,12 @@ std::string RTL_Register_Opd::get_name() {
 RTL_String_Const_Opd::RTL_String_Const_Opd(std::string s) : value(s) {
     opd_type = OpdType::STRING_CONST;
 
-    // TODO : handle insert into the string table
+    rtl.addNewStringConst(s);
 }
 
 std::string RTL_String_Const_Opd::get_name() {
-    // TODO : handle retrieval from the string table
-    return "";
+
+    return "_str_" + to_string(rtl.getStringConstNum(value));
 }
 
 RTL_Var_Opd::RTL_Var_Opd(SymbolTableEntry * e) : entry(e) {
@@ -231,10 +231,6 @@ void Transfer_RTL_Stmt::print(std::ostream & out) {
     out << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << std::endl;
 }
 
-Read_RTL_Stmt::Read_RTL_Stmt() {
-
-}
-
 void Read_RTL_Stmt::print(std::ostream & out) {
     out << "read" << std::endl;
 }
@@ -245,4 +241,26 @@ Write_RTL_Stmt::Write_RTL_Stmt() {
 
 void Write_RTL_Stmt::print(std::ostream & out) {
     out << "write" << std::endl;
+}
+
+RTL::RTL() {
+    string_const_num = 0;
+}
+
+RTL::~RTL() {
+    for (RTL_Stmt * stmt : rtl_code) delete stmt;
+}
+
+void RTL::addNewStringConst(std::string s) {
+    if (string_to_int.find(s) != string_to_int.end()) return;
+
+    string_to_int[s] = string_const_num++;
+}
+
+unsigned int RTL::getStringConstNum(std::string s) {
+    return string_to_int[s];
+}
+
+void RTL::addRTLStatement(RTL_Stmt * stmt) {
+    rtl_code.push_back(stmt);
 }

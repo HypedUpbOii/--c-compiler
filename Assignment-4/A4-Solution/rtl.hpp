@@ -3,6 +3,8 @@
 #include "symbol_table.hpp"
 #include "register.hpp"
 #include <string>
+#include <vector>
+#include <map>
 
 class RTL_Opd {
 public:
@@ -156,7 +158,6 @@ class NOP_RTL_Stmt : public RTL_Stmt {
 
 class Read_RTL_Stmt : public RTL_Stmt {
 public:
-    Read_RTL_Stmt();
     void print(std::ostream &) override;
 };
 
@@ -165,3 +166,17 @@ class Write_RTL_Stmt : public RTL_Stmt {
 public:
     void print(std::ostream &) override;
 };
+
+class RTL {
+    std::vector<RTL_Stmt *> rtl_code;
+    unsigned int string_const_num;
+    map<std::string, unsigned int> string_to_int;
+
+public:
+    RTL();
+    ~RTL();
+
+    void addNewStringConst(std::string s); // add only if it doesn't exist
+    unsigned int getStringConstNum(std::string s);
+    void addRTLStatement(RTL_Stmt * stmt);
+} rtl;
