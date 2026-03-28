@@ -114,13 +114,6 @@
 %type <std::unique_ptr<Function_Ast>> func_def
 %type <std::vector<std::unique_ptr<Function_Ast>>> func_def_list
 
-// %type <> program
-// %type <> global_decl_statement_list
-// %type <> func_decl
-// %type <> optional_local_var_decl_stmt_list
-// %type <> var_decl_stmt_list
-// %type <> var_decl_stmt
-
 %nonassoc THEN
 %nonassoc ELSE
 %nonassoc ASSIGN_OP
@@ -138,7 +131,7 @@
     symbolTableStack.push(ast.global);
 
     scope_name = "";
-    num_func_decl = 0;
+    num_func_decl = 0; // remove this guy in L5 pls pls pls trust
 }
 
 %%
@@ -151,7 +144,7 @@ program
     }
 ;
 
-// remove all code blocks in the next assignment
+// remove all code blocks in the next assignment L5 (pls pls pls remember)
 global_decl_statement_list
     : global_decl_statement_list func_decl {
         num_func_decl++;
@@ -173,19 +166,25 @@ func_decl
             param_types.push_back(t);
         }
         symbolTableStack.top()->insert_func($1.second, $1.first, param_types);
+        std::string name = ($1.second == "main") ? "main" : $1.second + "_";
+        ast.addFuncDef(name, $1.first);
     }
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET SEMICOLON {
         symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<DataType>());
+        std::string name = ($1.second == "main") ? "main" : $1.second + "_";
+        ast.addFuncDef(name, $1.first);
     }
 ;
 
 func_def_list
     : func_def_list func_def {
-        exit_with_err_msg("sclp error: L5 feature");
+        exit_with_err_msg("sclp error: L5 feature"); // remove this line in L5 (pls pls pls remember)
+        ast.addFuncDef($2->name, $2->returnType);
         $$ = std::move($1);
         $$.push_back(std::move($2));
     }
     | func_def {
+        ast.addFuncDef($1->name, $1->returnType);
         $$ = std::vector<std::unique_ptr<Function_Ast>>();
         $$.push_back(std::move($1));
     }
@@ -279,26 +278,26 @@ statement
         $$ = std::move($1);
     }
     | call_statement {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::move($1);
+        exit_with_err_msg("sclp error: L5 feature"); // remove in L5 macha (trust)
+        $$ = std::move($1);
     }
     | return_statement {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::move($1);
+        exit_with_err_msg("sclp error: L5 feature"); // this too L5 gone (pls)
+        $$ = std::move($1);
     }
 ;
 
 call_statement
     : func_call SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::make_unique<Call_Stmt_Ast>(std::move($1), scope_name);
+        exit_with_err_msg("sclp error: L5 feature"); // remove in L5 remember pls
+        $$ = std::make_unique<Call_Stmt_Ast>(std::move($1));
     }
 ;
 
 func_call
     : NAME LEFT_ROUND_BRACKET actual_arg_list RIGHT_ROUND_BRACKET {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::make_unique<Function_Call_Ast>($1, symbolTableStack.top()->lookup($1), $3);
+        exit_with_err_msg("sclp error: L5 feature"); // kys in L5 pls
+        $$ = std::make_unique<Function_Call_Ast>($1, std::move($3));
     }
 ;
 
@@ -330,8 +329,8 @@ actual_arg
 
 return_statement
     : RETURN expression SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::make_unique<Return_Stmt_Ast>(std::move($2), scope_name);
+        exit_with_err_msg("sclp error: L5 feature"); // remove this macha in L5
+        $$ = std::make_unique<Return_Stmt_Ast>(std::move($2), scope_name);
     }
 ;
 
@@ -415,12 +414,12 @@ assignment_statement
         $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
     }
     | variable_as_operand ASSIGN_OP func_call SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature");
-        // $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
+        exit_with_err_msg("sclp error: L5 feature"); // vvimp remove in L5 (trust)
+        $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
     }
     | variable_as_operand ASSIGN_OP ADDRESSOF variable_name SEMICOLON {
         exit_with_err_msg("sclp error: L6 feature");
-        // std::unique_ptr<Address_Expr_Ast> temp = std::make_unique<Address_Expr_Ast>(std::make_unique<Name_Expr_Ast>($4, symbolTableStack.top()->lookup($4)));
+        // std::unique_ptr<Address_Expr_Ast> temp = std::make_unique<Address_Expr_Ast>(std::make_unique<Name_Expr_Ast>($4);
         // $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move(temp));
     }
 ;
@@ -466,7 +465,7 @@ print_statement
 
 read_statement
     : READ NAME SEMICOLON {
-        $$ = std::make_unique<Read_Stmt_Ast>(std::move(std::make_unique<Name_Expr_Ast>($2, symbolTableStack.top()->lookup($2))));
+        $$ = std::make_unique<Read_Stmt_Ast>(std::move(std::make_unique<Name_Expr_Ast>($2)));
     }
 ;
 
@@ -535,15 +534,15 @@ rel_expression
 
 variable_as_operand
     : variable_name {
-        $$ = std::make_unique<Name_Expr_Ast>($1, symbolTableStack.top()->lookup($1));
+        $$ = std::make_unique<Name_Expr_Ast>($1);
     }
     | array_access {
         exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_unique<Array_Access_Expr_Ast>($1.first, symbolTableStack.top()->lookup($1.first), $1.second);
+        // $$ = std::make_unique<Array_Access_Expr_Ast>($1.first, $1.second);
     }
     | pointer_access {
         exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_unique<Pointer_Deref_Expr_Ast>($1.first, symbolTableStack.top()->lookup($1.first), $1.second);
+        // $$ = std::make_unique<Pointer_Deref_Expr_Ast>($1.first, $1.second);
     }
 ;
 

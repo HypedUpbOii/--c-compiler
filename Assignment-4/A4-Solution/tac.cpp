@@ -2,6 +2,10 @@
 
 unsigned int TAC::label_number = 0;
 
+Label_TAC_Opd *TAC::getRetLabel() {
+    return new Label_TAC_Opd(label_number++);
+}
+
 Temporary_TAC_Opd *TAC::genNewTemporary() {
     return new Temporary_TAC_Opd(temp_number++);
 }
@@ -80,7 +84,26 @@ Variable_TAC_Opd::Variable_TAC_Opd(SymbolTableEntry *entry)
 }
 
 std::string Variable_TAC_Opd::get_name() {
-    return symtab_entry->get_name() + "_";
+    return symtab_entry->get_name();
+}
+
+Function_TAC_Opd::Function_TAC_Opd(SymbolTableFunction *entry,
+                                   std::vector<TAC_Opd *> args)
+    : symtab_entry(entry), params(args) {
+    opd_type = OpdType::FUNCTION;
+}
+
+std::string Function_TAC_Opd::get_name() {
+    std::string ret = "";
+    ret += symtab_entry->get_name() + "(";
+    if (!params.empty()) {
+        for (auto it = params.begin(); it != std::prev(params.end()); ++it) {
+            ret += (*it)->get_name() + ", ";
+        }
+        ret += params.back()->get_name();
+    }
+    ret += ")";
+    return ret;
 }
 
 Asgn_TAC_Stmt::Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src) {
@@ -92,6 +115,16 @@ Asgn_TAC_Stmt::Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src) {
 void Asgn_TAC_Stmt::print(std::ostream &out) {
     out << "\t" << result->get_name() << " = " << oper1->get_name()
         << std::endl;
+}
+
+Call_TAC_Stmt::Call_TAC_Stmt(TAC_Opd *func) {
+    result = func;
+    oper1 = nullptr;
+    oper2 = nullptr;
+}
+
+void Call_TAC_Stmt::print(std::ostream &out) {
+    out << "\t" << result->get_name() << std::endl;
 }
 
 Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
@@ -186,4 +219,14 @@ Label_TAC_Stmt::Label_TAC_Stmt(Label_TAC_Opd *label) {
 
 void Label_TAC_Stmt::print(std::ostream &out) {
     out << result->get_name() << ":" << std::endl;
+}
+
+Return_TAC_Stmt::Return_TAC_Stmt(Temporary_TAC_Opd *stemp) {
+    result = stemp;
+    oper1 = nullptr;
+    oper2 = nullptr;
+}
+
+void Return_TAC_Stmt::print(std::ostream &out) {
+    out << "\t" << "return " << result->get_name() << std::endl;
 }

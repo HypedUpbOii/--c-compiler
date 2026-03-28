@@ -34,6 +34,7 @@ SymbolTable::~SymbolTable() {
 
 // insertion always happens in the current scope
 void SymbolTable::insert(std::string name, DataType dt) {
+    name = (name == "main") ? "main" : name + "_";
     if (func_lookup(name)) {
         encounteredDuplicate = true;
         return;
@@ -48,6 +49,7 @@ void SymbolTable::insert(std::string name, DataType dt) {
 
 void SymbolTable::insert_func(std::string name, DataType rt,
                               std::vector<DataType> params, bool def) {
+    name = (name == "main") ? "main" : name + "_";
     if (lookup(name) != nullptr) {
         encounteredDuplicate = true;
         return;

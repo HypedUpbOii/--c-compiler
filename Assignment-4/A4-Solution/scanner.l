@@ -33,7 +33,7 @@ letter [a-zA-Z_]
 "}"                                 {return parser::Parser::token::RIGHT_CURLY_BRACKET;}
 "["                                 {std::cerr << "Higher level language feature" << std::endl; exit(1); return parser::Parser::token::LEFT_SQUARE_BRACKET;}
 "]"                                 {std::cerr << "Higher level language feature" << std::endl; exit(1); return parser::Parser::token::RIGHT_SQUARE_BRACKET;}
-"&"                                 {std::cerr << "Higher level language feature" << std::endl; exit(1); return parser::Parser::token::ADDRESSOF;} // L5
+"&"                                 {std::cerr << "Higher level language feature" << std::endl; exit(1); return parser::Parser::token::ADDRESSOF;} // L6
 ","                                 {return parser::Parser::token::COMMA;}
 ";"                                 {return parser::Parser::token::SEMICOLON;}
 "="                                 {return parser::Parser::token::ASSIGN_OP;}

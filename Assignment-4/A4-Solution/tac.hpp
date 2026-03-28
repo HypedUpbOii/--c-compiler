@@ -14,7 +14,8 @@ enum class OpdType {
     STRING_CONST,
     LABEL,
     TEMPORARY,
-    VARIABLE
+    VARIABLE,
+    FUNCTION
 };
 
 class TAC_Opd {
@@ -90,10 +91,20 @@ class Variable_TAC_Opd : public TAC_Opd {
     std::string get_name() override;
 };
 
+class Function_TAC_Opd : public TAC_Opd {
+  private:
+    SymbolTableFunction *symtab_entry;
+    std::vector<TAC_Opd *> params;
+
+  public:
+    Function_TAC_Opd(SymbolTableFunction *symtab_entry,
+                     std::vector<TAC_Opd *> args);
+    std::string get_name() override;
+};
+
 class TAC_Stmt {
   protected:
-    // these pointers are "owned" by the corresponding ast expr node and deleted
-    // by them
+    // these pointers are "owned" by the ast expr node and deleted by them
     TAC_Opd *result;
     TAC_Opd *oper1;
     TAC_Opd *oper2;
@@ -110,10 +121,8 @@ class Asgn_TAC_Stmt : public TAC_Stmt {
 
 class Call_TAC_Stmt : public TAC_Stmt {
   public:
-    // TODO: L5
-    // each function will have a label
-    // just jump to that label
-    // parameters are evaluated before calling
+    Call_TAC_Stmt(TAC_Opd *func);
+    void print(std::ostream &) override;
 };
 
 class Compute_TAC_Stmt : public TAC_Stmt {
@@ -187,16 +196,10 @@ class Label_TAC_Stmt : public TAC_Stmt {
     void print(std::ostream &) override;
 };
 
-class NOP_TAC_Stmt : public TAC_Stmt {
-  public:
-    // TODO: Idk when
-};
-
 class Return_TAC_Stmt : public TAC_Stmt {
   public:
-    // TODO: L5
-    // store results in a stemp
-    // then go back to frame pointer etc
+    Return_TAC_Stmt(Temporary_TAC_Opd *stemp);
+    void print(std::ostream &) override;
 };
 
 class TAC {
@@ -208,6 +211,7 @@ class TAC {
 
   public:
     TAC();
+    static Label_TAC_Opd *getRetLabel(); // sclp's retarted implementation
     Temporary_TAC_Opd *genNewTemporary();
     Temporary_TAC_Opd *genNewSTemporary();
     Label_TAC_Opd *genNewLabel();
