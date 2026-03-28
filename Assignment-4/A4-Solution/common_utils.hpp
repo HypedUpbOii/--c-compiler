@@ -64,9 +64,9 @@ enum class UnaryOperator : int { UMINUS, NOT };
 std::string unary_op_to_string(UnaryOperator op);
 std::string unary_op_to_symbol(UnaryOperator op);
 
-enum class Register : int {
+typedef enum {
     none,
-    empty,
+    zero,
     v0,                     // expression result
     v1,                     // function result
     
@@ -88,7 +88,7 @@ enum class Register : int {
 
     gp, sp, fp,
     ra
-};
+} Register;
 
 enum class RegisterType : int {
     int, float
