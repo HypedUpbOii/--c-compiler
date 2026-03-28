@@ -25,7 +25,6 @@ class RegisterDescriptor {
     RegisterType reg_type;
     RegisterUseCategory reg_use_cat;
 
-    std::list<SymbolTableEntry *> lra_symbol_list;
     bool used_for_expr_result;
     bool reg_occupied;
     bool used_for_fn_result;
@@ -33,18 +32,9 @@ class RegisterDescriptor {
 public:
     RegisterDescriptor(Register reg, std::string _name, RegisterType type, RegisterUseCategory use_cat);
 
-    bool is_symbol_list_empty();
-    void update_symbol_information(SymbolTableEntry * entry);
-
-    int count_symbol_entry_in_list();
-
-    void remove_symbol_entry_from_list(SymbolTableEntry * entry);
-
     RegisterUseCategory get_use_category();
     Register get_register();
     std::string get_name();
-
-    void clear_lra_symbol_list();
 
     bool is_register_occupied();
     void set_register_occupied();

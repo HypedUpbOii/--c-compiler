@@ -11,45 +11,9 @@ RegisterDescriptor::RegisterDescriptor(Register reg, std::string _name, Register
     used_for_fn_result = false;
 }
 
-bool RegisterDescriptor::is_symbol_list_empty() {
-    return lra_symbol_list.empty();
-}
-
-void RegisterDescriptor::update_symbol_information(SymbolTableEntry * entry) {
-    bool found = false;
-
-    list<SymbolTableEntry *>::iterator i;
-    for (i = lra_symbol_list.begin(); i != lra_symbol_list.end(); i++) {
-        if (*i == entry) {
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        lra_symbol_list.push_back(entry);
-    }
-}
-
-int RegisterDescriptor::count_symbol_entry_in_list() {
-    int count = 0;
-    list<SymbolTableEntry *>::iterator i;
-    for (i = lra_symbol_list.begin(); i != lra_symbol_list.end(); i++) count++;
-    return count;
-}
-
-void RegisterDescriptor::remove_symbol_entry_from_list(SymbolTableEntry * entry) {
-    lra_symbol_list.remove(entry);
-}
-
 RegisterUseCategory RegisterDescriptor::get_use_category() { return reg_use_cat; }
 Register RegisterDescriptor::get_register() { return reg_id; }
 std::string RegisterDescriptor::get_name() { return reg_name; }
-
-void RegisterDescriptor::clear_lra_symbol_list() {
-    // might be wrong
-    lra_symbol_list.clear();
-}
 
 bool RegisterDescriptor::is_register_occupied() { return reg_occupied; }
 void RegisterDescriptor::set_register_occupied() { reg_occupied = true; }
@@ -61,7 +25,7 @@ void RegisterDescriptor::reset_used_for_fn_return() { is_used_for_fn_return = fa
 
 template<RegisterUseCategory dt>
 bool RegisterDescriptor::is_free() {
-    return reg_use_cat == dt && lra_symbol_list.empty() && !is_used_for_expr_return() && !is_used_for_fn_return();
+    return reg_use_cat == dt && !is_used_for_expr_return() && !is_used_for_fn_return();
 
 }
 
@@ -137,8 +101,7 @@ void MachineDescriptor::clear_reg_not_used_for_expr_result() {
 
         if (!rd->is_used_for_expr_result()) {
             rd->reset_register_occupied();
-            rd->clear_lra_symbol_list();
-            break; // sus
+            // break; // sus, removed it for now
         }
     }
 }
