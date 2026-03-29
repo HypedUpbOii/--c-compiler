@@ -16,7 +16,7 @@ RTL_Int_Const_Opd::RTL_Int_Const_Opd(int v) : value(v) {
 }
 
 std::string RTL_Int_Const_Opd::get_name() {
-    return to_string(value);
+    return std::to_string(value);
 }
 
 RTL_Label_Opd::RTL_Label_Opd(int num) : label_num(num) {
@@ -43,7 +43,7 @@ RTL_String_Const_Opd::RTL_String_Const_Opd(std::string s) : value(s) {
 
 std::string RTL_String_Const_Opd::get_name() {
 
-    return "_str_" + to_string(rtl.getStringConstNum(value));
+    return "_str_" + std::to_string(rtl.getStringConstNum(value));
 }
 
 RTL_Var_Opd::RTL_Var_Opd(SymbolTableEntry * e) : entry(e) {
@@ -56,17 +56,17 @@ std::string RTL_Var_Opd::get_name() {
 
 // ---------------------------------------------------------------
 
-Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator oper, bool is_float) {
+Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr, bool is_float) {
     result = res;
     oper1 = op1;
     oper2 = op2;
 
-    operator = oper;
+    oper = opr;
     isfloat = is_float;
 }
 
 void Arithmetic_RTL_Stmt::print(std::ostream & out) {
-    std::string operator_string = arith_op_rtl_strings(operator);
+    std::string operator_string = arith_op_to_rtl_string(oper);
     if (isfloat)
         operator_string = operator_string + ".d";
 
@@ -74,30 +74,30 @@ void Arithmetic_RTL_Stmt::print(std::ostream & out) {
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-Boolean_RTL_Stmt::Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator oper) {
+Boolean_RTL_Stmt::Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
 
-    operator = oper
+    oper = opr;
 }
 
 void Boolean_RTL_Stmt::print(std::ostream & out) {
-    out << bool_op_to_rtl_string(operator) << ":\t\t" << result->get_name() << " - > "
+    out << bool_op_to_rtl_string(oper) << ":\t\t" << result->get_name() << " - > "
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator oper, bool is_float) {
+Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr, bool is_float) {
     result = res;
     oper1 = op1;
     oper2 = op2;
 
-    operator = op;
+    oper = opr;
     isfloat = is_float;
 }
 
 void Relational_RTL_Stmt::print(std::ostream & out) {
-    std::string operator_string = rel_op_to_rtl_string(operator);
+    std::string operator_string = rel_op_to_rtl_string(oper);
     if (isfloat)
         operator_string = operator_string + ".d";
 
@@ -142,13 +142,13 @@ void Goto_RTL_Stmt::print(std::ostream & out) {
 }
 
 If_Goto_RTL_Stmt::If_Goto_RTL_Stmt(RTL_Register_Opd * r, RTL_Label_Opd * l) {
-    result = label;
+    result = l;
     oper1 = r;
     oper2 = nullptr;
 }
 
 void If_Goto_RTL_Stmt::print(std::ostream & out) {
-    out << "bgtz:\t\t" << oper1->get_name() << " , " result->get_name();
+    out << "bgtz:\t\t" << oper1->get_name() << " , " << result->get_name() << std::endl;
 }
 
 Label_RTL_Stmt::Label_RTL_Stmt(RTL_Label_Opd * l) {
@@ -166,7 +166,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd *
     oper1 = src;
     oper2 = nullptr;
 
-    isfloat = (src->reg_desc->reg_type == RegisterType::FLOAT);
+    isfloat = (src->reg_desc->reg_type == RegisterType::float_num);
 
     dest_type = OpdType::REGISTER;
     src_type = OpdType::REGISTER;
@@ -230,13 +230,17 @@ void Transfer_RTL_Stmt::print(std::ostream & out) {
         if (isfloat) instruction_name += ".d";
     }
     else if (dest_type == OpdType::REGISTER && src_type == OpdType::INT_CONST)
-        instruction_name = "iLoad"
+        instruction_name = "iLoad";
     else if (dest_type == OpdType::REGISTER && src_type == OpdType::DOUBLE_CONST)
         instruction_name = "iLoad.d";
     else
         exit_with_err_msg("kys");
 
     out << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << std::endl;
+}
+
+Read_RTL_Stmt::Read_RTL_Stmt() {
+
 }
 
 void Read_RTL_Stmt::print(std::ostream & out) {

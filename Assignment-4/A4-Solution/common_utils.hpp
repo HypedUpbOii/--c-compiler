@@ -41,11 +41,14 @@ enum class BooleanOperator : int { OR, AND };
 
 std::string bool_op_to_string(BooleanOperator op);
 std::string bool_op_to_symbol(BooleanOperator op);
+std::string bool_op_to_rtl_string(BooleanOperator op);
 
 enum class ArithmeticOperator : int { PLUS, MINUS, MULT, DIVIDE };
 
+
 std::string arith_op_to_string(ArithmeticOperator op);
 std::string arith_op_to_symbol(ArithmeticOperator op);
+std::string arith_op_to_rtl_string(ArithmeticOperator op);
 
 enum class RelationalOperator : int {
     LESS_THAN,
@@ -58,6 +61,7 @@ enum class RelationalOperator : int {
 
 std::string rel_op_to_string(RelationalOperator op);
 std::string rel_op_to_symbol(RelationalOperator op);
+std::string rel_op_to_rtl_string(RelationalOperator op);
 
 enum class UnaryOperator : int { UMINUS, NOT };
 
@@ -90,8 +94,5 @@ typedef enum {
     ra
 } Register;
 
-enum class RegisterType : int {
-    int, float
-};
 
 void exit_with_err_msg(std::string msg);

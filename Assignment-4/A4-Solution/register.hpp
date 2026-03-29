@@ -20,6 +20,8 @@ typedef enum {
 } RegisterUseCategory;
 
 class RegisterDescriptor {
+public:
+    
     Register reg_id;
     std::string reg_name;
     RegisterType reg_type;
@@ -28,8 +30,6 @@ class RegisterDescriptor {
     bool used_for_expr_result;
     bool reg_occupied;
     bool used_for_fn_result;
-
-public:
     RegisterDescriptor(Register reg, std::string _name, RegisterType type, RegisterUseCategory use_cat);
 
     RegisterUseCategory get_use_category();

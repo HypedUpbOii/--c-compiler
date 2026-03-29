@@ -5,11 +5,11 @@
 #include <vector>
 
 class SymbolTableEntry {
-    std::string name;
-    DataType type;
-    int lineno;
-
-  public:
+public:
+  
+  std::string name;
+  DataType type;
+  int lineno;
     SymbolTableEntry(std::string n, DataType dt);
     DataType get_type() const;
     std::string get_name() const;

@@ -34,8 +34,8 @@ public:
 };
 
 class RTL_Register_Opd : public RTL_Opd {
+    public:
     RegisterDescriptor * reg_desc;
-public:
     RTL_Register_Opd(RegisterDescriptor * rd);
     std::string get_name() override;
 };
@@ -47,9 +47,9 @@ public:
     std::string get_name() override;
 };
 
-class RTL_Var_Opd {
-    SymbolTableEntry * entry;
+class RTL_Var_Opd : public RTL_Opd {
 public:
+    SymbolTableEntry * entry;
     RTL_Var_Opd(SymbolTableEntry * e);
     std::string get_name() override;
 };
@@ -57,6 +57,7 @@ public:
 // ---------------------------------------------------------------
 
 class RTL_Stmt {
+protected:
     RTL_Opd * result;
     RTL_Opd * oper1;
     RTL_Opd * oper2;
@@ -66,27 +67,28 @@ public:
 
 
 class Compute_RTL_Stmt : public RTL_Stmt {
+protected:
     bool isfloat;
 };
 
 class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
-    ArithmeticOperator operator;
+    ArithmeticOperator oper;
 public:
-    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator oper, bool is_float);
+    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr, bool is_float);
     void print(std::ostream & out) override;
 };
 
 class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
-    BooleanOperator operator;
+    BooleanOperator oper;
 public:
-    Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator oper);
+    Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator opr);
     void print(std::ostream & out) override;
 };
 
 class Relational_RTL_Stmt : public Compute_RTL_Stmt {
-    RelationalOperator operator;
+    RelationalOperator oper;
 public:
-    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator oper, bool is_float);
+    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr, bool is_float);
     void print(std::ostream & out) override;
 };
 
@@ -158,19 +160,21 @@ class NOP_RTL_Stmt : public RTL_Stmt {
 
 class Read_RTL_Stmt : public RTL_Stmt {
 public:
+    Read_RTL_Stmt();
     void print(std::ostream &) override;
 };
 
 
 class Write_RTL_Stmt : public RTL_Stmt {
 public:
+    Write_RTL_Stmt();
     void print(std::ostream &) override;
 };
 
 class RTL {
     std::vector<RTL_Stmt *> rtl_code;
     unsigned int string_const_num;
-    map<std::string, unsigned int> string_to_int;
+    std::map<std::string, unsigned int> string_to_int;
     MachineDescriptor * machine_descriptor;
 
 public:
