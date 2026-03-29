@@ -27,12 +27,12 @@ std::string RTL_Label_Opd::get_name() {
     return "Label" + std::to_string(label_num);
 }
 
-RTL_Register_Opd::RTL_Register_Opd(Register_Descriptor * rd) : reg_desc(rd) {
+RTL_Register_Opd::RTL_Register_Opd(RegisterDescriptor * rd) : reg_desc(rd) {
     opd_type = OpdType::REGISTER;
 }
 
 std::string RTL_Register_Opd::get_name() {
-    return reg_to_symbols(reg_desc->reg);
+    return reg_desc->get_name();
 }
 
 RTL_String_Const_Opd::RTL_String_Const_Opd(std::string s) : value(s) {
@@ -166,25 +166,31 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd *
     oper1 = src;
     oper2 = nullptr;
 
+    isfloat = (src->reg_desc->reg_type == RegisterType::FLOAT);
+
     dest_type = OpdType::REGISTER;
     src_type = OpdType::REGISTER;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src, bool is_float) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
-    isfloat = is_float;
+
+    SymbolTableEntry * sym_entry = dest->entry;
+    isfloat = (sym_entry->type.base == BaseType::FLOAT);
 
     dest_type = OpdType::VARIABLE;
     src_type = OpdType::REGISTER;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src, bool is_float) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
-    isfloat = is_float;
+
+    SymbolTableEntry * sym_entry = src->entry;
+    isfloat = (sym_entry->type.base == BaseType::FLOAT);
 
     dest_type = OpdType::REGISTER;
     src_type = OpdType::VARIABLE;
@@ -211,8 +217,10 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_O
 void Transfer_RTL_Stmt::print(std::ostream & out) {
     std::string instruction_name;
 
-    if (dest_type == OpdType::REGISTER && src_type == OpdType::REGISTER)
+    if (dest_type == OpdType::REGISTER && src_type == OpdType::REGISTER){
         instruction_name = "move";
+        if (isfloat) instruction_name += ".d";
+    }
     else if (dest_type == OpdType::VARIABLE && src_type == OpdType::REGISTER){
         instruction_name = "store";
         if (isfloat) instruction_name += ".d";
@@ -245,10 +253,13 @@ void Write_RTL_Stmt::print(std::ostream & out) {
 
 RTL::RTL() {
     string_const_num = 0;
+    machine_descriptor = new MachineDescriptor();
 }
 
 RTL::~RTL() {
     for (RTL_Stmt * stmt : rtl_code) delete stmt;
+
+    delete machine_descriptor;
 }
 
 void RTL::addNewStringConst(std::string s) {

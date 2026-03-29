@@ -76,9 +76,9 @@ class Temporary_TAC_Opd : public TAC_Opd {
   private:
     unsigned int temp_num;
     bool is_special;
-
+    bool needfloat;
   public:
-    Temporary_TAC_Opd(unsigned int num, bool is_special = false);
+    Temporary_TAC_Opd(unsigned int num, bool is_special = false, bool need_float = false);
     std::string get_name() override;
 };
 
@@ -221,7 +221,7 @@ class TAC {
     static unsigned int label_number;
 
   public:
-    Temporary_TAC_Opd *genNewTemporary();
+    Temporary_TAC_Opd *genNewTemporary(bool need_float = false);
     Temporary_TAC_Opd *genNewSTemporary();
     Label_TAC_Opd *genNewLabel();
     void addTACStatements(const std::vector<TAC_Stmt *> &stmts);

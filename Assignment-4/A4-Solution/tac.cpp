@@ -3,8 +3,8 @@
 
 unsigned int TAC::label_number = 0;
 
-Temporary_TAC_Opd *TAC::genNewTemporary() {
-    return new Temporary_TAC_Opd(temp_number++);
+Temporary_TAC_Opd *TAC::genNewTemporary(bool need_float) {
+    return new Temporary_TAC_Opd(temp_number++, false, need_float);
 }
 
 Temporary_TAC_Opd *TAC::genNewSTemporary() {
@@ -66,9 +66,10 @@ std::string Label_TAC_Opd::get_name() {
     return "Label" + std::to_string(label_num);
 }
 
-Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, bool special)
+Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, bool special, bool need_float)
     : temp_num(num), is_special(special) {
     opd_type = OpdType::TEMPORARY;
+    needfloat = need_float;
 }
 
 std::string Temporary_TAC_Opd::get_name() {
@@ -196,7 +197,40 @@ void If_Goto_TAC_Stmt::print(std::ostream &out) {
 }
 
 void If_Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
+    bool istemp = result->opd_type == OpdType::TEMPROARY;
 
+    Label_TAC_Opd * label_tac_opd = (Label_TAC_Opd *) oper1;
+    RTL_Label_Opd * l = new RTL_Label_Opd(label_tac_opd->label_num);
+
+    if (!istemp) {
+        // load into temp
+        RegisterDescriptor * rd = __rtl.machine_descriptor->get_new_register<int_reg>();
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+        
+        Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) result;
+        RTL_Var_Opd * var_opd = new RTL_Var_Opd(result->symtab_entry);
+
+        // load statement
+        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, var_opd);
+        __rtl.addRTLStatement(load_stmt);
+
+        // use register to construct the if-goto statement
+        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
+        If_Goto_RTL_Stmt * if_goto_stmt = new If_Goto_RTL_Stmt(reg, l);
+
+    }
+    else {
+        // need to get register descriptor corresponding to that temp number
+        Temporary_TAC_Opd * temp_tac_opd = (Temporary_TAC_Opd *) result;
+        RegisterDescriptor * rd = __rtl.machine_descriptor->get_rd_for_temp(result->temp_num);
+
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+
+        If_Goto_RTL_Stmt * if_goto_stmt = new If_Goto_RTL_Stmt(reg_opd, l);
+
+    }
+    
+    __rtl.addRTLStatement(if_goto_stmt);
 }
 
 IO_TAC_Stmt::IO_TAC_Stmt(bool write, TAC_Opd *oper) : is_write(write) {
@@ -211,7 +245,80 @@ void IO_TAC_Stmt::print(std::ostream &out) {
 }
 
 void IO_TAC_Stmt::generateRTL(RTL & __rtl) {
+    if (is_write) {
+        bool is_temp = result->opd_type == OpdType::TEMPORARY;
+        Variable_TAC_Opd * var = (Variable_TAC_Opd *) result;
+        Temporary_TAC_Opd * temp = (Temporary_TAC_Opd *) result;
 
+        bool needfloat = (!is_temp && var->symtab_entry->type.base == BaseType::FLOAT) || 
+                         (is_temp && temp->need_float);
+
+        // load correct value into v0
+        RTL_Int_Const_Opd * num;
+        RegisterDescriptor * rd = __rtl.machine_descriptor->get_register(Register::v0);
+        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
+        if (!needfloat) {
+            num = new RTL_Int_Const_Opd(1);
+        }
+        else if (needfloat) {
+            num = new RTL_Int_Const_Opd(3);
+        }
+        Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg, num);
+        __rtl.addRTLStatement(iload_stmt);
+
+        // load into correct register
+        if (!needfloat) {
+            rd = __rtl.machine_descriptor->get_register(Register::a0);
+        }
+        else if (needfloat) {
+            rd = __rtl.machine_descriptor->get_register(Register::f12);
+        }
+        RTL_Register_Opd * reg_to_load = (is_temp) ? temp : var;
+        reg = new RTL_Register_Opd(reg_to_load);
+        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg, reg_to_load);
+        __rtl.addRTLStatement(load_stmt);
+
+        // write instruction
+        Write_RTL_Stmt * write_stmt = new Write_RTL_Stmt();
+        __rtl.addRTLStatement(write_stmt);  
+    }
+    else {
+        Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) result;
+
+        RTL_Int_Const_Opd * num;
+        RegisterDescriptor * rd = __rtl.machine_descriptor->get_register(Register::v0);
+        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
+
+        // choose appropriate value to load into v0
+        if (var_tac_opd->symtab_entry->type.base == BaseType::INT) {
+            num = new RTL_Int_Const_Opd(5);
+        }
+        else if (var_tac_opd->symtab_entry->type.base == BaseType::FLOAT) {
+            num = new RTL_Int_Const_Opd(7);
+        }
+
+        Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg, num);
+        __rtl.addRTLStatement(iload_stmt);
+
+
+        Read_RTL_Stmt * read_stmt = new Read_RTL_Stmt();
+        __rtl.addRTLStatement(read_stmt);
+        
+        RTL_Var_Opd * var_rtl_opd = new RTL_Var_Opd(var_tac_opd->symtab_entry);
+
+        // select appropriate register to move result from
+        if (var_tac_opd->symtab_entry->type.base == BaseType::INT) {
+            rd = __rtl.machine_descriptor->get_register(Register::v0);
+        }
+        else if (var_tac_opd->symtab_entry->type.base == BaseType::FLOAT) {
+            rd = __rtl.machine_descriptor->get_register(Register::f0);
+        }
+
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+
+        Transfer_RTL_Stmt * store_stmt = new Transfer_RTL_Stmt(var_rtl_opd, reg_opd);
+        __rtl.addRTLStatement(store_stmt);
+    }
 }
 
 Label_TAC_Stmt::Label_TAC_Stmt(Label_TAC_Opd *label) {
@@ -225,5 +332,10 @@ void Label_TAC_Stmt::print(std::ostream &out) {
 }
 
 void Label_TAC_Stmt::generateRTL(RTL & __rtl) {
+    Label_TAC_Opd * temp = (Label_TAC_Opd *) result;
+    RTL_Label_Opd * l = new RTL_Label_Opd(result->label_num);
 
+    Label_RTL_Stmt * stmt = new Label_RTL_Stmt(l);
+
+    __rtl.addRTLStatement(stmt);
 }

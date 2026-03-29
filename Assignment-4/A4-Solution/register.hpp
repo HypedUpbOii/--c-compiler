@@ -55,12 +55,21 @@ public:
 class MachineDescriptor {
 public:
     std::map<Register, RegisterDescriptor *> register_table;
+
+    // temp number -> RegisterDescriptor *
+    std::map<unsigned int, RegisterDescriptor *> temp_to_rd;
+
     MachineDescriptor();
     ~MachineDescriptor();
 
     void initialize_register_table();
 
     void clear_reg_not_used_for_expr_result();
+
+    RegisterDescriptor * get_register(Register r);
+
+    RegisterDescriptor * get_rd_for_temp(unsigned int temp_num);
+    void unset_rd_for_temp(unsigned int temp_num);
 
     template <RegisterUseCategory dt>
     int count_free_register();

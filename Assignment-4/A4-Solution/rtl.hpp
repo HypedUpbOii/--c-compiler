@@ -34,9 +34,9 @@ public:
 };
 
 class RTL_Register_Opd : public RTL_Opd {
-    Register_Descriptor * reg_desc;
+    RegisterDescriptor * reg_desc;
 public:
-    RTL_Register_Opd(Register_Descriptor * rd);
+    RTL_Register_Opd(RegisterDescriptor * rd);
     std::string get_name() override;
 };
 
@@ -142,8 +142,8 @@ class Transfer_RTL_Stmt : public RTL_Stmt {
     bool isfloat;
 public:
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd * src);
-    Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src, bool is_float);
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src, bool is_float);
+    Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src);
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd * src);
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_Opd * src);
 
@@ -171,6 +171,7 @@ class RTL {
     std::vector<RTL_Stmt *> rtl_code;
     unsigned int string_const_num;
     map<std::string, unsigned int> string_to_int;
+    MachineDescriptor * machine_descriptor;
 
 public:
     RTL();

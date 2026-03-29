@@ -106,6 +106,18 @@ void MachineDescriptor::clear_reg_not_used_for_expr_result() {
     }
 }
 
+RegisterDescriptor * MachineDescriptor::get_register(Register r) {
+    return register_table[r];
+}
+
+RegisterDescriptor * MachineDescriptor::get_rd_for_temp(unsigned int temp_num) {
+    return temp_to_rd[temp_num];
+}
+
+void MachineDescriptor::unset_rd_for_temp(unsigned int temp_num) {
+    temp_to_rd.erase(temp_num);
+}
+
 template <RegisterUseCategory dt>
 int MachineDescriptor::count_free_register() {
     map<Register, RegisterDescriptor *>::iterator i;
@@ -120,7 +132,7 @@ int MachineDescriptor::count_free_register() {
 }
 
 // sus
-template <RegisterDescriptor dt>
+template <RegisterUseCategory dt>
 RegisterDescriptor * MachineDescriptor::get_new_register() {
     RegisterDescriptor * reg_desc;
 

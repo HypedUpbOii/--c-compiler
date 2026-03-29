@@ -163,7 +163,8 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac) {
     auto left_tac = leftOp->generateTAC(tac);
     auto right_tac = rightOp->generateTAC(tac);
-    place = tac.genNewTemporary();
+    // may need float
+    place = tac.genNewTemporary(leftOp->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
         new Arith_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
@@ -325,7 +326,8 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac) {
     auto oper_tac = operand->generateTAC(tac);
-    place = tac.genNewTemporary();
+    // may need float
+    place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::UMINUS, operand->place);
 
@@ -439,7 +441,6 @@ std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac) {
     Label_TAC_Opd *check_cond = tac.genNewLabel();
     Label_TAC_Opd *exit_label = tac.genNewLabel();
 
-    Temporary_TAC_Opd *opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
