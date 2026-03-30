@@ -24,6 +24,7 @@ class TAC_Opd {
 
   public:
     virtual std::string get_name() = 0;
+    OpdType get_opd_type() const;
 };
 
 class Array_Acces_TAC_Opd : public TAC_Opd {
@@ -38,6 +39,7 @@ class Double_Const_TAC_Opd : public TAC_Opd {
   public:
     Double_Const_TAC_Opd(double val);
     std::string get_name() override;
+    double get_value() const;
 };
 
 class Int_Const_TAC_Opd : public TAC_Opd {
@@ -47,6 +49,7 @@ class Int_Const_TAC_Opd : public TAC_Opd {
   public:
     Int_Const_TAC_Opd(int val);
     std::string get_name() override;
+    int get_value() const;
 };
 
 class String_Const_TAC_Opd : public TAC_Opd {
@@ -65,6 +68,7 @@ class Label_TAC_Opd : public TAC_Opd {
   public:
     Label_TAC_Opd(unsigned int num);
     std::string get_name() override;
+    unsigned int get_label_num() const;
 };
 
 class Pointer_Deref_TAC_Opd : public TAC_Opd {
@@ -80,6 +84,8 @@ class Temporary_TAC_Opd : public TAC_Opd {
   public:
     Temporary_TAC_Opd(unsigned int num, bool is_special = false, bool need_float = false);
     std::string get_name() override;
+    unsigned int get_temp_num() const;
+    bool get_need_float() const;
 };
 
 class Variable_TAC_Opd : public TAC_Opd {
@@ -89,6 +95,7 @@ class Variable_TAC_Opd : public TAC_Opd {
   public:
     Variable_TAC_Opd(SymbolTableEntry *symtab_entry);
     std::string get_name() override;
+    SymbolTableEntry * get_sym_tab_entry() const;
 };
 
 // ----------------------------------------------------------------------------
@@ -221,6 +228,7 @@ class TAC {
     static unsigned int label_number;
 
   public:
+    TAC();
     Temporary_TAC_Opd *genNewTemporary(bool need_float = false);
     Temporary_TAC_Opd *genNewSTemporary();
     Label_TAC_Opd *genNewLabel();

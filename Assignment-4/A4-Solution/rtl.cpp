@@ -35,15 +35,16 @@ std::string RTL_Register_Opd::get_name() {
     return reg_desc->get_name();
 }
 
-RTL_String_Const_Opd::RTL_String_Const_Opd(std::string s) : value(s) {
+RTL_String_Const_Opd::RTL_String_Const_Opd(unsigned int str_num, std::string s) : string_num(str_num), value(s) {
     opd_type = OpdType::STRING_CONST;
-
-    rtl.addNewStringConst(s);
 }
 
 std::string RTL_String_Const_Opd::get_name() {
+    return "_str_" + std::to_string(string_num);
+}
 
-    return "_str_" + std::to_string(rtl.getStringConstNum(value));
+unsigned int RTL_String_Const_Opd::get_string_num() const {
+    return string_num;
 }
 
 RTL_Var_Opd::RTL_Var_Opd(SymbolTableEntry * e) : entry(e) {
@@ -178,7 +179,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src)
     oper2 = nullptr;
 
     SymbolTableEntry * sym_entry = dest->entry;
-    isfloat = (sym_entry->type.base == BaseType::FLOAT);
+    isfloat = (sym_entry->get_need_float());
 
     dest_type = OpdType::VARIABLE;
     src_type = OpdType::REGISTER;
@@ -190,7 +191,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src)
     oper2 = nullptr;
 
     SymbolTableEntry * sym_entry = src->entry;
-    isfloat = (sym_entry->type.base == BaseType::FLOAT);
+    isfloat = (sym_entry->get_need_float());
 
     dest_type = OpdType::REGISTER;
     src_type = OpdType::VARIABLE;
@@ -214,6 +215,15 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_O
     src_type = OpdType::DOUBLE_CONST;
 }
 
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_String_Const_Opd * src) {
+    result = dest;
+    oper1 = src;
+    oper2 = nullptr;
+
+    dest_type = OpdType::REGISTER;
+    src_type = OpdType::STRING_CONST;
+}
+
 void Transfer_RTL_Stmt::print(std::ostream & out) {
     std::string instruction_name;
 
@@ -233,6 +243,8 @@ void Transfer_RTL_Stmt::print(std::ostream & out) {
         instruction_name = "iLoad";
     else if (dest_type == OpdType::REGISTER && src_type == OpdType::DOUBLE_CONST)
         instruction_name = "iLoad.d";
+    else if (dest_type == OpdType::REGISTER && src_type == OpdType::STRING_CONST)
+        instruction_name = "load_addr";
     else
         exit_with_err_msg("kys");
 

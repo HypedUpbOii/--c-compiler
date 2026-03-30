@@ -56,8 +56,8 @@ class MachineDescriptor {
 public:
     std::map<Register, RegisterDescriptor *> register_table;
 
-    // temp number -> RegisterDescriptor *
-    std::map<unsigned int, RegisterDescriptor *> temp_to_rd;
+    // TAC_Opd * -> RegisterDescriptor *
+    std::map<TAC_Opd *, RegisterDescriptor *> tac_opd_to_rd;
 
     MachineDescriptor();
     ~MachineDescriptor();
@@ -68,8 +68,10 @@ public:
 
     RegisterDescriptor * get_register(Register r);
 
-    RegisterDescriptor * get_rd_for_temp(unsigned int temp_num);
-    void unset_rd_for_temp(unsigned int temp_num);
+    RegisterDescriptor * allocate_rd_for_tac_opd(TAC_Opd * tac_opd);
+    RegisterDescriptor * get_rd_for_tac_opd(TAC_Opd * tac_opd);
+    void unset_rd_for_tac_opd(TAC_Opd * tac_opd);
+    void clear_tac_opd_to_rd();
 
     template <RegisterUseCategory dt>
     int count_free_register();

@@ -41,10 +41,12 @@ class RTL_Register_Opd : public RTL_Opd {
 };
 
 class RTL_String_Const_Opd : public RTL_Opd {
+    unsigned int string_num;
     std::string value;
 public:
-    RTL_String_Const_Opd(std::string s);
+    RTL_String_Const_Opd(unsigned int str_num, std::string s);
     std::string get_name() override;
+    unsigned int get_string_num() const;
 };
 
 class RTL_Var_Opd : public RTL_Opd {
@@ -148,6 +150,7 @@ public:
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src);
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd * src);
     Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_Opd * src);
+    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_String_Const_Opd * src);
 
     void print(std::ostream &) override;
 };
@@ -175,13 +178,13 @@ class RTL {
     std::vector<RTL_Stmt *> rtl_code;
     unsigned int string_const_num;
     std::map<std::string, unsigned int> string_to_int;
-    MachineDescriptor * machine_descriptor;
-
+    
 public:
+    MachineDescriptor * machine_descriptor;
     RTL();
     ~RTL();
 
     void addNewStringConst(std::string s); // add only if it doesn't exist
     unsigned int getStringConstNum(std::string s);
     void addRTLStatement(RTL_Stmt * stmt);
-} rtl;
+};

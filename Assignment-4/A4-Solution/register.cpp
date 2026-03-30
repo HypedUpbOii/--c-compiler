@@ -19,9 +19,13 @@ bool RegisterDescriptor::is_register_occupied() { return reg_occupied; }
 void RegisterDescriptor::set_register_occupied() { reg_occupied = true; }
 void RegisterDescriptor::reset_register_occupied() { reg_occupied = false; }
 
-bool RegisterDescriptor::is_used_for_fn_return() { return is_used_for_fn_return; }
-void RegisterDescriptor::set_used_for_fn_return() { is_used_for_fn_return = true; }
-void RegisterDescriptor::reset_used_for_fn_return() { is_used_for_fn_return = false; }
+bool RegisterDescriptor::is_used_for_fn_return() { return used_for_fn_result; }
+void RegisterDescriptor::set_used_for_fn_return() { used_for_fn_result = true; }
+void RegisterDescriptor::reset_used_for_fn_return() { used_for_fn_result = false; }
+
+bool RegisterDescriptor::is_used_for_expr_return() { return used_for_expr_result; }
+void RegisterDescriptor::set_used_for_expr_return() { used_for_expr_result = true; }
+void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = false; }
 
 template<RegisterUseCategory dt>
 bool RegisterDescriptor::is_free() {
@@ -39,7 +43,7 @@ MachineDescriptor::MachineDescriptor() {
 }
 
 MachineDescriptor::~MachineDescriptor() {
-    for (auto [_, rd] : register_table) return rd;
+    for (auto [_, rd] : register_table) delete rd;
 }
 
 void MachineDescriptor::initialize_register_table() {
@@ -94,12 +98,12 @@ void MachineDescriptor::initialize_register_table() {
 }
 
 void MachineDescriptor::clear_reg_not_used_for_expr_result() {
-    map<Register, RegisterDescriptor *>::iterator i;
+    std::map<Register, RegisterDescriptor *>::iterator i;
 
     for (i = register_table.begin(); i != register_table.end(); i++) {
         RegisterDescriptor * rd = i->second;
 
-        if (!rd->is_used_for_expr_result()) {
+        if (!rd->is_used_for_expr_return()) {
             rd->reset_register_occupied();
             // break; // sus, removed it for now
         }
@@ -110,17 +114,38 @@ RegisterDescriptor * MachineDescriptor::get_register(Register r) {
     return register_table[r];
 }
 
-RegisterDescriptor * MachineDescriptor::get_rd_for_temp(unsigned int temp_num) {
-    return temp_to_rd[temp_num];
+RegisterDescriptor * MachineDescriptor::allocate_rd_for_tac_opd(TAC_Opd * tac_opd) {
+    bool is_temp = tac_opd->get_type() == OpdType::TEMPORARY;
+    bool needfloat = is_temp ? ((Temporary_TAC_Opd *) tac_opd)->get_need_float() 
+    : ((Variable_TAC_Opd *) tac_opd)->get_sym_tab_entry()->get_need_float();
+
+    RegisterDescriptor * new_rd;
+    if (needfloat) {
+        new_rd = get_new_register<float_reg>();
+    }
+    else {
+        new_rd = get_new_register<int_reg>();
+    }
+
+    tac_opd_to_rd[tac_opd] = new_rd;
+    return new_rd;
 }
 
-void MachineDescriptor::unset_rd_for_temp(unsigned int temp_num) {
-    temp_to_rd.erase(temp_num);
+RegisterDescriptor * MachineDescriptor::get_rd_for_tac_opd(TAC_Opd * tac_opd) {
+    return tac_opd_to_rd[tac_opd];
+}
+
+void MachineDescriptor::unset_rd_for_tac_opd(TAC_Opd * tac_opd) {
+    tac_opd_to_rd.erase(tac_opd);
+}
+
+void MachineDescriptor::clear_tac_opd_to_rd() {
+    tac_opd_to_rd.clear();
 }
 
 template <RegisterUseCategory dt>
 int MachineDescriptor::count_free_register() {
-    map<Register, RegisterDescriptor *>::iterator i;
+    std::map<Register, RegisterDescriptor *>::iterator i;
 
     int count = 0;
 
@@ -136,7 +161,7 @@ template <RegisterUseCategory dt>
 RegisterDescriptor * MachineDescriptor::get_new_register() {
     RegisterDescriptor * reg_desc;
 
-    map<Register, RegisterDescriptor *>::iterator i;
+    std::map<Register, RegisterDescriptor *>::iterator i;
     for (i = register_table.begin(); i != register_table.end(); i++) {
         reg_desc = i->second;
 
