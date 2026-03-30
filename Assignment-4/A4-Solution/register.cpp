@@ -115,9 +115,13 @@ RegisterDescriptor * MachineDescriptor::get_register(Register r) {
 }
 
 RegisterDescriptor * MachineDescriptor::allocate_rd_for_tac_opd(TAC_Opd * tac_opd) {
-    bool is_temp = tac_opd->get_type() == OpdType::TEMPORARY;
-    bool needfloat = is_temp ? ((Temporary_TAC_Opd *) tac_opd)->get_need_float() 
-    : ((Variable_TAC_Opd *) tac_opd)->get_sym_tab_entry()->get_need_float();
+    bool is_temp = tac_opd->get_opd_type() == OpdType::TEMPORARY;
+    bool is_var = tac_opd->get_opd_type() == OpdType::VARIABLE;
+    bool is_float_const = tac_opd->get_opd_type() == OpdType::DOUBLE_CONST;
+
+    bool needfloat = (is_temp && ((Temporary_TAC_Opd *) tac_opd)->get_need_float())
+     || (is_var && ((Variable_TAC_Opd *) tac_opd)->get_sym_tab_entry()->get_need_float())
+     || is_float_const;
 
     RegisterDescriptor * new_rd;
     if (needfloat) {

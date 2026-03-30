@@ -76,7 +76,7 @@ protected:
 class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
     ArithmeticOperator oper;
 public:
-    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr, bool is_float);
+    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr);
     void print(std::ostream & out) override;
 };
 
@@ -90,13 +90,13 @@ public:
 class Relational_RTL_Stmt : public Compute_RTL_Stmt {
     RelationalOperator oper;
 public:
-    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr, bool is_float);
+    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr);
     void print(std::ostream & out) override;
 };
 
 class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
 public:
-    UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op, bool is_float);
+    UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op);
     void print(std::ostream & out) override;
 };
 

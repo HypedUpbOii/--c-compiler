@@ -57,13 +57,13 @@ std::string RTL_Var_Opd::get_name() {
 
 // ---------------------------------------------------------------
 
-Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr, bool is_float) {
+Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
 
     oper = opr;
-    isfloat = is_float;
+    isfloat = op1->reg_desc->reg_type == RegisterType::float_num;
 }
 
 void Arithmetic_RTL_Stmt::print(std::ostream & out) {
@@ -88,13 +88,13 @@ void Boolean_RTL_Stmt::print(std::ostream & out) {
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr, bool is_float) {
+Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
 
     oper = opr;
-    isfloat = is_float;
+    isfloat = op1->reg_desc->reg_type == RegisterType::float_num;
 }
 
 void Relational_RTL_Stmt::print(std::ostream & out) {
@@ -106,12 +106,12 @@ void Relational_RTL_Stmt::print(std::ostream & out) {
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-UMinus_RTL_Stmt::UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op, bool is_float) {
+UMinus_RTL_Stmt::UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op) {
     result = res;
     oper1 = op;
     oper2 = nullptr;
 
-    isfloat = is_float;
+    isfloat = op->reg_desc->reg_type == RegisterType::float_num;
 }
 
 void UMinus_RTL_Stmt::print(std::ostream & out) {
@@ -202,6 +202,8 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd 
     oper1 = src;
     oper2 = nullptr;
 
+    isfloat = false;
+
     dest_type = OpdType::REGISTER;
     src_type = OpdType::INT_CONST;
 }
@@ -211,6 +213,8 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_O
     oper1 = src;
     oper2 = nullptr;
 
+    isfloat = true;
+
     dest_type = OpdType::REGISTER;
     src_type = OpdType::DOUBLE_CONST;
 }
@@ -219,6 +223,8 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_String_Const_O
     result = dest;
     oper1 = src;
     oper2 = nullptr;
+
+    isfloat = false;
 
     dest_type = OpdType::REGISTER;
     src_type = OpdType::STRING_CONST;
