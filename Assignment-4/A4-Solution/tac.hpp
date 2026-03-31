@@ -121,7 +121,7 @@ class Label_TAC_Stmt : public TAC_Stmt {
 
 class Return_TAC_Stmt : public TAC_Stmt {
   public:
-    Return_TAC_Stmt(std::shared_ptr<Temporary_TAC_Opd>stemp);
+    Return_TAC_Stmt(std::shared_ptr<Variable_TAC_Opd> stemp);
     void print(std::ostream &) override;
     void generateRTL(RTL & __rtl) override;
 };
@@ -135,10 +135,10 @@ class TAC {
 
   public:
     TAC();
-    static std::shared_ptr<Label_TAC_Opd>getRetLabel(); // sclp's retarted implementation
-    std::shared_ptr<Temporary_TAC_Opd>genNewTemporary(bool need_float = false);
-    std::shared_ptr<Temporary_TAC_Opd>genNewSTemporary();
-    std::shared_ptr<Label_TAC_Opd>genNewLabel();
+    static std::shared_ptr<Label_TAC_Opd> getRetLabel(); // sclp's retarted implementation
+    std::shared_ptr<Temporary_TAC_Opd> genNewTemporary(bool need_float = false);
+    std::shared_ptr<Variable_TAC_Opd> genNewSTemporary(DataType dt, SymbolTable *local);
+    std::shared_ptr<Label_TAC_Opd> genNewLabel();
     void addTACStatements(const std::vector<TAC_Stmt *> &stmts);
     void print(std::ostream &);
     void generateRTL(RTL &);

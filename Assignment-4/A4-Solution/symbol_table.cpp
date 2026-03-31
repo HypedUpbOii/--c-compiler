@@ -31,6 +31,9 @@ SymbolTable::~SymbolTable() {
     for (auto &[_, ptr] : entries)
         delete ptr;
 
+    for (auto &[_, ptr] : stemps)
+        delete ptr;
+
     for (auto &[_, ptr] : funcs)
         delete ptr;
     entries.clear();
@@ -49,6 +52,14 @@ void SymbolTable::insert(std::string name, DataType dt) {
     }
 
     entries[name] = new SymbolTableEntry(name, dt);
+}
+
+void SymbolTable::insert_stemp(std::string name, DataType dt) {
+    if (stemps.find(name) != stemps.end()) {
+        std::cerr << "WTAF" << std::endl;
+        exit(1);
+    }
+    stemps[name] = new SymbolTableEntry(name, dt);
 }
 
 void SymbolTable::insert_func(std::string name, DataType rt,
@@ -81,6 +92,16 @@ SymbolTableEntry *SymbolTable::lookup(std::string name) {
 
     if (parent != nullptr)
         return parent->lookup(name);
+
+    return nullptr;
+}
+
+SymbolTableEntry *SymbolTable::stemp_lookup(std::string name) {
+    if (stemps.find(name) != stemps.end())
+        return stemps[name];
+
+    if (parent != nullptr)
+        return parent->stemp_lookup(name);
 
     return nullptr;
 }

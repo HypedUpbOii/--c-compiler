@@ -66,10 +66,9 @@ class Pointer_Deref_TAC_Opd : public TAC_Opd {
 class Temporary_TAC_Opd : public TAC_Opd {
   private:
     unsigned int temp_num;
-    bool is_special;
     bool needfloat;
   public:
-    Temporary_TAC_Opd(unsigned int num, bool is_special = false, bool need_float = false);
+    Temporary_TAC_Opd(unsigned int num, bool need_float = false);
     std::string get_name() override;
     unsigned int get_temp_num() const;
     bool get_need_float() const;

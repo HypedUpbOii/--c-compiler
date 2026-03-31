@@ -31,6 +31,7 @@ class SymbolTableFunction {
 
 class SymbolTable {
     std::map<std::string, SymbolTableEntry *> entries;
+    std::map<std::string, SymbolTableEntry *> stemps;
     std::map<std::string, SymbolTableFunction *> funcs;
     SymbolTable *parent;
     bool encounteredDuplicate;
@@ -40,9 +41,11 @@ class SymbolTable {
     ~SymbolTable();
 
     void insert(std::string name, DataType dt);
+    void insert_stemp(std::string name, DataType dt);
     void insert_func(std::string, DataType, std::vector<DataType>,
                      bool = false);
     SymbolTableEntry *lookup(std::string name);
+    SymbolTableEntry *stemp_lookup(std::string name);
     SymbolTableFunction *func_lookup(std::string name);
     bool hasDuplicate();
 };

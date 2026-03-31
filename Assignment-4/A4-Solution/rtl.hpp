@@ -57,6 +57,13 @@ public:
     std::string get_name() override;
 };
 
+class RTL_STemp_Opd : public RTL_Opd {
+public:
+    unsigned int stemp_number;
+    RTL_STemp_Opd(unsigned int num);
+    std::string get_name() override;
+};
+
 // ---------------------------------------------------------------
 
 class RTL_Stmt {
@@ -151,6 +158,8 @@ public:
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Register_Opd> src);
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Var_Opd> dest, std::shared_ptr<RTL_Register_Opd> src);
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Var_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_STemp_Opd> dest, std::shared_ptr<RTL_Register_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_STemp_Opd> src);
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Int_Const_Opd> src);
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Double_Const_Opd> src);
     Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_String_Const_Opd> src);

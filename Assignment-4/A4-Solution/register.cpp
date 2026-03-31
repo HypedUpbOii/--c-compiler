@@ -139,7 +139,8 @@ RegisterDescriptor * MachineDescriptor::get_rd_for_tac_opd(std::shared_ptr<TAC_O
 }
 
 void MachineDescriptor::unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
-    tac_opd_to_rd.erase(tac_opd);
+    if (tac_opd_to_rd.find(tac_opd) != tac_opd_to_rd.end())
+        tac_opd_to_rd.erase(tac_opd);
 }
 
 void MachineDescriptor::clear_tac_opd_to_rd() {
@@ -170,6 +171,7 @@ RegisterDescriptor * MachineDescriptor::get_new_register() {
 
         if (reg_desc->is_free<dt>()) {
             reg_desc->set_register_occupied();
+            reg_desc->set_used_for_expr_return();
             return reg_desc;
         }
     }

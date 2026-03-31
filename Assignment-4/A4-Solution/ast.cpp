@@ -34,13 +34,13 @@ void Function_Call_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac) {
+std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac, SymbolTable *local) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
     if (funcEntry->get_return_type() != BaseType::VOID)
         place = tac.genNewTemporary();
     for (auto &ptr : arguments) {
-        for (auto &stmt : ptr->generateTAC(tac))
+        for (auto &stmt : ptr->generateTAC(tac, local))
             result.push_back(stmt);
         params.push_back(ptr->place);
     }
@@ -70,7 +70,7 @@ void Name_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << "Name : " << name << type_to_string(exprType);
 }
 
-std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &) {
+std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<Variable_TAC_Opd>(steEntry);
     return std::vector<TAC_Stmt *>();
 }
@@ -114,19 +114,19 @@ void Literal_Expr_Ast<std::string>::printTree(std::ostream &out, int tab) {
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<int>::generateTAC(TAC &tac) {
+std::vector<TAC_Stmt *> Literal_Expr_Ast<int>::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<Int_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<double>::generateTAC(TAC &tac) {
+std::vector<TAC_Stmt *> Literal_Expr_Ast<double>::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<Double_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<std::string>::generateTAC(TAC &tac) {
+std::vector<TAC_Stmt *> Literal_Expr_Ast<std::string>::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<String_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
@@ -176,9 +176,9 @@ void Boolean_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac) {
-    auto left_tac = leftOp->generateTAC(tac);
-    auto right_tac = rightOp->generateTAC(tac);
+std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto left_tac = leftOp->generateTAC(tac, local);
+    auto right_tac = rightOp->generateTAC(tac, local);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Bool_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -222,9 +222,9 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac) {
-    auto left_tac = leftOp->generateTAC(tac);
-    auto right_tac = rightOp->generateTAC(tac);
+std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto left_tac = leftOp->generateTAC(tac, local);
+    auto right_tac = rightOp->generateTAC(tac, local);
     // may need float
     place = tac.genNewTemporary(leftOp->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
@@ -269,9 +269,9 @@ void Relational_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac) {
-    auto left_tac = leftOp->generateTAC(tac);
-    auto right_tac = rightOp->generateTAC(tac);
+std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto left_tac = leftOp->generateTAC(tac, local);
+    auto right_tac = rightOp->generateTAC(tac, local);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Rel_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -318,13 +318,13 @@ void Ternary_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac) {
-    auto cond_tac = condition->generateTAC(tac);
-    place = tac.genNewSTemporary();
+std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto cond_tac = condition->generateTAC(tac, local);
+    place = tac.genNewSTemporary(exprType, local);
     std::shared_ptr<Label_TAC_Opd> false_label = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
-    auto true_tac = trueExpr->generateTAC(tac);
-    auto false_tac = falseExpr->generateTAC(tac);
+    auto true_tac = trueExpr->generateTAC(tac, local);
+    auto false_tac = falseExpr->generateTAC(tac, local);
 
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
@@ -390,8 +390,8 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac) {
-    auto oper_tac = operand->generateTAC(tac);
+std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto oper_tac = operand->generateTAC(tac, local);
     // may need float
     place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
@@ -426,8 +426,8 @@ void Not_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac) {
-    auto oper_tac = operand->generateTAC(tac);
+std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+    auto oper_tac = operand->generateTAC(tac, local);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::NOT, operand->place);
@@ -465,11 +465,11 @@ void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Assignment_Stmt_Ast::generateTAC(TAC &tac,
-                                 std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Assignment_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                                 std::shared_ptr<Variable_TAC_Opd> ret_var,
                                  std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac);
-    auto value_tac = value->generateTAC(tac);
+    auto target_tac = target->generateTAC(tac, local);
+    auto value_tac = value->generateTAC(tac, local);
     Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(target->place, value->place);
 
     std::vector<TAC_Stmt *> result;
@@ -506,11 +506,11 @@ void While_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-While_Stmt_Ast::generateTAC(TAC &tac,
-                            std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+While_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                            std::shared_ptr<Variable_TAC_Opd> ret_var,
                             std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto cond_tac = condition->generateTAC(tac);
-    auto body_tac = body->generateTAC(tac, ret_temp, ret_label);
+    auto cond_tac = condition->generateTAC(tac, local);
+    auto body_tac = body->generateTAC(tac, local, ret_var, ret_label);
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     std::shared_ptr<Label_TAC_Opd> check_cond = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
@@ -545,11 +545,11 @@ void Do_While_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Do_While_Stmt_Ast::generateTAC(TAC &tac,
-                               std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Do_While_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                               std::shared_ptr<Variable_TAC_Opd> ret_var,
                                std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto body_tac = body->generateTAC(tac, ret_temp, ret_label);
-    auto cond_tac = condition->generateTAC(tac);
+    auto body_tac = body->generateTAC(tac, local, ret_var, ret_label);
+    auto cond_tac = condition->generateTAC(tac, local);
 
     std::shared_ptr<Label_TAC_Opd> begin = tac.genNewLabel();
     Label_TAC_Stmt *begin_stmt = new Label_TAC_Stmt(begin);
@@ -585,10 +585,10 @@ void Read_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Read_Stmt_Ast::generateTAC(TAC &tac,
-                           std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Read_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                           std::shared_ptr<Variable_TAC_Opd> ret_var,
                            std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac);
+    auto target_tac = target->generateTAC(tac, local);
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(false, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -618,11 +618,11 @@ void Return_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Return_Stmt_Ast::generateTAC(TAC &tac,
-                             std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Return_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                             std::shared_ptr<Variable_TAC_Opd> ret_var,
                              std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto ret_val_tac = return_value->generateTAC(tac);
-    Asgn_TAC_Stmt *set_stemp = new Asgn_TAC_Stmt(ret_temp, return_value->place);
+    auto ret_val_tac = return_value->generateTAC(tac, local);
+    Asgn_TAC_Stmt *set_stemp = new Asgn_TAC_Stmt(ret_var, return_value->place);
     Goto_TAC_Stmt *go_func_end = new Goto_TAC_Stmt(ret_label);
 
     std::vector<TAC_Stmt *> result;
@@ -667,11 +667,11 @@ void Selection_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Selection_Stmt_Ast::generateTAC(TAC &tac,
-                                std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Selection_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                                std::shared_ptr<Variable_TAC_Opd> ret_var,
                                 std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto cond_tac = condition->generateTAC(tac);
-    auto then_tac = then_stmt->generateTAC(tac, ret_temp, ret_label);
+    auto cond_tac = condition->generateTAC(tac, local);
+    auto then_tac = then_stmt->generateTAC(tac, local, ret_var, ret_label);
 
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_cond =
@@ -696,7 +696,7 @@ Selection_Stmt_Ast::generateTAC(TAC &tac,
     if (else_stmt != nullptr) {
         Label_TAC_Stmt *else_label_stmt = new Label_TAC_Stmt(else_label);
         result.push_back(else_label_stmt);
-        auto else_tac = else_stmt->generateTAC(tac, ret_temp, ret_label);
+        auto else_tac = else_stmt->generateTAC(tac, local, ret_var, ret_label);
         for (auto s : else_tac)
             result.push_back(s);
     }
@@ -733,12 +733,12 @@ void Sequence_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Sequence_Stmt_Ast::generateTAC(TAC &tac,
-                               std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Sequence_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                               std::shared_ptr<Variable_TAC_Opd> ret_var,
                                std::shared_ptr<Label_TAC_Opd> ret_label) {
     std::vector<TAC_Stmt *> result;
     for (auto &stmt : statement_list) {
-        auto stmt_tac = stmt->generateTAC(tac, ret_temp, ret_label);
+        auto stmt_tac = stmt->generateTAC(tac, local, ret_var, ret_label);
         for (auto s : stmt_tac)
             result.push_back(s);
     }
@@ -774,10 +774,10 @@ void Write_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Write_Stmt_Ast::generateTAC(TAC &tac,
-                            std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Write_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                            std::shared_ptr<Variable_TAC_Opd> ret_var,
                             std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac);
+    auto target_tac = target->generateTAC(tac, local);
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(true, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -807,10 +807,10 @@ void Call_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *>
-Call_Stmt_Ast::generateTAC(TAC &tac,
-                           std::shared_ptr<Temporary_TAC_Opd> ret_temp,
+Call_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
+                           std::shared_ptr<Variable_TAC_Opd> ret_var,
                            std::shared_ptr<Label_TAC_Opd> ret_label) {
-    func_call->generateTAC(tac);
+    func_call->generateTAC(tac, local);
     Call_TAC_Stmt *call_stmt = new Call_TAC_Stmt(func_call->place);
     std::vector<TAC_Stmt *> result = {call_stmt};
     return result;
@@ -855,11 +855,11 @@ void Function_Ast::printTree(std::ostream &out) {
 }
 
 void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
-    std::shared_ptr<Temporary_TAC_Opd> return_stemp =
-        (name == "main") ? nullptr : tac.genNewSTemporary();
+    std::shared_ptr<Variable_TAC_Opd> return_stemp =
+        (name == "main") ? nullptr : tac.genNewSTemporary(returnType, local);
     for (auto &stmt : statements)
         tac.addTACStatements(
-            stmt->generateTAC(tac, return_stemp, return_label));
+            stmt->generateTAC(tac, local, return_stemp, return_label));
 
     if (returnType != BaseType::VOID) {
         std::vector<TAC_Stmt *> ret_statements;

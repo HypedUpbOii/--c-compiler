@@ -27,7 +27,7 @@ class Expression_Ast : public Ast {
     DataType exprType; // type set in validateNode() except for literals
 
     virtual ~Expression_Ast() = default;
-    virtual std::vector<TAC_Stmt *> generateTAC(TAC &) = 0;
+    virtual std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable*) = 0;
     virtual bool isLvalue();
 };
 
@@ -51,7 +51,7 @@ class Function_Call_Ast : public Base_Expr_Ast {
 
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 class Name_Expr_Ast : public Base_Expr_Ast { // variable
@@ -62,7 +62,7 @@ class Name_Expr_Ast : public Base_Expr_Ast { // variable
     Name_Expr_Ast(std::string);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
     bool isLvalue() override;
 };
 
@@ -75,7 +75,7 @@ class Literal_Expr_Ast
     Literal_Expr_Ast(T);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 // Binary Expressions
@@ -109,7 +109,7 @@ class Boolean_Expr_Ast : public Binary_Expr_Ast { // bool operators - or, and
                      std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 class Arithmetic_Expr_Ast : public Binary_Expr_Ast { // operations +, -, /, *
@@ -120,7 +120,7 @@ class Arithmetic_Expr_Ast : public Binary_Expr_Ast { // operations +, -, /, *
                         std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 class Relational_Expr_Ast : public Binary_Expr_Ast { // all comparisons
@@ -131,7 +131,7 @@ class Relational_Expr_Ast : public Binary_Expr_Ast { // all comparisons
                         std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 // Ternary Expressions
@@ -146,7 +146,7 @@ class Ternary_Expr_Ast : public Expression_Ast {
                      std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 // Unary Expressions
@@ -182,7 +182,7 @@ class UMinus_Expr_Ast : public Unary_Expr_Ast {
     UMinus_Expr_Ast(std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 class Not_Expr_Ast : public Unary_Expr_Ast {
@@ -192,7 +192,7 @@ class Not_Expr_Ast : public Unary_Expr_Ast {
     Not_Expr_Ast(std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *) override;
 };
 
 // Statements
@@ -200,7 +200,7 @@ class Not_Expr_Ast : public Unary_Expr_Ast {
 class Statement_Ast : public Ast {
   public:
     virtual ~Statement_Ast() = default;
-    virtual std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    virtual std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                                 std::shared_ptr<Label_TAC_Opd>) = 0;
     virtual bool hasReturn();
 };
@@ -214,7 +214,7 @@ class Assignment_Stmt_Ast : public Statement_Ast {
                         std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
@@ -233,7 +233,7 @@ class While_Stmt_Ast : public Iteration_Stmt_Ast {
   public:
     using Iteration_Stmt_Ast::Iteration_Stmt_Ast;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
@@ -241,7 +241,7 @@ class Do_While_Stmt_Ast : public Iteration_Stmt_Ast {
   public:
     using Iteration_Stmt_Ast::Iteration_Stmt_Ast;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
@@ -252,7 +252,7 @@ class Read_Stmt_Ast : public Statement_Ast {
     Read_Stmt_Ast(std::unique_ptr<Name_Expr_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
@@ -265,7 +265,7 @@ class Return_Stmt_Ast : public Statement_Ast {
     Return_Stmt_Ast(std::unique_ptr<Expression_Ast>, std::string);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
     bool hasReturn() override;
 };
@@ -281,7 +281,7 @@ class Selection_Stmt_Ast : public Statement_Ast { // if, if-else statements
                        std::unique_ptr<Statement_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
     bool hasReturn() override;
 };
@@ -293,7 +293,7 @@ class Sequence_Stmt_Ast : public Statement_Ast { // block statements
     Sequence_Stmt_Ast(std::vector<std::unique_ptr<Statement_Ast>> &);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
     bool hasReturn() override;
 };
@@ -305,7 +305,7 @@ class Write_Stmt_Ast : public Statement_Ast {
     Write_Stmt_Ast(std::unique_ptr<Expression_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
@@ -317,7 +317,7 @@ class Call_Stmt_Ast : public Statement_Ast {
     Call_Stmt_Ast(std::unique_ptr<Function_Call_Ast>);
     void validateNode(SymbolTable *) override;
     void printTree(std::ostream &, int) override;
-    std::vector<TAC_Stmt *> generateTAC(TAC &, std::shared_ptr<Temporary_TAC_Opd>,
+    std::vector<TAC_Stmt *> generateTAC(TAC &, SymbolTable *, std::shared_ptr<Variable_TAC_Opd>,
                                         std::shared_ptr<Label_TAC_Opd>) override;
 };
 
