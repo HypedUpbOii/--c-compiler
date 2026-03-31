@@ -92,7 +92,7 @@ void exit_with_err_msg(std::string msg) {
     exit(1);
 }
 
-static std::array<std::string> reg_symbols = {
+static std::array<std::string, 48> reg_symbols = {
     "none",
     "empty",
     "v0",
@@ -122,9 +122,9 @@ std::string reg_to_symbols(Register r){
     return reg_symbols.at(static_cast<int>(r));
 }
 
-static std::array<std::string> arith_op_rtl_strings = {"add", "sub", "mul", "div"};
-static std::array<std::string> rel_op_rtl_strings = {"slt", "sle", "sgt", "sge", "seq", "sne"};
-static std::array<std::string> bool_op_rtl_strings = {"or", "and"};
+static std::array<std::string, 4> arith_op_rtl_strings = {"add", "sub", "mul", "div"};
+static std::array<std::string, 6> rel_op_rtl_strings = {"slt", "sle", "sgt", "sge", "seq", "sne"};
+static std::array<std::string, 2> bool_op_rtl_strings = {"or", "and"};
 
 std::string arith_op_to_rtl_string(ArithmeticOperator op) {
     return arith_op_rtl_strings.at(static_cast<int>(op));

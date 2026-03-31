@@ -3,7 +3,9 @@ our=sclp
 
 make
 
-for file in tests/*.c; do
+for file in $(ls tests | grep "l.*")
+do
+    file=tests/$file
     echo "Checking file $file"
 
     # run their implementation
@@ -59,8 +61,9 @@ for file in tests/*.c; do
     fi
 
     # run their implementation
-    ./$reference --show-rtl -d $file > theirs.rtl 2> /dev/null
-    sed 's/;;.*//' theirs.rtl > theirs.rtl
+    ./$reference --show-rtl -d $file > their.rtl 2> /dev/null
+    sed 's/;;.*//' their.rtl > theirs.rtl
+    rm their.rtl
     their_status=$?
     # run our implementation
     ./$our --show-rtl -d $file > ours.rtl 2> /dev/null

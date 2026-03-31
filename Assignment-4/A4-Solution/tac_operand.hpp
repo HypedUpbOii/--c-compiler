@@ -1,0 +1,97 @@
+#pragma once
+#include "common_utils.hpp"
+#include "symbol_table.hpp"
+#include <string>
+#include <vector>
+#include <memory>
+
+class TAC_Opd {
+  protected:
+    OpdType opd_type;
+
+  public:
+    virtual std::string get_name() = 0;
+    OpdType get_opd_type() const;
+};
+
+class Array_Acces_TAC_Opd : public TAC_Opd {
+  public:
+    // TODO: L6
+};
+
+class Double_Const_TAC_Opd : public TAC_Opd {
+  private:
+    double value;
+
+  public:
+    Double_Const_TAC_Opd(double val);
+    std::string get_name() override;
+    double get_value() const;
+};
+
+class Int_Const_TAC_Opd : public TAC_Opd {
+  private:
+    int value;
+
+  public:
+    Int_Const_TAC_Opd(int val);
+    std::string get_name() override;
+    int get_value() const;
+};
+
+class String_Const_TAC_Opd : public TAC_Opd {
+  private:
+    std::string value;
+
+  public:
+    String_Const_TAC_Opd(const std::string &val);
+    std::string get_name() override;
+};
+
+class Label_TAC_Opd : public TAC_Opd {
+  private:
+    unsigned int label_num;
+
+  public:
+    Label_TAC_Opd(unsigned int num);
+    std::string get_name() override;
+    unsigned int get_label_num() const;
+};
+
+class Pointer_Deref_TAC_Opd : public TAC_Opd {
+  public:
+    // TODO: L6
+};
+
+class Temporary_TAC_Opd : public TAC_Opd {
+  private:
+    unsigned int temp_num;
+    bool is_special;
+    bool needfloat;
+  public:
+    Temporary_TAC_Opd(unsigned int num, bool is_special = false, bool need_float = false);
+    std::string get_name() override;
+    unsigned int get_temp_num() const;
+    bool get_need_float() const;
+};
+
+class Variable_TAC_Opd : public TAC_Opd {
+  private:
+    SymbolTableEntry *symtab_entry;
+
+  public:
+    Variable_TAC_Opd(SymbolTableEntry *symtab_entry);
+    std::string get_name() override;
+    SymbolTableEntry * get_sym_tab_entry() const;
+};
+
+class Function_TAC_Opd : public TAC_Opd {
+  private:
+    SymbolTableFunction *symtab_entry;
+    std::vector<std::shared_ptr<TAC_Opd>> params;
+
+  public:
+    Function_TAC_Opd(SymbolTableFunction *symtab_entry,
+                     std::vector<std::shared_ptr<TAC_Opd>> args);
+    std::string get_name() override;
+};

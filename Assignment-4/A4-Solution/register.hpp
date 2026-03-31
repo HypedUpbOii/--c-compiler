@@ -1,10 +1,9 @@
 #pragma once
 #include "common_utils.hpp"
 #include "symbol_table.hpp"
-#include "tac.hpp"
+#include "tac_operand.hpp"
 #include <map>
 #include <list>
-
 
 class RegisterDescriptor {
 public:
@@ -43,8 +42,8 @@ class MachineDescriptor {
 public:
     std::map<Register, RegisterDescriptor *> register_table;
 
-    // TAC_Opd * -> RegisterDescriptor *
-    std::map<TAC_Opd *, RegisterDescriptor *> tac_opd_to_rd;
+    // std::shared_ptr<TAC_Opd> -> RegisterDescriptor *
+    std::map<std::shared_ptr<TAC_Opd>, RegisterDescriptor *> tac_opd_to_rd;
 
     MachineDescriptor();
     ~MachineDescriptor();
@@ -55,9 +54,9 @@ public:
 
     RegisterDescriptor * get_register(Register r);
 
-    RegisterDescriptor * allocate_rd_for_tac_opd(TAC_Opd * tac_opd);
-    RegisterDescriptor * get_rd_for_tac_opd(TAC_Opd * tac_opd);
-    void unset_rd_for_tac_opd(TAC_Opd * tac_opd);
+    RegisterDescriptor * allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
+    RegisterDescriptor * get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
+    void unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void clear_tac_opd_to_rd();
 
     template <RegisterUseCategory dt>

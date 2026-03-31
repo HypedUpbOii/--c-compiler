@@ -75,6 +75,7 @@ enum class OpdType {
     LABEL,
     TEMPORARY,
     VARIABLE,
+    FUNCTION,
     REGISTER
 };
 

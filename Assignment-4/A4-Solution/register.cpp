@@ -30,7 +30,6 @@ void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = f
 template<RegisterUseCategory dt>
 bool RegisterDescriptor::is_free() {
     return reg_use_cat == dt && !is_used_for_expr_return() && !is_used_for_fn_return();
-
 }
 
 template bool RegisterDescriptor::is_free<int_reg>();
@@ -74,7 +73,7 @@ void MachineDescriptor::initialize_register_table() {
     register_table[s6] = new RegisterDescriptor(s6, "s6", RegisterType::int_num, RegisterUseCategory::int_reg);
     register_table[s7] = new RegisterDescriptor(s7, "s7", RegisterType::int_num, RegisterUseCategory::int_reg);
 
-    register_table[f0] = new RegisterDescriptor(f0, "f0", RegisterType::float_num, RegisterUseCategory::float_reg);
+    register_table[f0] = new RegisterDescriptor(f0, "f0", RegisterType::float_num, RegisterUseCategory::fn_result);
     register_table[f2] = new RegisterDescriptor(f2, "f2", RegisterType::float_num, RegisterUseCategory::float_reg);
     register_table[f4] = new RegisterDescriptor(f4, "f4", RegisterType::float_num, RegisterUseCategory::float_reg);
     register_table[f6] = new RegisterDescriptor(f6, "f6", RegisterType::float_num, RegisterUseCategory::float_reg);
@@ -114,13 +113,13 @@ RegisterDescriptor * MachineDescriptor::get_register(Register r) {
     return register_table[r];
 }
 
-RegisterDescriptor * MachineDescriptor::allocate_rd_for_tac_opd(TAC_Opd * tac_opd) {
+RegisterDescriptor * MachineDescriptor::allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
     bool is_temp = tac_opd->get_opd_type() == OpdType::TEMPORARY;
     bool is_var = tac_opd->get_opd_type() == OpdType::VARIABLE;
     bool is_float_const = tac_opd->get_opd_type() == OpdType::DOUBLE_CONST;
 
-    bool needfloat = (is_temp && ((Temporary_TAC_Opd *) tac_opd)->get_need_float())
-     || (is_var && ((Variable_TAC_Opd *) tac_opd)->get_sym_tab_entry()->get_need_float())
+    bool needfloat = (is_temp && (std::dynamic_pointer_cast<Temporary_TAC_Opd>(tac_opd))->get_need_float())
+     || (is_var && (std::dynamic_pointer_cast<Variable_TAC_Opd>(tac_opd))->get_sym_tab_entry()->get_need_float())
      || is_float_const;
 
     RegisterDescriptor * new_rd;
@@ -130,16 +129,16 @@ RegisterDescriptor * MachineDescriptor::allocate_rd_for_tac_opd(TAC_Opd * tac_op
     else {
         new_rd = get_new_register<int_reg>();
     }
-
+    new_rd->set_used_for_expr_return();
     tac_opd_to_rd[tac_opd] = new_rd;
     return new_rd;
 }
 
-RegisterDescriptor * MachineDescriptor::get_rd_for_tac_opd(TAC_Opd * tac_opd) {
+RegisterDescriptor * MachineDescriptor::get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
     return tac_opd_to_rd[tac_opd];
 }
 
-void MachineDescriptor::unset_rd_for_tac_opd(TAC_Opd * tac_opd) {
+void MachineDescriptor::unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
     tac_opd_to_rd.erase(tac_opd);
 }
 

@@ -1,7 +1,7 @@
 all : sclp
 
-sclp : lex.yy.o parser.tab.o common_utils.o lexer.o main.o symbol_table.o ast.o tac.o argument_handler.o output_handler.o
-	g++ -g -o sclp lex.yy.o common_utils.o parser.tab.o lexer.o main.o symbol_table.o ast.o tac.o argument_handler.o output_handler.o -ly -ll
+sclp : lex.yy.o parser.tab.o common_utils.o lexer.o main.o symbol_table.o ast.o tac.o rtl.o register.o argument_handler.o output_handler.o
+	g++ -g -o sclp lex.yy.o common_utils.o parser.tab.o lexer.o main.o symbol_table.o ast.o tac.o rtl.o register.o argument_handler.o output_handler.o -ly -ll
 
 main.o : main.cpp defs.hpp argument_handler.hpp output_handler.hpp ast.hpp lexer.hpp parser.tab.hh location.hh
 	g++ -c -g main.cpp
@@ -28,6 +28,12 @@ ast.o: ast.hpp common_utils.hpp symbol_table.hpp tac.hpp ast.cpp
 
 tac.o: tac.hpp common_utils.hpp symbol_table.hpp tac.cpp
 	g++ -c -g tac.cpp
+
+rtl.o: common_utils.hpp symbol_table.hpp register.hpp rtl.hpp rtl.cpp
+	g++ -c -g rtl.cpp
+	
+register.o: common_utils.hpp symbol_table.hpp tac.hpp register.hpp register.cpp
+	g++ -c -g register.cpp
 
 common_utils.o : common_utils.cpp common_utils.hpp
 	g++ -c -g common_utils.cpp

@@ -4,6 +4,7 @@
 #include "register.hpp"
 #include <string>
 #include <vector>
+#include <memory>
 #include <map>
 
 class RTL_Opd {
@@ -60,9 +61,9 @@ public:
 
 class RTL_Stmt {
 protected:
-    RTL_Opd * result;
-    RTL_Opd * oper1;
-    RTL_Opd * oper2;
+    std::shared_ptr<RTL_Opd> result;
+    std::shared_ptr<RTL_Opd> oper1;
+    std::shared_ptr<RTL_Opd> oper2;
 public:
     virtual void print(std::ostream &) = 0;
 };
@@ -76,14 +77,14 @@ protected:
 class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
     ArithmeticOperator oper;
 public:
-    Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr);
+    Arithmetic_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, ArithmeticOperator opr);
     void print(std::ostream & out) override;
 };
 
 class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
     BooleanOperator oper;
 public:
-    Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator opr);
+    Boolean_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, BooleanOperator opr);
     void print(std::ostream & out) override;
 };
 
@@ -91,20 +92,20 @@ class Relational_RTL_Stmt : public Compute_RTL_Stmt {
     RelationalOperator oper;
 
 public:
-    Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr);
-    Relational_RTL_Stmt(RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr);
+    Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, RelationalOperator opr);
+    Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, RelationalOperator opr);
     void print(std::ostream & out) override;
 };
 
 class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
 public:
-    UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op);
+    UMinus_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op);
     void print(std::ostream & out) override;
 };
 
 class Not_RTL_Stmt : public Compute_RTL_Stmt {
 public:
-    Not_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op);
+    Not_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op);
     void print(std::ostream & out) override;
 };
 
@@ -119,14 +120,14 @@ class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
 
 class Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
 public:
-    Goto_RTL_Stmt(RTL_Label_Opd * l);
+    Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
 };
 
 class If_Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
 public:
     // register -> oper1, label -> result
-    If_Goto_RTL_Stmt(RTL_Register_Opd * r, RTL_Label_Opd * l);
+    If_Goto_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> r, std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
 };
 
@@ -137,7 +138,7 @@ class Return_RTL_Stmt : public Control_Flow_RTL_Stmt {
 
 class Label_RTL_Stmt : public RTL_Stmt {
 public:
-    Label_RTL_Stmt(RTL_Label_Opd * l);
+    Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
 };
 
@@ -147,12 +148,12 @@ class Transfer_RTL_Stmt : public RTL_Stmt {
     OpdType src_type;
     bool isfloat;
 public:
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd * src);
-    Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src);
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src);
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd * src);
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_Opd * src);
-    Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_String_Const_Opd * src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Register_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Var_Opd> dest, std::shared_ptr<RTL_Register_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Var_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Int_Const_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Double_Const_Opd> src);
+    Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_String_Const_Opd> src);
 
     void print(std::ostream &) override;
 };
@@ -180,12 +181,12 @@ class Mov_RTL_Stmt : public RTL_Stmt {
     unsigned int flag;
     bool movt;
 public:
-    Mov_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * opd, unsigned int _flag, bool _movt);
+    Mov_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> opd, unsigned int _flag, bool _movt);
     void print(std::ostream &) override;
 };
 
 class RTL {
-    std::vector<RTL_Stmt *> rtl_code;
+    std::vector<std::shared_ptr<RTL_Stmt>> rtl_code;
     unsigned int string_const_num;
     std::map<std::string, unsigned int> string_to_int;
     
@@ -195,7 +196,7 @@ public:
     ~RTL();
 
     void print(std::ostream &);
-    void addNewStringConst(std::string s); // add only if it doesn't exist
     unsigned int getStringConstNum(std::string s);
-    void addRTLStatement(RTL_Stmt * stmt);
+    void addRTLStatement(std::shared_ptr<RTL_Stmt> stmt);
+    bool isEmpty();
 };

@@ -28,9 +28,11 @@ SymbolTable::SymbolTable(SymbolTable *p)
 
 SymbolTable::~SymbolTable() {
     // delete all STEs
-    for (auto &[_, ptr] : entries) {
+    for (auto &[_, ptr] : entries)
         delete ptr;
-    }
+
+    for (auto &[_, ptr] : funcs)
+        delete ptr;
     entries.clear();
 }
 

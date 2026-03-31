@@ -3,19 +3,19 @@
 
 unsigned int TAC::label_number = 0;
 
-Label_TAC_Opd *TAC::getRetLabel() {
-    return new Label_TAC_Opd(label_number++);
+std::shared_ptr<Label_TAC_Opd>TAC::getRetLabel() {
+    return std::make_shared<Label_TAC_Opd>(label_number++);
 }
 
-Temporary_TAC_Opd *TAC::genNewTemporary(bool need_float) {
-    return new Temporary_TAC_Opd(temp_number++, false, need_float);
+std::shared_ptr<Temporary_TAC_Opd>TAC::genNewTemporary(bool need_float) {
+    return std::make_shared<Temporary_TAC_Opd>(temp_number++, false, need_float);
 }
 
-Temporary_TAC_Opd *TAC::genNewSTemporary() {
-    return new Temporary_TAC_Opd(stemp_number++, true);
+std::shared_ptr<Temporary_TAC_Opd>TAC::genNewSTemporary() {
+    return std::make_shared<Temporary_TAC_Opd>(stemp_number++, true);
 }
 
-Label_TAC_Opd *TAC::genNewLabel() { return new Label_TAC_Opd(label_number++); }
+std::shared_ptr<Label_TAC_Opd>TAC::genNewLabel() { return std::make_shared<Label_TAC_Opd>(label_number++); }
 
 TAC::TAC() : temp_number(0), stemp_number(0) {}
 
@@ -32,6 +32,11 @@ void TAC::print(std::ostream &out) {
 }
 
 bool TAC::isEmpty() { return tac_code.empty(); }
+
+void TAC::generateRTL(RTL & rtl) {
+    for (auto & stmt : tac_code)
+        stmt->generateRTL(rtl);
+}
 
 TAC::~TAC() {
     for (auto ptr : tac_code) {
@@ -114,7 +119,7 @@ std::string Variable_TAC_Opd::get_name() {
 }
 
 Function_TAC_Opd::Function_TAC_Opd(SymbolTableFunction *entry,
-                                   std::vector<TAC_Opd *> args)
+                                   std::vector<std::shared_ptr<TAC_Opd> > args)
     : symtab_entry(entry), params(args) {
     opd_type = OpdType::FUNCTION;
 }
@@ -138,7 +143,7 @@ SymbolTableEntry * Variable_TAC_Opd::get_sym_tab_entry() const {
 
 // ------------------------------------------------------------------------------
 
-Asgn_TAC_Stmt::Asgn_TAC_Stmt(TAC_Opd *dest, TAC_Opd *src) {
+Asgn_TAC_Stmt::Asgn_TAC_Stmt(std::shared_ptr<TAC_Opd> dest, std::shared_ptr<TAC_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -149,7 +154,7 @@ void Asgn_TAC_Stmt::print(std::ostream &out) {
         << std::endl;
 }
 
-Call_TAC_Stmt::Call_TAC_Stmt(TAC_Opd *func) {
+Call_TAC_Stmt::Call_TAC_Stmt(std::shared_ptr<TAC_Opd> func) {
     result = func;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -159,6 +164,8 @@ void Call_TAC_Stmt::print(std::ostream &out) {
     out << "\t" << result->get_name() << std::endl;
 }
 
+void Call_TAC_Stmt::generateRTL(RTL & __rtl) {}
+
 void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
     bool is_result_temp = result->get_opd_type() == OpdType::TEMPORARY;
 
@@ -166,6 +173,7 @@ void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
     bool is_oper1_var = oper1->get_opd_type() == OpdType::VARIABLE;
     bool is_oper1_int_const = oper1->get_opd_type() == OpdType::INT_CONST;
     bool is_oper1_float_const = oper1->get_opd_type() == OpdType::DOUBLE_CONST;
+    bool is_oper1_string_const = oper1->get_opd_type() == OpdType::STRING_CONST;
 
     RegisterDescriptor * oper1_rd;
     if (is_oper1_temp) {
@@ -173,49 +181,60 @@ void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
     }
     else if (is_oper1_var) {
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, var_opd);
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg_opd, var_opd);
 
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper1_int_const) {
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper1;
-        RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, intconst_opd);
+        std::shared_ptr<Int_Const_TAC_Opd>  intconst = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Int_Const_Opd> intconst_opd = std::make_shared<RTL_Int_Const_Opd>(intconst->get_value());
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg_opd, intconst_opd);
 
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper1_float_const) {
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper1;
-        RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, floatconst_opd);
+        std::shared_ptr<Double_Const_TAC_Opd>  floatconst = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Double_Const_Opd> floatconst_opd = std::make_shared<RTL_Double_Const_Opd>(floatconst->get_value());
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg_opd, floatconst_opd);
 
         __rtl.addRTLStatement(load_stmt);
     }
-    RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+    else if (is_oper1_string_const) {
+        oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+        std::shared_ptr<String_Const_TAC_Opd> strconst = std::dynamic_pointer_cast<String_Const_TAC_Opd>(oper1);
+        unsigned int str_num = __rtl.getStringConstNum(strconst->get_name());
+        std::shared_ptr<RTL_String_Const_Opd> strconst_opd = std::make_shared<RTL_String_Const_Opd>(str_num, strconst->get_name());
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg_opd, strconst_opd);
+
+        __rtl.addRTLStatement(load_stmt);
+    }
+
+    std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
     RegisterDescriptor * res_rd;
     // to be safe, don't think this case would occur
     if (is_result_temp) {
         res_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(result);
-        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+        std::shared_ptr<RTL_Register_Opd> res_reg_opd = std::make_shared<RTL_Register_Opd>(res_rd);
 
-        Transfer_RTL_Stmt * assn_stmt = new Transfer_RTL_Stmt(res_reg_opd, oper1_reg_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> assn_stmt = std::make_shared<Transfer_RTL_Stmt>(res_reg_opd, oper1_reg_opd);
         __rtl.addRTLStatement(assn_stmt);
 
         res_rd->set_used_for_expr_return();
     }
     else {
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) result;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-        Transfer_RTL_Stmt * assn_stmt = new Transfer_RTL_Stmt(var_opd, oper1_reg_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> assn_stmt = std::make_shared<Transfer_RTL_Stmt>(var_opd, oper1_reg_opd);
         __rtl.addRTLStatement(assn_stmt);
     }
 
@@ -223,8 +242,8 @@ void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
     oper1_rd->reset_used_for_expr_return();
 }
 
-Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
-                                       BooleanOperator b_op, TAC_Opd *op2)
+Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res, std::shared_ptr<TAC_Opd> op1,
+                                       BooleanOperator b_op, std::shared_ptr<TAC_Opd> op2)
     : op(b_op) {
     result = res;
     oper1 = op1;
@@ -248,19 +267,19 @@ void Bool_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     else {
         // load
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, var_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, var_opd);
         __rtl.addRTLStatement(load_stmt);
     }
 
-    RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+    std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
     RegisterDescriptor * result_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-    RTL_Register_Opd * result_reg_opd = new RTL_Register_Opd(result_rd);
+    std::shared_ptr<RTL_Register_Opd> result_reg_opd = std::make_shared<RTL_Register_Opd>(result_rd);
 
     RegisterDescriptor * oper2_rd;
     if (is_oper2_temp) {
@@ -269,18 +288,18 @@ void Bool_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     else {
         // load
         oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper2);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, var_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, var_opd);
         __rtl.addRTLStatement(load_stmt);
     }
 
-    RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+    std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-    Boolean_RTL_Stmt * bool_comp_stmt = new Boolean_RTL_Stmt(result_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
+    std::shared_ptr<Boolean_RTL_Stmt> bool_comp_stmt = std::make_shared<Boolean_RTL_Stmt>(result_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
     __rtl.addRTLStatement(bool_comp_stmt);
 
     result_rd->set_used_for_expr_return();
@@ -290,8 +309,8 @@ void Bool_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     oper2_rd->reset_used_for_expr_return();
 }
 
-Arith_Comp_TAC_Stmt::Arith_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
-                                         ArithmeticOperator a_op, TAC_Opd *op2)
+Arith_Comp_TAC_Stmt::Arith_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res, std::shared_ptr<TAC_Opd> op1,
+                                         ArithmeticOperator a_op, std::shared_ptr<TAC_Opd> op2)
     : op(a_op) {
     result = res;
     oper1 = op1;
@@ -321,41 +340,41 @@ void Arith_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     else if (is_oper1_var) {
         // load from variable
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, var_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, var_opd);
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper1_int_const) {
         // load from int const
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-        Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper1;
-        RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
+        std::shared_ptr<Int_Const_TAC_Opd>  intconst = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Int_Const_Opd> intconst_opd = std::make_shared<RTL_Int_Const_Opd>(intconst->get_value());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, intconst_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, intconst_opd);
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper1_float_const) {
         // load from float const
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-        Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper1;
-        RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
+        std::shared_ptr<Double_Const_TAC_Opd>  floatconst = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Double_Const_Opd> floatconst_opd = std::make_shared<RTL_Double_Const_Opd>(floatconst->get_value());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, floatconst_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, floatconst_opd);
         __rtl.addRTLStatement(load_stmt);
     }
 
-    RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+    std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
     RegisterDescriptor * result_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-    RTL_Register_Opd * result_reg_opd = new RTL_Register_Opd(result_rd);
+    std::shared_ptr<RTL_Register_Opd> result_reg_opd = std::make_shared<RTL_Register_Opd>(result_rd);
 
     RegisterDescriptor * oper2_rd;
     if (is_oper2_temp) {
@@ -364,40 +383,40 @@ void Arith_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     else if (is_oper2_var) {
         // load from variable
         oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper2);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, var_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, var_opd);
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper2_int_const) {
         // load from int const
         oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-        Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper2;
-        RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
+        std::shared_ptr<Int_Const_TAC_Opd>  intconst = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper2);
+        std::shared_ptr<RTL_Int_Const_Opd> intconst_opd = std::make_shared<RTL_Int_Const_Opd>(intconst->get_value());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, intconst_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, intconst_opd);
         __rtl.addRTLStatement(load_stmt);
     }
     else if (is_oper2_float_const) {
         // load from float const
         oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-        RTL_Register_Opd * load_value_reg = new RTL_Register_Opd(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> load_value_reg = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-        Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper2;
-        RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
+        std::shared_ptr<Double_Const_TAC_Opd>  floatconst = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper2);
+        std::shared_ptr<RTL_Double_Const_Opd> floatconst_opd = std::make_shared<RTL_Double_Const_Opd>(floatconst->get_value());
 
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_value_reg, floatconst_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_value_reg, floatconst_opd);
         __rtl.addRTLStatement(load_stmt);
     }
 
-    RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+    std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-    Arithmetic_RTL_Stmt * arith_comp_stmt = new Arithmetic_RTL_Stmt(result_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
+    std::shared_ptr<Arithmetic_RTL_Stmt> arith_comp_stmt = std::make_shared<Arithmetic_RTL_Stmt>(result_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
     __rtl.addRTLStatement(arith_comp_stmt);
 
     result_rd->set_used_for_expr_return();
@@ -408,8 +427,8 @@ void Arith_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
 
 }
 
-Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
-                                     RelationalOperator r_op, TAC_Opd *op2)
+Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res, std::shared_ptr<TAC_Opd> op1,
+                                     RelationalOperator r_op, std::shared_ptr<TAC_Opd> op2)
     : op(r_op) {
     result = res;
     oper1 = op1;
@@ -419,8 +438,8 @@ Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
     bool is_var = op1->get_opd_type() == OpdType::VARIABLE;
     bool is_float_const = op1->get_opd_type() == OpdType::DOUBLE_CONST;
 
-    needfloat = (is_temp && ((Temporary_TAC_Opd *) op1)->get_need_float())
-     || (is_var && ((Variable_TAC_Opd *) op1)->get_sym_tab_entry()->get_need_float())
+    needfloat = (is_temp && (std::dynamic_pointer_cast<Temporary_TAC_Opd>(op1))->get_need_float())
+     || (is_var && (std::dynamic_pointer_cast<Variable_TAC_Opd>(op1))->get_sym_tab_entry()->get_need_float())
      || is_float_const;
 }
 
@@ -441,18 +460,18 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
         }
         else if (is_oper1_var) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, var_opd);
+            std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+            std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper1_reg_opd, var_opd);
             __rtl.addRTLStatement(load_stmt);
         }
         else if (is_oper1_float_const) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-            Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper1;
-            RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
-            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, floatconst_opd);
+            std::shared_ptr<Double_Const_TAC_Opd>  floatconst = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper1);
+            std::shared_ptr<RTL_Double_Const_Opd> floatconst_opd = std::make_shared<RTL_Double_Const_Opd>(floatconst->get_value());
+            std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper1_reg_opd, floatconst_opd);
             __rtl.addRTLStatement(load_stmt);
         }
 
@@ -468,187 +487,179 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
         }
         else if (is_oper2_var) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
-            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, var_opd);
+            std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper2);
+            std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper2_reg_opd, var_opd);
             __rtl.addRTLStatement(load_stmt);
         }
         else if (is_oper2_float_const) {
             oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-            Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper2;
-            RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
-            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, floatconst_opd);
+            std::shared_ptr<Double_Const_TAC_Opd>  floatconst = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper2);
+            std::shared_ptr<RTL_Double_Const_Opd> floatconst_opd = std::make_shared<RTL_Double_Const_Opd>(floatconst->get_value());
+            std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper2_reg_opd, floatconst_opd);
             __rtl.addRTLStatement(load_stmt);
         }
         
-        RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-        RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
-        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+        std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> res_reg_opd = std::make_shared<RTL_Register_Opd>(res_rd);
         // add the relational statement based on case
         switch(op) {
             case RelationalOperator::LESS_THAN:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                std::shared_ptr<RTL_Register_Opd> reg1_ = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2_ = std::make_shared<RTL_Register_Opd>(rd2);
+                std::shared_ptr<Mov_RTL_Stmt> movt_stmt = std::make_shared<Mov_RTL_Stmt>(reg2_, reg1_, 0, true);
                 __rtl.addRTLStatement(movt_stmt);
 
                 break;
             }
             case RelationalOperator::LESS_THAN_EQUAL:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                std::shared_ptr<RTL_Register_Opd> reg1_ = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2_ = std::make_shared<RTL_Register_Opd>(rd2);
+                std::shared_ptr<Mov_RTL_Stmt> movt_stmt = std::make_shared<Mov_RTL_Stmt>(reg2_, reg1_, 0, true);
                 __rtl.addRTLStatement(movt_stmt);
                 break;
             }
             case RelationalOperator::GREATER_THAN:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                std::shared_ptr<Mov_RTL_Stmt> movf_stmt = std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
                 __rtl.addRTLStatement(movf_stmt);
                 break;
             }
             case RelationalOperator::GREATER_THAN_EQUAL:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                std::shared_ptr<Mov_RTL_Stmt> movf_stmt = std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
                 __rtl.addRTLStatement(movf_stmt);
 
                 break;
             }
             case RelationalOperator::EQUAL:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                std::shared_ptr<Mov_RTL_Stmt> movt_stmt = std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, true);
                 __rtl.addRTLStatement(movt_stmt);
                 break;
             }
             case RelationalOperator::NOT_EQUAL:
             {
-                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
                 __rtl.addRTLStatement(rel_stmt);
 
                 RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
                 RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
 
-                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+                std::shared_ptr<RTL_Register_Opd> reg1 = std::make_shared<RTL_Register_Opd>(rd1);
+                std::shared_ptr<RTL_Register_Opd> reg2 = std::make_shared<RTL_Register_Opd>(rd2);
 
-                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                std::shared_ptr<RTL_Int_Const_Opd> one = std::make_shared<RTL_Int_Const_Opd>(1);
                 RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
-                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                std::shared_ptr<RTL_Register_Opd> zero_reg = std::make_shared<RTL_Register_Opd>(zero);
                 
                 // iLoad
-                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg1, one);
                 __rtl.addRTLStatement(iload_stmt);
                 // move
-                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                std::shared_ptr<Transfer_RTL_Stmt> move_stmt = std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
                 // movt
-                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
-                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
-                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                std::shared_ptr<Mov_RTL_Stmt> movf_stmt = std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
                 __rtl.addRTLStatement(movf_stmt);
                 break;
             }
@@ -672,18 +683,18 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
         }
         else if (is_oper1_var) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, var_opd);
+            std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+            std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper1_reg_opd, var_opd);
             __rtl.addRTLStatement(load_stmt);
         }
         else if (is_oper1_int_const) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-            Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper1;
-            RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
-            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, intconst_opd);
+            std::shared_ptr<Int_Const_TAC_Opd>  intconst = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper1);
+            std::shared_ptr<RTL_Int_Const_Opd> intconst_opd = std::make_shared<RTL_Int_Const_Opd>(intconst->get_value());
+            std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper1_reg_opd, intconst_opd);
             __rtl.addRTLStatement(load_stmt);
         }
 
@@ -699,26 +710,26 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
         }
         else if (is_oper2_var) {
             oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
-            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, var_opd);
+            std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper2);
+            std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper2_reg_opd, var_opd);
             __rtl.addRTLStatement(load_stmt);
         }
         else if (is_oper2_int_const) {
             oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
-            Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper2;
-            RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
-            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
-            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, intconst_opd);
+            std::shared_ptr<Int_Const_TAC_Opd>  intconst = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper2);
+            std::shared_ptr<RTL_Int_Const_Opd> intconst_opd = std::make_shared<RTL_Int_Const_Opd>(intconst->get_value());
+            std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(oper2_reg_opd, intconst_opd);
             __rtl.addRTLStatement(load_stmt);
         }
 
-        RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
-        RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+        std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<RTL_Register_Opd> res_reg_opd = std::make_shared<RTL_Register_Opd>(res_rd);
+        std::shared_ptr<RTL_Register_Opd> oper2_reg_opd = std::make_shared<RTL_Register_Opd>(oper2_rd);
 
-        Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(res_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
+        std::shared_ptr<Relational_RTL_Stmt> rel_stmt = std::make_shared<Relational_RTL_Stmt>(res_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
         __rtl.addRTLStatement(rel_stmt);
 
         res_rd->set_used_for_expr_return();
@@ -729,8 +740,8 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     }
 }
 
-Unary_Comp_TAC_Stmt::Unary_Comp_TAC_Stmt(TAC_Opd *res, UnaryOperator u_op,
-                                         TAC_Opd *oper)
+Unary_Comp_TAC_Stmt::Unary_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res, UnaryOperator u_op,
+                                         std::shared_ptr<TAC_Opd> oper)
     : op(u_op) {
     result = res;
     oper1 = oper;
@@ -757,43 +768,43 @@ void Unary_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
                 else if (is_var) {
                     // load into register from variable
                     oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
-                    Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-                    RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+                    std::shared_ptr<RTL_Register_Opd> load_temp_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+                    std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(oper1);
+                    std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
 
-                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, var_opd);
+                    std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_temp_reg_opd, var_opd);
 
                     __rtl.addRTLStatement(load_stmt);
                 }
                 else if (is_int_const) {
                     // load into register from variable
                     oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
-                    Int_Const_TAC_Opd * int_const = (Int_Const_TAC_Opd *) oper1;
-                    RTL_Int_Const_Opd * int_const_opd = new RTL_Int_Const_Opd(int_const->get_value());
+                    std::shared_ptr<RTL_Register_Opd> load_temp_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+                    std::shared_ptr<Int_Const_TAC_Opd>  int_const = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(oper1);
+                    std::shared_ptr<RTL_Int_Const_Opd> int_const_opd = std::make_shared<RTL_Int_Const_Opd>(int_const->get_value());
 
-                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, int_const_opd);
+                    std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_temp_reg_opd, int_const_opd);
 
                     __rtl.addRTLStatement(load_stmt);
                 }
                 else if (is_float_const) {
                     // load into register from variable
                     oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
-                    Double_Const_TAC_Opd * float_const = (Double_Const_TAC_Opd *) oper1;
-                    RTL_Double_Const_Opd * float_const_opd = new RTL_Double_Const_Opd(float_const->get_value());
+                    std::shared_ptr<RTL_Register_Opd> load_temp_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+                    std::shared_ptr<Double_Const_TAC_Opd>  float_const = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(oper1);
+                    std::shared_ptr<RTL_Double_Const_Opd> float_const_opd = std::make_shared<RTL_Double_Const_Opd>(float_const->get_value());
 
-                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, float_const_opd);
+                    std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(load_temp_reg_opd, float_const_opd);
 
                     __rtl.addRTLStatement(load_stmt);
                 }
 
                 // uminus
                 RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-                RTL_Register_Opd * res_opd = new RTL_Register_Opd(res_rd);
-                RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+                std::shared_ptr<RTL_Register_Opd> res_opd = std::make_shared<RTL_Register_Opd>(res_rd);
+                std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, oper1_reg_opd);
+                std::shared_ptr<UMinus_RTL_Stmt> uminus_stmt = std::make_shared<UMinus_RTL_Stmt>(res_opd, oper1_reg_opd);
 
                 __rtl.addRTLStatement(uminus_stmt);
 
@@ -814,20 +825,20 @@ void Unary_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
             else {
                 // load value into temp
                 oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * load_oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+                std::shared_ptr<RTL_Register_Opd> load_oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-                Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) oper1;
-                RTL_Var_Opd * var_opd = new RTL_Var_Opd(var_tac_opd->get_sym_tab_entry());
+                std::shared_ptr<Variable_TAC_Opd>  var_tac_opd = std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
+                std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var_tac_opd->get_sym_tab_entry());
 
-                Transfer_RTL_Stmt * load_into_register_stmt = new Transfer_RTL_Stmt(load_oper1_reg_opd, var_opd);
+                std::shared_ptr<Transfer_RTL_Stmt> load_into_register_stmt = std::make_shared<Transfer_RTL_Stmt>(load_oper1_reg_opd, var_opd);
                 __rtl.addRTLStatement(load_into_register_stmt);
             }
 
             // not instruction
             RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-            RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
-            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
-            Not_RTL_Stmt * not_stmt = new Not_RTL_Stmt(res_reg_opd, oper1_reg_opd);
+            std::shared_ptr<RTL_Register_Opd> res_reg_opd = std::make_shared<RTL_Register_Opd>(res_rd);
+            std::shared_ptr<RTL_Register_Opd> oper1_reg_opd = std::make_shared<RTL_Register_Opd>(oper1_rd);
+            std::shared_ptr<Not_RTL_Stmt> not_stmt = std::make_shared<Not_RTL_Stmt>(res_reg_opd, oper1_reg_opd);
 
             __rtl.addRTLStatement(not_stmt);
 
@@ -840,7 +851,7 @@ void Unary_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     }
 }
 
-Goto_TAC_Stmt::Goto_TAC_Stmt(Label_TAC_Opd *l) {
+Goto_TAC_Stmt::Goto_TAC_Stmt(std::shared_ptr<Label_TAC_Opd>l) {
     result = l;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -851,14 +862,14 @@ void Goto_TAC_Stmt::print(std::ostream &out) {
 }
 
 void Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
-    Label_TAC_Opd * l = (Label_TAC_Opd *) result;
-    RTL_Label_Opd * l_rtl_opd = new RTL_Label_Opd(l->get_label_num());
-    Goto_RTL_Stmt * goto_stmt = new Goto_RTL_Stmt(l_rtl_opd);
+    std::shared_ptr<Label_TAC_Opd> l = std::dynamic_pointer_cast<Label_TAC_Opd>(result);
+    std::shared_ptr<RTL_Label_Opd> l_rtl_opd = std::make_shared<RTL_Label_Opd>(l->get_label_num());
+    std::shared_ptr<Goto_RTL_Stmt> goto_stmt = std::make_shared<Goto_RTL_Stmt>(l_rtl_opd);
     __rtl.addRTLStatement(goto_stmt);
 }
 
-If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(TAC_Opd *cond,
-                                   Label_TAC_Opd *label) {
+If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(std::shared_ptr<TAC_Opd> cond,
+                                   std::shared_ptr<Label_TAC_Opd>label) {
     result = cond;
     oper1 = label;
     oper2 = nullptr;
@@ -872,33 +883,33 @@ void If_Goto_TAC_Stmt::print(std::ostream &out) {
 void If_Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
     bool istemp = result->get_opd_type() == OpdType::TEMPORARY;
 
-    Label_TAC_Opd * label_tac_opd = (Label_TAC_Opd *) oper1;
-    RTL_Label_Opd * l = new RTL_Label_Opd(label_tac_opd->get_label_num());
-    If_Goto_RTL_Stmt * if_goto_stmt;
+    std::shared_ptr<Label_TAC_Opd> label_tac_opd = std::dynamic_pointer_cast<Label_TAC_Opd>(oper1);
+    std::shared_ptr<RTL_Label_Opd> l = std::make_shared<RTL_Label_Opd>(label_tac_opd->get_label_num());
+    std::shared_ptr<If_Goto_RTL_Stmt> if_goto_stmt;
     RegisterDescriptor * rd;
     if (!istemp) {
         // load into temp
         rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(rd);
         
-        Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) result;
-        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var_tac_opd->get_sym_tab_entry());
+        std::shared_ptr<Variable_TAC_Opd>  var_tac_opd = std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
+        std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var_tac_opd->get_sym_tab_entry());
 
         // load statement
-        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, var_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg_opd, var_opd);
         __rtl.addRTLStatement(load_stmt);
 
         // construct the if-goto statement
-        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
-        if_goto_stmt = new If_Goto_RTL_Stmt(reg, l);
+        std::shared_ptr<RTL_Register_Opd> reg = std::make_shared<RTL_Register_Opd>(rd);
+        if_goto_stmt = std::make_shared<If_Goto_RTL_Stmt>(reg, l);
     }
     else {
         // need to get register descriptor corresponding to that temp number
         rd = __rtl.machine_descriptor->get_rd_for_tac_opd(result);
 
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(rd);
 
-        if_goto_stmt = new If_Goto_RTL_Stmt(reg_opd, l);
+        if_goto_stmt = std::make_shared<If_Goto_RTL_Stmt>(reg_opd, l);
 
     }
     
@@ -908,7 +919,7 @@ void If_Goto_TAC_Stmt::generateRTL(RTL & __rtl) {
     rd->reset_used_for_expr_return();
 }
 
-IO_TAC_Stmt::IO_TAC_Stmt(bool write, TAC_Opd *oper) : is_write(write) {
+IO_TAC_Stmt::IO_TAC_Stmt(bool write, std::shared_ptr<TAC_Opd> oper) : is_write(write) {
     result = oper;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -922,35 +933,36 @@ void IO_TAC_Stmt::print(std::ostream &out) {
 void IO_TAC_Stmt::generateRTL(RTL & __rtl) {
     if (is_write) {
         bool is_temp = result->get_opd_type() == OpdType::TEMPORARY;
-        bool is_var = result->get_opd_type() == OpdType::VARIABLE;
+        bool is_var = (result->get_opd_type() == OpdType::VARIABLE) && (std::dynamic_pointer_cast<Variable_TAC_Opd>(result)->get_sym_tab_entry()->get_type() != BaseType::STRING);
         bool is_int_const = result->get_opd_type() == OpdType::INT_CONST;
         bool is_float_const = result->get_opd_type() == OpdType::DOUBLE_CONST;
-        bool is_string_const = result->get_opd_type() == OpdType::STRING_CONST;
+        bool is_string_const = result->get_opd_type() == OpdType::STRING_CONST; 
+        bool is_string_var = ((result->get_opd_type() == OpdType::VARIABLE) && (std::dynamic_pointer_cast<Variable_TAC_Opd>(result)->get_sym_tab_entry()->get_type() == BaseType::STRING));
 
-        Variable_TAC_Opd * var = (Variable_TAC_Opd *) result;
-        Temporary_TAC_Opd * temp = (Temporary_TAC_Opd *) result;
-        Int_Const_TAC_Opd * int_const = (Int_Const_TAC_Opd *) result;
-        Double_Const_TAC_Opd * float_const = (Double_Const_TAC_Opd *) result;
-        String_Const_TAC_Opd * string_const = (String_Const_TAC_Opd *) result;
+        std::shared_ptr<Variable_TAC_Opd>  var = std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
+        std::shared_ptr<Temporary_TAC_Opd> temp = std::dynamic_pointer_cast<Temporary_TAC_Opd>(result);
+        std::shared_ptr<Int_Const_TAC_Opd>  int_const = std::dynamic_pointer_cast<Int_Const_TAC_Opd>(result);
+        std::shared_ptr<Double_Const_TAC_Opd>  float_const = std::dynamic_pointer_cast<Double_Const_TAC_Opd>(result);
+        std::shared_ptr<String_Const_TAC_Opd>  string_const = std::dynamic_pointer_cast<String_Const_TAC_Opd>(result);
 
         bool needfloat = (is_var && var->get_sym_tab_entry()->get_need_float()) || 
                          (is_temp && temp->get_need_float()) || is_float_const;
 
         // load correct value into v0
-        RTL_Int_Const_Opd * num;
+        std::shared_ptr<RTL_Int_Const_Opd> num;
         RegisterDescriptor * rd = __rtl.machine_descriptor->get_register(Register::v0);
-        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
+        std::shared_ptr<RTL_Register_Opd> reg = std::make_shared<RTL_Register_Opd>(rd);
         if (needfloat) {
-            num = new RTL_Int_Const_Opd(3);
+            num = std::make_shared<RTL_Int_Const_Opd>(3);
         }
         else if (is_var || is_temp || is_int_const) {
-            num = new RTL_Int_Const_Opd(1);
+            num = std::make_shared<RTL_Int_Const_Opd>(1);
         }
-        else if (is_string_const) {
-            num = new RTL_Int_Const_Opd(4);
+        else if (is_string_const || is_string_var) {
+            num = std::make_shared<RTL_Int_Const_Opd>(4);
         }
 
-        Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg, num);
+        std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, num);
         __rtl.addRTLStatement(iload_stmt);
 
         // load into correct register
@@ -961,70 +973,71 @@ void IO_TAC_Stmt::generateRTL(RTL & __rtl) {
             rd = __rtl.machine_descriptor->get_register(Register::a0);
         }
 
-        reg = new RTL_Register_Opd(rd);
-        Transfer_RTL_Stmt * load_stmt;
+        reg = std::make_shared<RTL_Register_Opd>(rd);
+        std::shared_ptr<Transfer_RTL_Stmt> load_stmt;
 
         RegisterDescriptor * temp_rd;
         if (is_temp) {
             temp_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(result);
-            RTL_Register_Opd * reg_op = new RTL_Register_Opd(temp_rd);
-            load_stmt = new Transfer_RTL_Stmt(reg, reg_op);
+            std::shared_ptr<RTL_Register_Opd> reg_op = std::make_shared<RTL_Register_Opd>(temp_rd);
+            load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, reg_op);
         }
-        else if (is_var) {
-            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
-            load_stmt = new Transfer_RTL_Stmt(reg, var_opd);
+        else if (is_var || is_string_var) {
+            std::shared_ptr<RTL_Var_Opd> var_opd = std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, var_opd);
         }
         else if (is_int_const) {
-            RTL_Int_Const_Opd * int_const_opd = new RTL_Int_Const_Opd(int_const->get_value());
-            load_stmt = new Transfer_RTL_Stmt(reg, int_const_opd);
+            std::shared_ptr<RTL_Int_Const_Opd> int_const_opd = std::make_shared<RTL_Int_Const_Opd>(int_const->get_value());
+            load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, int_const_opd);
         }
         else if (is_float_const) {
-            RTL_Double_Const_Opd * float_const_opd = new RTL_Double_Const_Opd(float_const->get_value());
-            load_stmt = new Transfer_RTL_Stmt(reg, float_const_opd);
+            std::shared_ptr<RTL_Double_Const_Opd> float_const_opd = std::make_shared<RTL_Double_Const_Opd>(float_const->get_value());
+            load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, float_const_opd);
         }
         else if (is_string_const) {
             // add string const to string const table of rtl
             std::string str_value = string_const->get_name();
-            __rtl.addNewStringConst(str_value);
 
             unsigned int str_num = __rtl.getStringConstNum(str_value);
 
-            RTL_String_Const_Opd * string_const_opd = new RTL_String_Const_Opd(str_num, str_value);
-            load_stmt = new Transfer_RTL_Stmt(reg, string_const_opd);
+            std::shared_ptr<RTL_String_Const_Opd> string_const_opd = std::make_shared<RTL_String_Const_Opd>(str_num, str_value);
+            load_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, string_const_opd);
         }
 
         __rtl.addRTLStatement(load_stmt);
 
         __rtl.machine_descriptor->unset_rd_for_tac_opd(result);
-        temp_rd->reset_used_for_expr_return();
+
+        if (is_temp)
+            temp_rd->reset_used_for_expr_return();
 
         // write instruction
-        Write_RTL_Stmt * write_stmt = new Write_RTL_Stmt();
+        std::shared_ptr<Write_RTL_Stmt> write_stmt = std::make_shared<Write_RTL_Stmt>();
         __rtl.addRTLStatement(write_stmt);  
     }
     else {
-        Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) result;
+        std::shared_ptr<Variable_TAC_Opd>  var_tac_opd = std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
 
-        RTL_Int_Const_Opd * num;
+        std::shared_ptr<RTL_Int_Const_Opd> num;
         RegisterDescriptor * rd = __rtl.machine_descriptor->get_register(Register::v0);
-        RTL_Register_Opd * reg = new RTL_Register_Opd(rd);
+        std::shared_ptr<RTL_Register_Opd> reg = std::make_shared<RTL_Register_Opd>(rd);
 
         // choose appropriate value to load into v0
         if (var_tac_opd->get_sym_tab_entry()->get_need_float()) {
-            num = new RTL_Int_Const_Opd(7);
+            num = std::make_shared<RTL_Int_Const_Opd>(7);
         }
         else {
-            num = new RTL_Int_Const_Opd(5);
+            num = std::make_shared<RTL_Int_Const_Opd>(5);
         }
 
-        Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg, num);
+        std::shared_ptr<Transfer_RTL_Stmt> iload_stmt = std::make_shared<Transfer_RTL_Stmt>(reg, num);
         __rtl.addRTLStatement(iload_stmt);
 
 
-        Read_RTL_Stmt * read_stmt = new Read_RTL_Stmt();
+        std::shared_ptr<Read_RTL_Stmt> read_stmt = std::make_shared<Read_RTL_Stmt>();
         __rtl.addRTLStatement(read_stmt);
         
-        RTL_Var_Opd * var_rtl_opd = new RTL_Var_Opd(var_tac_opd->get_sym_tab_entry());
+        std::shared_ptr<RTL_Var_Opd> var_rtl_opd = std::make_shared<RTL_Var_Opd>(var_tac_opd->get_sym_tab_entry());
 
         // select appropriate register to move result from
         if (var_tac_opd->get_sym_tab_entry()->get_need_float()) {
@@ -1034,14 +1047,14 @@ void IO_TAC_Stmt::generateRTL(RTL & __rtl) {
             rd = __rtl.machine_descriptor->get_register(Register::v0);
         }
 
-        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(rd);
+        std::shared_ptr<RTL_Register_Opd> reg_opd = std::make_shared<RTL_Register_Opd>(rd);
 
-        Transfer_RTL_Stmt * store_stmt = new Transfer_RTL_Stmt(var_rtl_opd, reg_opd);
+        std::shared_ptr<Transfer_RTL_Stmt> store_stmt = std::make_shared<Transfer_RTL_Stmt>(var_rtl_opd, reg_opd);
         __rtl.addRTLStatement(store_stmt);
     }
 }
 
-Label_TAC_Stmt::Label_TAC_Stmt(Label_TAC_Opd *label) {
+Label_TAC_Stmt::Label_TAC_Stmt(std::shared_ptr<Label_TAC_Opd>label) {
     result = label;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -1051,7 +1064,7 @@ void Label_TAC_Stmt::print(std::ostream &out) {
     out << result->get_name() << ":" << std::endl;
 }
 
-Return_TAC_Stmt::Return_TAC_Stmt(Temporary_TAC_Opd *stemp) {
+Return_TAC_Stmt::Return_TAC_Stmt(std::shared_ptr<Temporary_TAC_Opd>stemp) {
     result = stemp;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -1061,11 +1074,13 @@ void Return_TAC_Stmt::print(std::ostream &out) {
     out << "\t" << "return " << result->get_name() << std::endl;
 }
 
-void Label_TAC_Stmt::generateRTL(RTL & __rtl) {
-    Label_TAC_Opd * temp = (Label_TAC_Opd *) result;
-    RTL_Label_Opd * l = new RTL_Label_Opd(temp->get_label_num());
+void Return_TAC_Stmt::generateRTL(RTL & __RTL) {}
 
-    Label_RTL_Stmt * stmt = new Label_RTL_Stmt(l);
+void Label_TAC_Stmt::generateRTL(RTL & __rtl) {
+    std::shared_ptr<Label_TAC_Opd> temp = std::dynamic_pointer_cast<Label_TAC_Opd>(result);
+    std::shared_ptr<RTL_Label_Opd> l = std::make_shared<RTL_Label_Opd>(temp->get_label_num());
+
+    std::shared_ptr<Label_RTL_Stmt> stmt = std::make_shared<Label_RTL_Stmt>(l);
 
     __rtl.addRTLStatement(stmt);
 }

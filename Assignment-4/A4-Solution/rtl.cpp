@@ -52,12 +52,12 @@ RTL_Var_Opd::RTL_Var_Opd(SymbolTableEntry * e) : entry(e) {
 }
 
 std::string RTL_Var_Opd::get_name() {
-    return entry->get_name() + "_";
+    return entry->get_name();
 }
 
 // ---------------------------------------------------------------
 
-Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, ArithmeticOperator opr) {
+Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, ArithmeticOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
@@ -71,11 +71,11 @@ void Arithmetic_RTL_Stmt::print(std::ostream & out) {
     if (isfloat)
         operator_string = operator_string + ".d";
 
-    out << operator_string << ":\t\t" << result->get_name() << " <- " 
+    out << "\t" << operator_string << ":\t\t" << result->get_name() << " <- " 
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-Boolean_RTL_Stmt::Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, BooleanOperator opr) {
+Boolean_RTL_Stmt::Boolean_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, BooleanOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
@@ -84,11 +84,11 @@ Boolean_RTL_Stmt::Boolean_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op
 }
 
 void Boolean_RTL_Stmt::print(std::ostream & out) {
-    out << bool_op_to_rtl_string(oper) << ":\t\t" << result->get_name() << " - > "
+    out << "\t" << bool_op_to_rtl_string(oper) << ":\t\t" << result->get_name() << " - > "
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
-Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr) {
+Relational_RTL_Stmt::Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, RelationalOperator opr) {
     result = res;
     oper1 = op1;
     oper2 = op2;
@@ -97,7 +97,7 @@ Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Op
     isfloat = false;
 }
 
-Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr) {
+Relational_RTL_Stmt::Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> op1, std::shared_ptr<RTL_Register_Opd> op2, RelationalOperator opr) {
     result = nullptr;
     oper1 = op1;
     oper2 = op2;
@@ -112,15 +112,15 @@ void Relational_RTL_Stmt::print(std::ostream & out) {
         operator_string = operator_string + ".d";
 
     if (!isfloat) {
-        out << operator_string << ":\t\t" << result->get_name() << " <- "
+        out << "\t" << operator_string << ":\t\t" << result->get_name() << " <- "
             << oper1->get_name() << " , " << oper2->get_name() << std::endl;
     }
     else {
-        out << operator_string << ":\t\t" << oper1->get_name() << " , " << oper2->get_name() << std::endl;
+        out << "\t" << operator_string << ":\t\t" << oper1->get_name() << " , " << oper2->get_name() << std::endl;
     }
 }
 
-UMinus_RTL_Stmt::UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op) {
+UMinus_RTL_Stmt::UMinus_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op) {
     result = res;
     oper1 = op;
     oper2 = nullptr;
@@ -131,52 +131,52 @@ UMinus_RTL_Stmt::UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op) 
 void UMinus_RTL_Stmt::print(std::ostream & out) {
     std::string operator_string = isfloat ? "uminus.d" : "uminus";
 
-    out << operator_string << ":\t\t" << result->get_name() << " <- "
+    out << "\t" << operator_string << ":\t\t" << result->get_name() << " <- "
         << oper1->get_name() << std::endl;
 }
 
-Not_RTL_Stmt::Not_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op) {
+Not_RTL_Stmt::Not_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> op) {
     result = res;
     oper1 = op;
     oper2 = nullptr;
 }
 
 void Not_RTL_Stmt::print(std::ostream & out) {
-    out << "not" << ":\t\t" << result->get_name() << " <- "
+    out << "\t" << "not" << ":\t\t" << result->get_name() << " <- "
         << oper1->get_name() << std::endl;
 }
 
-Goto_RTL_Stmt::Goto_RTL_Stmt(RTL_Label_Opd * l) {
+Goto_RTL_Stmt::Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = nullptr;
     oper2 = nullptr;
 }
 
 void Goto_RTL_Stmt::print(std::ostream & out) {
-    out << "goto:\t\t" << result->get_name() << std::endl;
+    out << "\t" << "goto:\t\t" << result->get_name() << std::endl;
 }
 
-If_Goto_RTL_Stmt::If_Goto_RTL_Stmt(RTL_Register_Opd * r, RTL_Label_Opd * l) {
+If_Goto_RTL_Stmt::If_Goto_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> r, std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = r;
     oper2 = nullptr;
 }
 
 void If_Goto_RTL_Stmt::print(std::ostream & out) {
-    out << "bgtz:\t\t" << oper1->get_name() << " , " << result->get_name() << std::endl;
+    out << "\t" << "bgtz:\t\t" << oper1->get_name() << " , " << result->get_name() << std::endl;
 }
 
-Label_RTL_Stmt::Label_RTL_Stmt(RTL_Label_Opd * l) {
+Label_RTL_Stmt::Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = nullptr;
     oper2 = nullptr;
 }
 
 void Label_RTL_Stmt::print(std::ostream & out) {
-    out << result->get_name() << ":" << std::endl;
+    out << "\t" << result->get_name() << ":" << std::endl;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Register_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -187,7 +187,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Register_Opd *
     src_type = OpdType::REGISTER;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Var_Opd> dest, std::shared_ptr<RTL_Register_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -199,7 +199,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Var_Opd * dest, RTL_Register_Opd * src)
     src_type = OpdType::REGISTER;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Var_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -211,7 +211,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Var_Opd * src)
     src_type = OpdType::VARIABLE;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Int_Const_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -222,7 +222,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Int_Const_Opd 
     src_type = OpdType::INT_CONST;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_Double_Const_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -233,7 +233,7 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_Double_Const_O
     src_type = OpdType::DOUBLE_CONST;
 }
 
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(RTL_Register_Opd * dest, RTL_String_Const_Opd * src) {
+Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_String_Const_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
@@ -268,7 +268,7 @@ void Transfer_RTL_Stmt::print(std::ostream & out) {
     else
         exit_with_err_msg("kys");
 
-    out << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << std::endl;
+    out << "\t" << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << std::endl;
 }
 
 Read_RTL_Stmt::Read_RTL_Stmt() {
@@ -276,7 +276,7 @@ Read_RTL_Stmt::Read_RTL_Stmt() {
 }
 
 void Read_RTL_Stmt::print(std::ostream & out) {
-    out << "read" << std::endl;
+    out << "\t" << "read" << std::endl;
 }
 
 Write_RTL_Stmt::Write_RTL_Stmt() {
@@ -284,10 +284,10 @@ Write_RTL_Stmt::Write_RTL_Stmt() {
 }
 
 void Write_RTL_Stmt::print(std::ostream & out) {
-    out << "write" << std::endl;
+    out << "\t" << "write" << std::endl;
 }
 
-Mov_RTL_Stmt::Mov_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * opd, unsigned int _flag, bool _movt) {
+Mov_RTL_Stmt::Mov_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Register_Opd> opd, unsigned int _flag, bool _movt) {
     result = res;
     oper1 = opd;
     oper2 = nullptr;
@@ -298,7 +298,7 @@ Mov_RTL_Stmt::Mov_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * opd, unsig
 
 void Mov_RTL_Stmt::print(std::ostream & out) {
     std::string instruction_name = (movt) ? "movt" : "movf";
-    out << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << " , " << flag << std::endl;
+    out << "\t" << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << " , " << flag << std::endl;
 }
 
 RTL::RTL() {
@@ -307,27 +307,26 @@ RTL::RTL() {
 }
 
 RTL::~RTL() {
-    for (RTL_Stmt * stmt : rtl_code) delete stmt;
-
     delete machine_descriptor;
 }
 
 void RTL::print(std::ostream & out) {
-    for (RTL_Stmt * stmt : rtl_code) {
+    for (auto & stmt : rtl_code) {
         stmt->print(out);
     }
 }
 
-void RTL::addNewStringConst(std::string s) {
-    if (string_to_int.find(s) != string_to_int.end()) return;
-
-    string_to_int[s] = string_const_num++;
-}
-
 unsigned int RTL::getStringConstNum(std::string s) {
+    if (string_to_int.find(s) == string_to_int.end()) 
+        string_to_int[s] = string_const_num++;
+    
     return string_to_int[s];
 }
 
-void RTL::addRTLStatement(RTL_Stmt * stmt) {
+void RTL::addRTLStatement(std::shared_ptr<RTL_Stmt> stmt) {
     rtl_code.push_back(stmt);
+}
+
+bool RTL::isEmpty() {
+    return rtl_code.empty();
 }
