@@ -25,7 +25,7 @@ void RegisterDescriptor::reset_used_for_fn_return() { used_for_fn_result = false
 
 bool RegisterDescriptor::is_used_for_expr_return() { return used_for_expr_result; }
 void RegisterDescriptor::set_used_for_expr_return() { used_for_expr_result = true; }
-void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = false; }
+void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = false; reset_register_occupied(); }
 
 template<RegisterUseCategory dt>
 bool RegisterDescriptor::is_free() {

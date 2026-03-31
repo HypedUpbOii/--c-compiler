@@ -127,7 +127,67 @@ void Asgn_TAC_Stmt::print(std::ostream &out) {
 }
 
 void Asgn_TAC_Stmt::generateRTL(RTL & __rtl) {
+    bool is_result_temp = result->get_opd_type() == OpdType::TEMPORARY;
 
+    bool is_oper1_temp = oper1->get_opd_type() == OpdType::TEMPORARY;
+    bool is_oper1_var = oper1->get_opd_type() == OpdType::VARIABLE;
+    bool is_oper1_int_const = oper1->get_opd_type() == OpdType::INT_CONST;
+    bool is_oper1_float_const = oper1->get_opd_type() == OpdType::DOUBLE_CONST;
+
+    RegisterDescriptor * oper1_rd;
+    if (is_oper1_temp) {
+        oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
+    }
+    else if (is_oper1_var) {
+        oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+        Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
+        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
+        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, var_opd);
+
+        __rtl.addRTLStatement(load_stmt);
+    }
+    else if (is_oper1_int_const) {
+        oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+        Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper1;
+        RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
+        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, intconst_opd);
+
+        __rtl.addRTLStatement(load_stmt);
+    }
+    else if (is_oper1_float_const) {
+        oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+        Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper1;
+        RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
+        RTL_Register_Opd * reg_opd = new RTL_Register_Opd(oper1_rd);
+        Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(reg_opd, floatconst_opd);
+
+        __rtl.addRTLStatement(load_stmt);
+    }
+    RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+
+    RegisterDescriptor * res_rd;
+    // to be safe, don't think this case would occur
+    if (is_result_temp) {
+        res_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(result);
+        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+
+        Transfer_RTL_Stmt * assn_stmt = new Transfer_RTL_Stmt(res_reg_opd, oper1_reg_opd);
+        __rtl.addRTLStatement(assn_stmt);
+
+        res_rd->set_used_for_expr_return();
+    }
+    else {
+        Variable_TAC_Opd * var = (Variable_TAC_Opd *) result;
+        RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+
+        Transfer_RTL_Stmt * assn_stmt = new Transfer_RTL_Stmt(var_opd, oper1_reg_opd);
+        __rtl.addRTLStatement(assn_stmt);
+    }
+
+    __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
+    oper1_rd->reset_used_for_expr_return();
 }
 
 Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
@@ -352,131 +412,94 @@ void Unary_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
     bool is_float_const = (oper1->get_opd_type() == OpdType::DOUBLE_CONST);
     switch (op) {
         case UnaryOperator::UMINUS:
-            if (is_temp) {
-                RegisterDescriptor * temp_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
-                RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+            {
+                RegisterDescriptor * oper1_rd;
+                if (is_temp) {
+                    oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
+                }
+                else if (is_var) {
+                    // load into register from variable
+                    oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
+                    Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
+                    RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
 
-                RTL_Register_Opd * temp_opd = new RTL_Register_Opd(temp_rd);
-                RTL_Register_Opd * res_opd = new RTL_Register_Opd(res_rd);
+                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, var_opd);
 
-                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, temp_opd);
+                    __rtl.addRTLStatement(load_stmt);
+                }
+                else if (is_int_const) {
+                    // load into register from variable
+                    oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
+                    Int_Const_TAC_Opd * int_const = (Int_Const_TAC_Opd *) oper1;
+                    RTL_Int_Const_Opd * int_const_opd = new RTL_Int_Const_Opd(int_const->get_value());
 
-                __rtl.addRTLStatement(uminus_stmt);
+                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, int_const_opd);
 
-                __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-                res_rd->set_used_for_expr_return();
-                temp_rd->reset_used_for_expr_return();
-            }
-            else if (is_var) {
-                // load into register from variable
-                RegisterDescriptor * load_temp_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(load_temp_rd);
-                Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
-                RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+                    __rtl.addRTLStatement(load_stmt);
+                }
+                else if (is_float_const) {
+                    // load into register from variable
+                    oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+                    RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(oper1_rd);
+                    Double_Const_TAC_Opd * float_const = (Double_Const_TAC_Opd *) oper1;
+                    RTL_Double_Const_Opd * float_const_opd = new RTL_Double_Const_Opd(float_const->get_value());
 
-                Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, var_opd);
+                    Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, float_const_opd);
 
-                __rtl.addRTLStatement(load_stmt);
-
-                // uminus
-                RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-                RTL_Register_Opd * res_opd = new RTL_Register_Opd(res_rd);
-
-                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, load_temp_reg_opd);
-
-                __rtl.addRTLStatement(uminus_stmt);
-
-                __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-                res_rd->set_used_for_expr_return();
-                load_temp_rd->reset_used_for_expr_return();
-            }
-            else if (is_int_const) {
-                // load into register from variable
-                RegisterDescriptor * load_temp_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(load_temp_rd);
-                Int_Const_TAC_Opd * int_const = (Int_Const_TAC_Opd *) oper1;
-                RTL_Int_Const_Opd * int_const_opd = new RTL_Int_Const_Opd(int_const->get_value());
-
-                Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, int_const_opd);
-
-                __rtl.addRTLStatement(load_stmt);
+                    __rtl.addRTLStatement(load_stmt);
+                }
 
                 // uminus
                 RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
                 RTL_Register_Opd * res_opd = new RTL_Register_Opd(res_rd);
+                RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
 
-                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, load_temp_reg_opd);
-
-                __rtl.addRTLStatement(uminus_stmt);
-
-                __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-                res_rd->set_used_for_expr_return();
-                load_temp_rd->reset_used_for_expr_return();
-            }
-            else if (is_float_const) {
-                // load into register from variable
-                RegisterDescriptor * load_temp_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(load_temp_rd);
-                Double_Const_TAC_Opd * float_const = (Double_Const_TAC_Opd *) oper1;
-                RTL_Double_Const_Opd * float_const_opd = new RTL_Double_Const_Opd(float_const->get_value());
-
-                Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, float_const_opd);
-
-                __rtl.addRTLStatement(load_stmt);
-
-                // uminus
-                RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-                RTL_Register_Opd * res_opd = new RTL_Register_Opd(res_rd);
-
-                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, load_temp_reg_opd);
+                UMinus_RTL_Stmt * uminus_stmt = new UMinus_RTL_Stmt(res_opd, oper1_reg_opd);
 
                 __rtl.addRTLStatement(uminus_stmt);
 
                 __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
                 res_rd->set_used_for_expr_return();
-                load_temp_rd->reset_used_for_expr_return();
+                oper1_rd->reset_used_for_expr_return();
+                
+                break;
             }
-        
-
-            break;
 
         case UnaryOperator::NOT:
+        {            
+            RegisterDescriptor * oper1_rd;
+                
             if (is_temp) {
-                RegisterDescriptor * result_temp_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-                RegisterDescriptor * temp_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * new_temp_rtl_opd = new RTL_Register_Opd(result_temp_rd);
-                RTL_Register_Opd * temp_rtl_opd = new RTL_Register_Opd(temp_rd);
-
-                Not_RTL_Stmt * not_stmt = new Not_RTL_Stmt(new_temp_rtl_opd, temp_rtl_opd);
-                
-                __rtl.addRTLStatement(not_stmt);
-                
-                __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-                result_temp_rd->set_used_for_expr_return();
-                temp_rd->reset_used_for_expr_return();
+                oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
             }
             else {
                 // load value into temp
-                RegisterDescriptor * load_temp_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-                RTL_Register_Opd * load_temp_reg_opd = new RTL_Register_Opd(load_temp_rd);
+                oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+                RTL_Register_Opd * load_oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
 
                 Variable_TAC_Opd * var_tac_opd = (Variable_TAC_Opd *) oper1;
                 RTL_Var_Opd * var_opd = new RTL_Var_Opd(var_tac_opd->get_sym_tab_entry());
-                Transfer_RTL_Stmt * load_into_temp_stmt = new Transfer_RTL_Stmt(load_temp_reg_opd, var_opd);
-                __rtl.addRTLStatement(load_into_temp_stmt);
 
-                // not instruction
-                RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
-                RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
-                Not_RTL_Stmt * not_stmt = new Not_RTL_Stmt(res_reg_opd, load_temp_reg_opd);
-
-                __rtl.addRTLStatement(not_stmt);
-
-                __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-                res_rd->set_used_for_expr_return();
-                load_temp_rd->reset_used_for_expr_return();
+                Transfer_RTL_Stmt * load_into_register_stmt = new Transfer_RTL_Stmt(load_oper1_reg_opd, var_opd);
+                __rtl.addRTLStatement(load_into_register_stmt);
             }
+
+            // not instruction
+            RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+            RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+            Not_RTL_Stmt * not_stmt = new Not_RTL_Stmt(res_reg_opd, oper1_reg_opd);
+
+            __rtl.addRTLStatement(not_stmt);
+
+            __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
+            res_rd->set_used_for_expr_return();
+            oper1_rd->reset_used_for_expr_return();
+            
             break;
+        }
     }
 }
 
