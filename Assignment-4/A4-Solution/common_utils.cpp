@@ -44,6 +44,17 @@ DataType &DataType::operator=(const BaseType &t) {
     return *this;
 }
 
+RelationalOperator anti_op(RelationalOperator op) {
+    switch (op) {
+    case RelationalOperator::GREATER_THAN:
+        return RelationalOperator::LESS_THAN_EQUAL;
+    case RelationalOperator::GREATER_THAN_EQUAL:
+        return RelationalOperator::LESS_THAN;
+    case RelationalOperator::NOT_EQUAL:
+        return RelationalOperator::EQUAL;
+    }
+}
+
 static std::array<std::string, 2> bool_op_strings = {"OR", "AND"};
 std::string bool_op_to_string(BooleanOperator op) {
     return bool_op_strings.at(static_cast<int>(op));

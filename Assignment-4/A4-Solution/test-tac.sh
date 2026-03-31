@@ -61,32 +61,32 @@ do
     fi
 
     # run their implementation
-    # ./$reference --show-rtl -d $file > their.rtl 2> /dev/null
-    # sed 's/;;.*//' their.rtl > theirs.rtl
-    # rm their.rtl
-    # their_status=$?
-    # # run our implementation
-    # ./$our --show-rtl -d $file > ours.rtl 2> /dev/null
-    # our_status=$?
+    ./$reference --show-rtl -d $file > their.rtl 2> /dev/null
+    sed 's/;;.*//' their.rtl > theirs.rtl
+    rm their.rtl
+    their_status=$?
+    # run our implementation
+    ./$our --show-rtl -d $file > ours.rtl 2> /dev/null
+    our_status=$?
 
-    # if [ $their_status -eq $our_status ]; then
-    #     if [ $their_status -eq 1 ]; then
-    #         echo "Passed show-rtl"
-    #         continue
-    #     fi
+    if [ $their_status -eq $our_status ]; then
+        if [ $their_status -eq 1 ]; then
+            echo "Passed show-rtl"
+            continue
+        fi
 
-    #     diff -Bw ours.rtl theirs.rtl > err.log
+        diff -Bw ours.rtl theirs.rtl > err.log
 
-    #     if [ $? -eq 0 ]; then
-    #         echo "Passed show-rtl"
-    #     else 
-    #         echo "Failed show-rtl: rtl don't match in file $file"
-    #         exit 1
-    #     fi
-    # else 
-    #     echo "Failed show-rtl : parsed incorrectly on file $file"
-    #     exit 1
-    # fi
+        if [ $? -eq 0 ]; then
+            echo "Passed show-rtl"
+        else 
+            echo "Failed show-rtl: rtl don't match in file $file"
+            exit 1
+        fi
+    else 
+        echo "Failed show-rtl : parsed incorrectly on file $file"
+        exit 1
+    fi
 done
 
 rm ours.ast theirs.ast

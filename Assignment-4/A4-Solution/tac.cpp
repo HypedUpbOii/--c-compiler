@@ -222,18 +222,6 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
             std::make_shared<Transfer_RTL_Stmt>(reg_opd, strconst_opd);
 
         __rtl.addRTLStatement(load_stmt);
-    } else {
-        oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
-        std::shared_ptr<Temporary_TAC_Opd> temp =
-            std::dynamic_pointer_cast<Temporary_TAC_Opd>(oper1);
-        std::shared_ptr<RTL_STemp_Opd> stemp_opd =
-            std::make_shared<RTL_STemp_Opd>(temp->get_temp_num());
-        std::shared_ptr<RTL_Register_Opd> reg_opd =
-            std::make_shared<RTL_Register_Opd>(oper1_rd);
-        std::shared_ptr<Transfer_RTL_Stmt> load_stmt =
-            std::make_shared<Transfer_RTL_Stmt>(reg_opd, stemp_opd);
-
-        __rtl.addRTLStatement(load_stmt);
     }
 
     std::shared_ptr<RTL_Register_Opd> oper1_reg_opd =
@@ -259,15 +247,6 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
 
         std::shared_ptr<Transfer_RTL_Stmt> assn_stmt =
             std::make_shared<Transfer_RTL_Stmt>(var_opd, oper1_reg_opd);
-        __rtl.addRTLStatement(assn_stmt);
-    } else {
-        std::shared_ptr<Temporary_TAC_Opd> temp =
-            std::dynamic_pointer_cast<Temporary_TAC_Opd>(result);
-        std::shared_ptr<RTL_STemp_Opd> temp_opd =
-            std::make_shared<RTL_STemp_Opd>(temp->get_temp_num());
-
-        std::shared_ptr<Transfer_RTL_Stmt> assn_stmt =
-            std::make_shared<Transfer_RTL_Stmt>(temp_opd, oper1_reg_opd);
         __rtl.addRTLStatement(assn_stmt);
     }
 
@@ -605,144 +584,12 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL &__rtl) {
 
         // add the relational statement based on case
         switch (op) {
-            case RelationalOperator::LESS_THAN: {
-                std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
-                    std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd,
-                        RelationalOperator::LESS_THAN);
-                __rtl.addRTLStatement(rel_stmt);
-
-                std::shared_ptr<RTL_Register_Opd> reg1 =
-                    std::make_shared<RTL_Register_Opd>(rd);
-                std::shared_ptr<RTL_Register_Opd> reg2 =
-                    std::make_shared<RTL_Register_Opd>(res_rd);
-
-                std::shared_ptr<RTL_Int_Const_Opd> one =
-                    std::make_shared<RTL_Int_Const_Opd>(1);
-                RegisterDescriptor *zero =
-                    __rtl.machine_descriptor->get_register(Register::zero);
-                std::shared_ptr<RTL_Register_Opd> zero_reg =
-                    std::make_shared<RTL_Register_Opd>(zero);
-
-                // iLoad
-                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg1, one);
-                __rtl.addRTLStatement(iload_stmt);
-                // move
-                std::shared_ptr<Transfer_RTL_Stmt> move_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
-                __rtl.addRTLStatement(move_stmt);
-                // movt
-                std::shared_ptr<Mov_RTL_Stmt> movt_stmt =
-                    std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, true);
-                __rtl.addRTLStatement(movt_stmt);
-
-                break;
-            }
-            case RelationalOperator::LESS_THAN_EQUAL: {
-                std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
-                    std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd,
-                        RelationalOperator::LESS_THAN_EQUAL);
-                __rtl.addRTLStatement(rel_stmt);
-
-                std::shared_ptr<RTL_Register_Opd> reg1 =
-                    std::make_shared<RTL_Register_Opd>(rd);
-                std::shared_ptr<RTL_Register_Opd> reg2 =
-                    std::make_shared<RTL_Register_Opd>(res_rd);
-
-                std::shared_ptr<RTL_Int_Const_Opd> one =
-                    std::make_shared<RTL_Int_Const_Opd>(1);
-                RegisterDescriptor *zero =
-                    __rtl.machine_descriptor->get_register(Register::zero);
-                std::shared_ptr<RTL_Register_Opd> zero_reg =
-                    std::make_shared<RTL_Register_Opd>(zero);
-
-                // iLoad
-                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg1, one);
-                __rtl.addRTLStatement(iload_stmt);
-                // move
-                std::shared_ptr<Transfer_RTL_Stmt> move_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
-                __rtl.addRTLStatement(move_stmt);
-                // movt
-                std::shared_ptr<Mov_RTL_Stmt> movt_stmt =
-                    std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, true);
-                __rtl.addRTLStatement(movt_stmt);
-                break;
-            }
-            case RelationalOperator::GREATER_THAN: {
-                std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
-                    std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd,
-                        RelationalOperator::LESS_THAN_EQUAL);
-                __rtl.addRTLStatement(rel_stmt);
-
-                std::shared_ptr<RTL_Register_Opd> reg1 =
-                    std::make_shared<RTL_Register_Opd>(rd);
-                std::shared_ptr<RTL_Register_Opd> reg2 =
-                    std::make_shared<RTL_Register_Opd>(res_rd);
-
-                std::shared_ptr<RTL_Int_Const_Opd> one =
-                    std::make_shared<RTL_Int_Const_Opd>(1);
-                RegisterDescriptor *zero =
-                    __rtl.machine_descriptor->get_register(Register::zero);
-                std::shared_ptr<RTL_Register_Opd> zero_reg =
-                    std::make_shared<RTL_Register_Opd>(zero);
-
-                // iLoad
-                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg1, one);
-                __rtl.addRTLStatement(iload_stmt);
-                // move
-                std::shared_ptr<Transfer_RTL_Stmt> move_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
-                __rtl.addRTLStatement(move_stmt);
-                // movt
-                std::shared_ptr<Mov_RTL_Stmt> movf_stmt =
-                    std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
-                __rtl.addRTLStatement(movf_stmt);
-                break;
-            }
-            case RelationalOperator::GREATER_THAN_EQUAL: {
-                std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
-                    std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd,
-                        RelationalOperator::LESS_THAN);
-                __rtl.addRTLStatement(rel_stmt);
-
-                std::shared_ptr<RTL_Register_Opd> reg1 =
-                    std::make_shared<RTL_Register_Opd>(rd);
-                std::shared_ptr<RTL_Register_Opd> reg2 =
-                    std::make_shared<RTL_Register_Opd>(res_rd);
-
-                std::shared_ptr<RTL_Int_Const_Opd> one =
-                    std::make_shared<RTL_Int_Const_Opd>(1);
-                RegisterDescriptor *zero =
-                    __rtl.machine_descriptor->get_register(Register::zero);
-                std::shared_ptr<RTL_Register_Opd> zero_reg =
-                    std::make_shared<RTL_Register_Opd>(zero);
-
-                // iLoad
-                std::shared_ptr<Transfer_RTL_Stmt> iload_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg1, one);
-                __rtl.addRTLStatement(iload_stmt);
-                // move
-                std::shared_ptr<Transfer_RTL_Stmt> move_stmt =
-                    std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
-                __rtl.addRTLStatement(move_stmt);
-                // movt
-                std::shared_ptr<Mov_RTL_Stmt> movf_stmt =
-                    std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
-                __rtl.addRTLStatement(movf_stmt);
-
-                break;
-            }
+            case RelationalOperator::LESS_THAN:
+            case RelationalOperator::LESS_THAN_EQUAL:
             case RelationalOperator::EQUAL: {
                 std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
                     std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                        oper1_reg_opd, oper2_reg_opd, op);
                 __rtl.addRTLStatement(rel_stmt);
 
                 std::shared_ptr<RTL_Register_Opd> reg1 =
@@ -769,12 +616,15 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL &__rtl) {
                 std::shared_ptr<Mov_RTL_Stmt> movt_stmt =
                     std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, true);
                 __rtl.addRTLStatement(movt_stmt);
+
                 break;
             }
+            case RelationalOperator::GREATER_THAN:
+            case RelationalOperator::GREATER_THAN_EQUAL:
             case RelationalOperator::NOT_EQUAL: {
                 std::shared_ptr<Relational_RTL_Stmt> rel_stmt =
                     std::make_shared<Relational_RTL_Stmt>(
-                        oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                        oper1_reg_opd, oper2_reg_opd, anti_op(op));
                 __rtl.addRTLStatement(rel_stmt);
 
                 std::shared_ptr<RTL_Register_Opd> reg1 =
@@ -796,10 +646,12 @@ void Rel_Comp_TAC_Stmt::generateRTL(RTL &__rtl) {
                 // move
                 std::shared_ptr<Transfer_RTL_Stmt> move_stmt =
                     std::make_shared<Transfer_RTL_Stmt>(reg2, zero_reg);
-                // movt
+                __rtl.addRTLStatement(move_stmt);
+                // movf
                 std::shared_ptr<Mov_RTL_Stmt> movf_stmt =
                     std::make_shared<Mov_RTL_Stmt>(reg2, reg1, 0, false);
                 __rtl.addRTLStatement(movf_stmt);
+
                 break;
             }
         }
@@ -1122,6 +974,20 @@ void IO_TAC_Stmt::print(std::ostream &out) {
 }
 
 void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
+    RegisterDescriptor *rd = __rtl.machine_descriptor->get_register(Register::v0);
+    RegisterDescriptor *extra_reg = nullptr;
+    bool v0_free = __rtl.machine_descriptor->get_register(Register::v0)->is_free<int_reg>();
+    // first check if v0 is free
+    if (!v0_free) {
+        // get a new int_reg
+        extra_reg = __rtl.machine_descriptor->get_new_register<int_reg>();
+        // move v0 into that reg
+        std::shared_ptr<RTL_Register_Opd> src = std::make_shared<RTL_Register_Opd>(rd);
+        std::shared_ptr<RTL_Register_Opd> dest = std::make_shared<RTL_Register_Opd>(extra_reg);
+        std::shared_ptr<Transfer_RTL_Stmt> mov = std::make_shared<Transfer_RTL_Stmt>(dest, src);
+
+        __rtl.addRTLStatement(mov);
+    }
     if (is_write) {
         bool is_temp = result->get_opd_type() == OpdType::TEMPORARY;
         bool is_var = (result->get_opd_type() == OpdType::VARIABLE) &&
@@ -1154,8 +1020,6 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
 
         // load correct value into v0
         std::shared_ptr<RTL_Int_Const_Opd> num;
-        RegisterDescriptor *rd =
-            __rtl.machine_descriptor->get_register(Register::v0);
         std::shared_ptr<RTL_Register_Opd> reg =
             std::make_shared<RTL_Register_Opd>(rd);
         if (needfloat) {
@@ -1228,8 +1092,6 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
             std::dynamic_pointer_cast<Variable_TAC_Opd>(result);
 
         std::shared_ptr<RTL_Int_Const_Opd> num;
-        RegisterDescriptor *rd =
-            __rtl.machine_descriptor->get_register(Register::v0);
         std::shared_ptr<RTL_Register_Opd> reg =
             std::make_shared<RTL_Register_Opd>(rd);
 
@@ -1264,6 +1126,16 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
         std::shared_ptr<Transfer_RTL_Stmt> store_stmt =
             std::make_shared<Transfer_RTL_Stmt>(var_rtl_opd, reg_opd);
         __rtl.addRTLStatement(store_stmt);
+    }
+    if (!v0_free) {
+        // move extra_reg stuff back to rd
+        std::shared_ptr<RTL_Register_Opd> dest = std::make_shared<RTL_Register_Opd>(rd);
+        std::shared_ptr<RTL_Register_Opd> src = std::make_shared<RTL_Register_Opd>(extra_reg);
+        std::shared_ptr<Transfer_RTL_Stmt> mov = std::make_shared<Transfer_RTL_Stmt>(dest, src);
+
+        __rtl.addRTLStatement(mov);
+
+        extra_reg->reset_used_for_expr_return();
     }
 }
 

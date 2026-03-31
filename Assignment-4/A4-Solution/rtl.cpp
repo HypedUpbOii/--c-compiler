@@ -48,14 +48,6 @@ RTL_Var_Opd::RTL_Var_Opd(SymbolTableEntry *e) : entry(e) {
 
 std::string RTL_Var_Opd::get_name() { return entry->get_name(); }
 
-RTL_STemp_Opd::RTL_STemp_Opd(unsigned int num) : stemp_number(num) {
-    opd_type = OpdType::TEMPORARY;
-}
-
-std::string RTL_STemp_Opd::get_name() {
-    return "stemp" + std::to_string(stemp_number);
-}
-
 // ---------------------------------------------------------------
 
 Arithmetic_RTL_Stmt::Arithmetic_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
@@ -268,28 +260,6 @@ Transfer_RTL_Stmt::Transfer_RTL_Stmt(
 
     dest_type = OpdType::REGISTER;
     src_type = OpdType::STRING_CONST;
-}
-
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_STemp_Opd> dest, std::shared_ptr<RTL_Register_Opd> src) {
-    result = dest;
-    oper1 = src;
-    oper2 = nullptr;
-
-    isfloat = src->reg_desc->reg_type == RegisterType::float_num;
-
-    dest_type = OpdType::TEMPORARY;
-    src_type = OpdType::REGISTER;
-}
-
-Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest, std::shared_ptr<RTL_STemp_Opd> src) {
-    result = dest;
-    oper1 = src;
-    oper2 = nullptr;
-
-    isfloat = dest->reg_desc->reg_type == RegisterType::float_num;
-
-    dest_type = OpdType::REGISTER;
-    src_type = OpdType::TEMPORARY;
 }
 
 void Transfer_RTL_Stmt::print(std::ostream &out) {

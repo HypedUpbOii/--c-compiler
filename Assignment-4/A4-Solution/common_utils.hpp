@@ -59,6 +59,8 @@ enum class RelationalOperator : int {
     NOT_EQUAL
 };
 
+RelationalOperator anti_op(RelationalOperator op);
+
 std::string rel_op_to_string(RelationalOperator op);
 std::string rel_op_to_symbol(RelationalOperator op);
 std::string rel_op_to_rtl_string(RelationalOperator op);
