@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
     }
 
     // do rtl stuff here
-    // program.generateRTL();
-    // program.printRTL(rtl_stream);
-    // out_handler.commitRtl();
+    program.generateRTL();
+    program.printRTL(rtl_stream);
+    out_handler.commitRtl();
     return 0;
 }

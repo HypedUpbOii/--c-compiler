@@ -8,6 +8,8 @@ DataType SymbolTableEntry::get_type() const { return type; }
 
 std::string SymbolTableEntry::get_name() const { return name; }
 
+bool SymbolTableEntry::get_need_float() const { return type.base == BaseType::FLOAT; }
+
 SymbolTableFunction::SymbolTableFunction(std::string n, DataType rt,
                                          std::vector<DataType> &params,
                                          bool def)

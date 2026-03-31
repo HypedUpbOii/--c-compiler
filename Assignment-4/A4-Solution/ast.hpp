@@ -3,6 +3,7 @@
 #include "symbol_table.hpp"
 #include "tac.hpp"
 #include <algorithm>
+#include "rtl.hpp"
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -325,6 +326,7 @@ class Function_Ast {
   private:
     TAC tac;
 
+    RTL rtl;
   public:
     DataType returnType;
     std::vector<std::pair<std::string, DataType>> parameters;
@@ -342,6 +344,8 @@ class Function_Ast {
     void printTree(std::ostream &);
     void generateTAC(Label_TAC_Opd *ret_label);
     void printTAC(std::ostream &);
+    void generateRTL();
+    void printRTL(std::ostream &);
 };
 
 class Program {
@@ -359,4 +363,6 @@ class Program {
     void print(std::ostream &);
     void generateTAC();
     void printTAC(std::ostream &);
+    void generateRTL();
+    void printRTL(std::ostream &);
 };

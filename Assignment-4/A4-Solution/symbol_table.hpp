@@ -12,6 +12,7 @@ class SymbolTableEntry {
     SymbolTableEntry(std::string n, DataType dt);
     DataType get_type() const;
     std::string get_name() const;
+    bool get_need_float() const;
 };
 
 class SymbolTableFunction {

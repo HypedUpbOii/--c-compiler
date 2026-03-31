@@ -232,7 +232,8 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac) {
     auto left_tac = leftOp->generateTAC(tac);
     auto right_tac = rightOp->generateTAC(tac);
-    place = tac.genNewTemporary();
+    // may need float
+    place = tac.genNewTemporary(leftOp->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
         new Arith_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
@@ -398,7 +399,8 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac) {
     auto oper_tac = operand->generateTAC(tac);
-    place = tac.genNewTemporary();
+    // may need float
+    place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::UMINUS, operand->place);
 
@@ -877,6 +879,14 @@ void Function_Ast::printTAC(std::ostream &out) {
     out << "**END: Three Address Code Statements" << std::endl;
 }
 
+void Function_Ast::generateRTL() {
+    tac.generateRTL(rtl);
+}
+
+void Function_Ast::printRTL(std::ostream & out) {
+    rtl.print(out);
+}
+
 Function_Ast::~Function_Ast() { delete local; }
 
 // Program Class
@@ -926,6 +936,18 @@ void Program::generateTAC() {
 void Program::printTAC(std::ostream &out) {
     for (auto const &[name, func] : funcs)
         func->printTAC(out);
+}
+
+void Program::generateRTL() {
+    for (auto & func : funcs) {
+        func->generateRTL();
+    }
+}
+
+void Program::printRTL(std::ostream & out) {
+    for (auto & func : funcs) {
+        func->printRTL(out);
+    }
 }
 
 Program::~Program() { delete global; }
