@@ -714,6 +714,14 @@ void Function_Ast::printTAC(std::ostream &out) {
     out << "**END: Three Address Code Statements" << std::endl;
 }
 
+void Function_Ast::generateRTL() {
+    tac.generateRTL(rtl);
+}
+
+void Function_Ast::printRTL(std::ostream & out) {
+    rtl.print(out);
+}
+
 Function_Ast::~Function_Ast() { delete local; }
 
 // Program class (please change in A5)
@@ -800,6 +808,18 @@ void Program::generateTAC() {
 void Program::printTAC(std::ostream &out) {
     for (auto &func : funcs) {
         func->printTAC(out);
+    }
+}
+
+void Program::generateRTL() {
+    for (auto & func : funcs) {
+        func->generateRTL();
+    }
+}
+
+void Program::printRTL(std::ostream & out) {
+    for (auto & func : funcs) {
+        func->printRTL(out);
     }
 }
 

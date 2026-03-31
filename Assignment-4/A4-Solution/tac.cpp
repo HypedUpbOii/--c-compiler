@@ -381,6 +381,14 @@ Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(TAC_Opd *res, TAC_Opd *op1,
     result = res;
     oper1 = op1;
     oper2 = op2;
+
+    bool is_temp = op1->get_opd_type() == OpdType::TEMPORARY;
+    bool is_var = op1->get_opd_type() == OpdType::VARIABLE;
+    bool is_float_const = op1->get_opd_type() == OpdType::DOUBLE_CONST;
+
+    needfloat = (is_temp && ((Temporary_TAC_Opd *) op1)->get_need_float())
+     || (is_var && ((Variable_TAC_Opd *) op1)->get_sym_tab_entry()->get_need_float())
+     || is_float_const;
 }
 
 void Rel_Comp_TAC_Stmt::print(std::ostream &out) {
@@ -389,7 +397,303 @@ void Rel_Comp_TAC_Stmt::print(std::ostream &out) {
 }
 
 void Rel_Comp_TAC_Stmt::generateRTL(RTL & __rtl) {
+    if (needfloat) {
+        bool is_oper1_temp = oper1->get_opd_type() == OpdType::TEMPORARY;
+        bool is_oper1_var = oper1->get_opd_type() == OpdType::VARIABLE;
+        bool is_oper1_float_const = oper1->get_opd_type() == OpdType::DOUBLE_CONST;
 
+        RegisterDescriptor * oper1_rd;
+        if (is_oper1_temp) {
+            oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
+        }
+        else if (is_oper1_var) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
+            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, var_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+        else if (is_oper1_float_const) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+            Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper1;
+            RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
+            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, floatconst_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+
+        RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+
+        bool is_oper2_temp = oper2->get_opd_type() == OpdType::TEMPORARY;
+        bool is_oper2_var = oper2->get_opd_type() == OpdType::VARIABLE;
+        bool is_oper2_float_const = oper2->get_opd_type() == OpdType::DOUBLE_CONST;
+
+        RegisterDescriptor * oper2_rd;
+        if (is_oper2_temp) {
+            oper2_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper2);
+        }
+        else if (is_oper2_var) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
+            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
+            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, var_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+        else if (is_oper2_float_const) {
+            oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
+            Double_Const_TAC_Opd * floatconst = (Double_Const_TAC_Opd *) oper2;
+            RTL_Double_Const_Opd * floatconst_opd = new RTL_Double_Const_Opd(floatconst->get_value());
+            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, floatconst_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+        
+        RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+        RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+        // add the relational statement based on case
+        switch(op) {
+            case RelationalOperator::LESS_THAN:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                __rtl.addRTLStatement(movt_stmt);
+
+                break;
+            }
+            case RelationalOperator::LESS_THAN_EQUAL:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                __rtl.addRTLStatement(movt_stmt);
+                break;
+            }
+            case RelationalOperator::GREATER_THAN:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN_EQUAL);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                __rtl.addRTLStatement(movf_stmt);
+                break;
+            }
+            case RelationalOperator::GREATER_THAN_EQUAL:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::LESS_THAN);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                __rtl.addRTLStatement(movf_stmt);
+
+                break;
+            }
+            case RelationalOperator::EQUAL:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movt_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, true);
+                __rtl.addRTLStatement(movt_stmt);
+                break;
+            }
+            case RelationalOperator::NOT_EQUAL:
+            {
+                Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(oper1_reg_opd, oper2_reg_opd, RelationalOperator::EQUAL);
+                __rtl.addRTLStatement(rel_stmt);
+
+                RegisterDescriptor * rd1 = __rtl.machine_descriptor->get_new_register<int_reg>();
+                RegisterDescriptor * rd2 = __rtl.machine_descriptor->get_new_register<int_reg>();
+
+                RTL_Register_Opd * reg1 = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2 = new RTL_Register_Opd(rd2);
+
+                RTL_Int_Const_Opd * one = new RTL_Int_Const_Opd(1);
+                RegisterDescriptor * zero = __rtl.machine_descriptor->get_register(Register::zero);
+                RTL_Register_Opd * zero_reg = new RTL_Register_Opd(zero);
+                
+                // iLoad
+                Transfer_RTL_Stmt * iload_stmt = new Transfer_RTL_Stmt(reg1, one);
+                __rtl.addRTLStatement(iload_stmt);
+                // move
+                Transfer_RTL_Stmt * move_stmt = new Transfer_RTL_Stmt(reg2, zero_reg);
+                // movt
+                RTL_Register_Opd * reg1_ = new RTL_Register_Opd(rd1);
+                RTL_Register_Opd * reg2_ = new RTL_Register_Opd(rd2);
+                Mov_RTL_Stmt * movf_stmt = new Mov_RTL_Stmt(reg2_, reg1_, 0, false);
+                __rtl.addRTLStatement(movf_stmt);
+                break;
+            }
+        }
+
+        
+        res_rd->set_used_for_expr_return();
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(oper2);
+        oper1_rd->reset_used_for_expr_return();
+        oper2_rd->reset_used_for_expr_return();
+    }
+    else {
+        bool is_oper1_temp = oper1->get_opd_type() == OpdType::TEMPORARY;
+        bool is_oper1_var = oper1->get_opd_type() == OpdType::VARIABLE;
+        bool is_oper1_int_const = oper1->get_opd_type() == OpdType::INT_CONST;
+
+        RegisterDescriptor * oper1_rd;
+        if (is_oper1_temp) {
+            oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
+        }
+        else if (is_oper1_var) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper1;
+            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, var_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+        else if (is_oper1_int_const) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
+            Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper1;
+            RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
+            RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper1_reg_opd, intconst_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+
+        RegisterDescriptor * res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+
+        bool is_oper2_temp = oper2->get_opd_type() == OpdType::TEMPORARY;
+        bool is_oper2_var = oper2->get_opd_type() == OpdType::VARIABLE;
+        bool is_oper2_int_const = oper2->get_opd_type() == OpdType::INT_CONST;
+
+        RegisterDescriptor * oper2_rd;
+        if (is_oper2_temp) {
+            oper2_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper2);
+        }
+        else if (is_oper2_var) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
+            Variable_TAC_Opd * var = (Variable_TAC_Opd *) oper2;
+            RTL_Var_Opd * var_opd = new RTL_Var_Opd(var->get_sym_tab_entry());
+            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, var_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+        else if (is_oper2_int_const) {
+            oper2_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper2);
+            Int_Const_TAC_Opd * intconst = (Int_Const_TAC_Opd *) oper2;
+            RTL_Int_Const_Opd * intconst_opd = new RTL_Int_Const_Opd(intconst->get_value());
+            RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+            Transfer_RTL_Stmt * load_stmt = new Transfer_RTL_Stmt(oper2_reg_opd, intconst_opd);
+            __rtl.addRTLStatement(load_stmt);
+        }
+
+        RTL_Register_Opd * oper1_reg_opd = new RTL_Register_Opd(oper1_rd);
+        RTL_Register_Opd * res_reg_opd = new RTL_Register_Opd(res_rd);
+        RTL_Register_Opd * oper2_reg_opd = new RTL_Register_Opd(oper2_rd);
+
+        Relational_RTL_Stmt * rel_stmt = new Relational_RTL_Stmt(res_reg_opd, oper1_reg_opd, oper2_reg_opd, op);
+        __rtl.addRTLStatement(rel_stmt);
+
+        res_rd->set_used_for_expr_return();
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(oper2);
+        oper1_rd->reset_used_for_expr_return();
+        oper2_rd->reset_used_for_expr_return();
+    }
 }
 
 Unary_Comp_TAC_Stmt::Unary_Comp_TAC_Stmt(TAC_Opd *res, UnaryOperator u_op,

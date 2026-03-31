@@ -56,6 +56,9 @@ int main(int argc, char *argv[]) {
     }
 
     // do rtl stuff here
+    program.generateRTL();
+    program.printRTL(rtl_stream);
+    out_handler.commitRTL();
 
     delete local_sym_tab;
 

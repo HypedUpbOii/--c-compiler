@@ -8,16 +8,6 @@
 #include <string>
 #include <vector>
 
-enum class OpdType {
-    INT_CONST,
-    DOUBLE_CONST,
-    STRING_CONST,
-    LABEL,
-    TEMPORARY,
-    VARIABLE,
-    REGISTER
-};
-
 class TAC_Opd {
   protected:
     OpdType opd_type;
@@ -99,7 +89,7 @@ class Variable_TAC_Opd : public TAC_Opd {
 };
 
 // ----------------------------------------------------------------------------
-class RTL;
+#include "rtl.hpp"
 
 class TAC_Stmt {
   protected:
@@ -159,6 +149,7 @@ class Arith_Comp_TAC_Stmt : public Compute_TAC_Stmt {
 class Rel_Comp_TAC_Stmt : public Compute_TAC_Stmt {
   private:
     RelationalOperator op;
+    bool needfloat;
 
   public:
     Rel_Comp_TAC_Stmt(TAC_Opd *result, TAC_Opd *oper1, RelationalOperator op,

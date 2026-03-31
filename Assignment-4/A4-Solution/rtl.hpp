@@ -1,5 +1,5 @@
+#pragma once
 #include "common_utils.hpp"
-#include "tac.hpp"
 #include "symbol_table.hpp"
 #include "register.hpp"
 #include <string>
@@ -89,8 +89,10 @@ public:
 
 class Relational_RTL_Stmt : public Compute_RTL_Stmt {
     RelationalOperator oper;
+
 public:
     Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr);
+    Relational_RTL_Stmt(RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr);
     void print(std::ostream & out) override;
 };
 
@@ -174,6 +176,14 @@ public:
     void print(std::ostream &) override;
 };
 
+class Mov_RTL_Stmt : public RTL_Stmt {
+    unsigned int flag;
+    bool movt;
+public:
+    Mov_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * opd, unsigned int _flag, bool _movt);
+    void print(std::ostream &) override;
+};
+
 class RTL {
     std::vector<RTL_Stmt *> rtl_code;
     unsigned int string_const_num;
@@ -184,6 +194,7 @@ public:
     RTL();
     ~RTL();
 
+    void print(std::ostream &);
     void addNewStringConst(std::string s); // add only if it doesn't exist
     unsigned int getStringConstNum(std::string s);
     void addRTLStatement(RTL_Stmt * stmt);

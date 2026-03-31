@@ -1,23 +1,10 @@
+#pragma once
 #include "common_utils.hpp"
 #include "symbol_table.hpp"
 #include "tac.hpp"
 #include <map>
 #include <list>
 
-typedef enum {
-    int_num,
-    float_num,
-} RegisterType;
-
-typedef enum {
-    fixed_reg,
-    int_reg,
-    fn_result,
-    argument,
-    pointer,
-    ret_address,
-    float_reg
-} RegisterUseCategory;
 
 class RegisterDescriptor {
 public:

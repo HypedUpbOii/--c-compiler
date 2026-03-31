@@ -94,7 +94,16 @@ Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Op
     oper2 = op2;
 
     oper = opr;
-    isfloat = op1->reg_desc->reg_type == RegisterType::float_num;
+    isfloat = false;
+}
+
+Relational_RTL_Stmt::Relational_RTL_Stmt(RTL_Register_Opd * op1, RTL_Register_Opd * op2, RelationalOperator opr) {
+    result = nullptr;
+    oper1 = op1;
+    oper2 = op2;
+
+    oper = opr;
+    isfloat = true;
 }
 
 void Relational_RTL_Stmt::print(std::ostream & out) {
@@ -102,8 +111,13 @@ void Relational_RTL_Stmt::print(std::ostream & out) {
     if (isfloat)
         operator_string = operator_string + ".d";
 
-    out << operator_string << ":\t\t" << result->get_name() << " <- "
-        << oper1->get_name() << " , " << oper2->get_name() << std::endl;
+    if (!isfloat) {
+        out << operator_string << ":\t\t" << result->get_name() << " <- "
+            << oper1->get_name() << " , " << oper2->get_name() << std::endl;
+    }
+    else {
+        out << operator_string << ":\t\t" << oper1->get_name() << " , " << oper2->get_name() << std::endl;
+    }
 }
 
 UMinus_RTL_Stmt::UMinus_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * op) {
@@ -273,6 +287,20 @@ void Write_RTL_Stmt::print(std::ostream & out) {
     out << "write" << std::endl;
 }
 
+Mov_RTL_Stmt::Mov_RTL_Stmt(RTL_Register_Opd * res, RTL_Register_Opd * opd, unsigned int _flag, bool _movt) {
+    result = res;
+    oper1 = opd;
+    oper2 = nullptr;
+
+    flag = _flag;
+    movt = _movt;
+}
+
+void Mov_RTL_Stmt::print(std::ostream & out) {
+    std::string instruction_name = (movt) ? "movt" : "movf";
+    out << instruction_name << ":\t\t" << result->get_name() << " <- " << oper1->get_name() << " , " << flag << std::endl;
+}
+
 RTL::RTL() {
     string_const_num = 0;
     machine_descriptor = new MachineDescriptor();
@@ -282,6 +310,12 @@ RTL::~RTL() {
     for (RTL_Stmt * stmt : rtl_code) delete stmt;
 
     delete machine_descriptor;
+}
+
+void RTL::print(std::ostream & out) {
+    for (RTL_Stmt * stmt : rtl_code) {
+        stmt->print(out);
+    }
 }
 
 void RTL::addNewStringConst(std::string s) {

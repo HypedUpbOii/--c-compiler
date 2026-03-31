@@ -68,6 +68,16 @@ enum class UnaryOperator : int { UMINUS, NOT };
 std::string unary_op_to_string(UnaryOperator op);
 std::string unary_op_to_symbol(UnaryOperator op);
 
+enum class OpdType {
+    INT_CONST,
+    DOUBLE_CONST,
+    STRING_CONST,
+    LABEL,
+    TEMPORARY,
+    VARIABLE,
+    REGISTER
+};
+
 typedef enum {
     none,
     zero,
@@ -93,6 +103,21 @@ typedef enum {
     gp, sp, fp,
     ra
 } Register;
+
+typedef enum {
+    int_num,
+    float_num,
+} RegisterType;
+
+typedef enum {
+    fixed_reg,
+    int_reg,
+    fn_result,
+    argument,
+    pointer,
+    ret_address,
+    float_reg
+} RegisterUseCategory;
 
 
 void exit_with_err_msg(std::string msg);
