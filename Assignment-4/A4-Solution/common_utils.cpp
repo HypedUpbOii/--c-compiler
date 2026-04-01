@@ -53,6 +53,7 @@ RelationalOperator anti_op(RelationalOperator op) {
     case RelationalOperator::NOT_EQUAL:
         return RelationalOperator::EQUAL;
     }
+    return op;
 }
 
 static std::array<std::string, 2> bool_op_strings = {"OR", "AND"};

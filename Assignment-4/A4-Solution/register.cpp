@@ -7,7 +7,6 @@ RegisterDescriptor::RegisterDescriptor(Register reg, std::string _name, Register
     reg_use_cat = use_cat;
 
     used_for_expr_result = false;
-    reg_occupied = false;
     used_for_fn_result = false;
 }
 
@@ -15,17 +14,13 @@ RegisterUseCategory RegisterDescriptor::get_use_category() { return reg_use_cat;
 Register RegisterDescriptor::get_register() { return reg_id; }
 std::string RegisterDescriptor::get_name() { return reg_name; }
 
-bool RegisterDescriptor::is_register_occupied() { return reg_occupied; }
-void RegisterDescriptor::set_register_occupied() { reg_occupied = true; }
-void RegisterDescriptor::reset_register_occupied() { reg_occupied = false; }
-
 bool RegisterDescriptor::is_used_for_fn_return() { return used_for_fn_result; }
 void RegisterDescriptor::set_used_for_fn_return() { used_for_fn_result = true; }
 void RegisterDescriptor::reset_used_for_fn_return() { used_for_fn_result = false; }
 
 bool RegisterDescriptor::is_used_for_expr_return() { return used_for_expr_result; }
 void RegisterDescriptor::set_used_for_expr_return() { used_for_expr_result = true; }
-void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = false; reset_register_occupied(); }
+void RegisterDescriptor::reset_used_for_expr_return() { used_for_expr_result = false; }
 
 template<RegisterUseCategory dt>
 bool RegisterDescriptor::is_free() {
@@ -96,19 +91,6 @@ void MachineDescriptor::initialize_register_table() {
     register_table[ra] = new RegisterDescriptor(ra, "ra", RegisterType::int_num, RegisterUseCategory::ret_address);
 }
 
-void MachineDescriptor::clear_reg_not_used_for_expr_result() {
-    std::map<Register, RegisterDescriptor *>::iterator i;
-
-    for (i = register_table.begin(); i != register_table.end(); i++) {
-        RegisterDescriptor * rd = i->second;
-
-        if (!rd->is_used_for_expr_return()) {
-            rd->reset_register_occupied();
-            // break; // sus, removed it for now
-        }
-    }
-}
-
 RegisterDescriptor * MachineDescriptor::get_register(Register r) {
     return register_table[r];
 }
@@ -143,24 +125,6 @@ void MachineDescriptor::unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
         tac_opd_to_rd.erase(tac_opd);
 }
 
-void MachineDescriptor::clear_tac_opd_to_rd() {
-    tac_opd_to_rd.clear();
-}
-
-template <RegisterUseCategory dt>
-int MachineDescriptor::count_free_register() {
-    std::map<Register, RegisterDescriptor *>::iterator i;
-
-    int count = 0;
-
-    for (i = register_table.begin(); i != register_table.end(); i++) {
-        if (i->second->is_free<dt>()) count++;
-    }
-
-    return count;
-}
-
-// sus
 template <RegisterUseCategory dt>
 RegisterDescriptor * MachineDescriptor::get_new_register() {
     RegisterDescriptor * reg_desc;
@@ -170,18 +134,14 @@ RegisterDescriptor * MachineDescriptor::get_new_register() {
         reg_desc = i->second;
 
         if (reg_desc->is_free<dt>()) {
-            reg_desc->set_register_occupied();
             reg_desc->set_used_for_expr_return();
             return reg_desc;
         }
     }
 
-    exit_with_err_msg("kys");
+    exit_with_err_msg("sclp error: Could not allocate free register");
     return nullptr;
 }
-
-template int MachineDescriptor::count_free_register<int_reg>();
-template int MachineDescriptor::count_free_register<float_reg>();
 
 template RegisterDescriptor * MachineDescriptor::get_new_register<int_reg>();
 template RegisterDescriptor * MachineDescriptor::get_new_register<float_reg>();

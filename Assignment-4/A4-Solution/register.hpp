@@ -14,17 +14,12 @@ public:
     RegisterUseCategory reg_use_cat;
 
     bool used_for_expr_result;
-    bool reg_occupied;
     bool used_for_fn_result;
     RegisterDescriptor(Register reg, std::string _name, RegisterType type, RegisterUseCategory use_cat);
 
     RegisterUseCategory get_use_category();
     Register get_register();
     std::string get_name();
-
-    bool is_register_occupied();
-    void set_register_occupied();
-    void reset_register_occupied();
 
     bool is_used_for_fn_return();
     void set_used_for_fn_return();
@@ -57,10 +52,6 @@ public:
     RegisterDescriptor * allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     RegisterDescriptor * get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
-    void clear_tac_opd_to_rd();
-
-    template <RegisterUseCategory dt>
-    int count_free_register();
 
     template <RegisterUseCategory dt>
     RegisterDescriptor * get_new_register();

@@ -51,6 +51,6 @@ output_handler.o : output_handler.cpp output_handler.hpp common_utils.hpp
 	g++ -fsanitize=address -c -g output_handler.cpp
 
 clean :
-	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac exp? *.tab.cc a.out sclp
+	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac *.rtl exp? *.tab.cc a.out sclp
 
 .PHONY: all clean gdb test
