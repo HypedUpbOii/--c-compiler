@@ -1,4 +1,6 @@
 #include "ast.hpp"
+#include <algorithm>
+#include <iomanip>
 
 bool Expression_Ast::isLvalue() { return false; }
 
@@ -34,7 +36,8 @@ void Function_Call_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
+                                                       SymbolTable *local) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
     if (funcEntry->get_return_type() != BaseType::VOID)
@@ -70,7 +73,8 @@ void Name_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << "Name : " << name << type_to_string(exprType);
 }
 
-std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &tac,
+                                                   SymbolTable *local) {
     place = std::make_shared<Variable_TAC_Opd>(steEntry);
     return std::vector<TAC_Stmt *>();
 }
@@ -114,19 +118,22 @@ void Literal_Expr_Ast<std::string>::printTree(std::ostream &out, int tab) {
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<int>::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Literal_Expr_Ast<int>::generateTAC(TAC &tac,
+                                                           SymbolTable *local) {
     place = std::make_shared<Int_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<double>::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *>
+Literal_Expr_Ast<double>::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<Double_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
-std::vector<TAC_Stmt *> Literal_Expr_Ast<std::string>::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *>
+Literal_Expr_Ast<std::string>::generateTAC(TAC &tac, SymbolTable *local) {
     place = std::make_shared<String_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
@@ -176,7 +183,8 @@ void Boolean_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac,
+                                                      SymbolTable *local) {
     auto left_tac = leftOp->generateTAC(tac, local);
     auto right_tac = rightOp->generateTAC(tac, local);
     place = tac.genNewTemporary();
@@ -222,7 +230,8 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac,
+                                                         SymbolTable *local) {
     auto left_tac = leftOp->generateTAC(tac, local);
     auto right_tac = rightOp->generateTAC(tac, local);
     // may need float
@@ -269,7 +278,8 @@ void Relational_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac,
+                                                         SymbolTable *local) {
     auto left_tac = leftOp->generateTAC(tac, local);
     auto right_tac = rightOp->generateTAC(tac, local);
     place = tac.genNewTemporary();
@@ -318,7 +328,8 @@ void Ternary_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac,
+                                                      SymbolTable *local) {
     auto cond_tac = condition->generateTAC(tac, local);
     place = tac.genNewSTemporary(exprType, local);
     std::shared_ptr<Label_TAC_Opd> false_label = tac.genNewLabel();
@@ -390,7 +401,8 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac,
+                                                     SymbolTable *local) {
     auto oper_tac = operand->generateTAC(tac, local);
     // may need float
     place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
@@ -426,7 +438,8 @@ void Not_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac,
+                                                  SymbolTable *local) {
     auto oper_tac = operand->generateTAC(tac, local);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
@@ -856,7 +869,8 @@ void Function_Ast::printTree(std::ostream &out) {
 
 void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
     std::shared_ptr<Variable_TAC_Opd> return_stemp =
-        (name == "main") ? nullptr : tac.genNewSTemporary(returnType, local);
+        (name == "main") ? nullptr
+                         : tac.genNewSTemporary(returnType, local, true);
     for (auto &stmt : statements)
         tac.addTACStatements(
             stmt->generateTAC(tac, local, return_stemp, return_label));
@@ -893,6 +907,29 @@ void Function_Ast::printRTL(std::ostream &out) {
     out << "**END: RTL Statements" << std::endl;
 }
 
+void Function_Ast::generateSPIM() { rtl.generateSPIM(spim); }
+
+void Function_Ast::printSPIM(std::ostream &out) {
+    out << "\t.text" << std::endl;
+    out << "\t.globl " << name << std::endl;
+    out << name << ":" << std::endl;
+    int stack_space = local->getStackSpace();
+    // Prologue
+    out << "\tsw $ram 0($sp)" << std::endl;
+    out << "\tsw $fp, -4($sp)" << std::endl;
+    out << "\tsub $fp, $sp, 4" << std::endl;
+    out << "\tsub $sp, $sp, " << stack_space << std::endl;
+
+    spim.print(out); // treat return as jump to epilogue
+
+    // Epilogue
+    out << "epilogue_" << name << ":" << std::endl;
+    out << "\tadd $sp, $sp, " << stack_space << std::endl;
+    out << "\tlw $fp, -4($sp)" << std::endl;
+    out << "\tlw $ra, 0($sp)" << std::endl;
+    out << "\t jr $ra" << std::endl;
+}
+
 Function_Ast::~Function_Ast() { delete local; }
 
 // Program Class
@@ -908,9 +945,21 @@ void Program::addFuncDef(std::string name, DataType dt) {
 
 void Program::addFunctions(
     std::vector<std::unique_ptr<Function_Ast>> func_list) {
-    for (auto &ptr : func_list) {
+    for (auto &ptr : func_list)
         funcs.emplace(ptr->name, std::move(ptr));
+}
+
+void Program::addStringConst(std::string str) {
+    unsigned int sz = global_strings.size();
+    if (global_strings.find(str) == global_strings.end()) {
+        global_strings[str] = sz;
+        string_consts.push_back(str);
     }
+}
+
+void Program::addGlobal(std::pair<DataType, std::vector<std::string>> line) {
+    for (auto &str : line.second)
+        global_vars.emplace_back(line.first, str);
 }
 
 void Program::validateProgram() {
@@ -919,11 +968,6 @@ void Program::validateProgram() {
     // Check if main type exists
     if (funcs.find("main") == funcs.end())
         exit_with_err_msg("sclp error: No main function defined");
-
-    // remove this condition in L5 (trust me)
-    if (funcs["main"]->returnType != BaseType::VOID)
-        exit_with_err_msg(
-            "sclp error: Main function must have return type void");
     for (const auto &[name, func] : funcs)
         func->validateFunction();
 }
@@ -933,7 +977,6 @@ void Program::print(std::ostream &out) {
         func->printTree(out);
 }
 
-// each func has its own TAC object (only labels are shared)
 void Program::generateTAC() {
     for (auto const &[name, func] : funcs)
         func->generateTAC(rets[name]);
@@ -945,15 +988,36 @@ void Program::printTAC(std::ostream &out) {
 }
 
 void Program::generateRTL() {
-    for (auto const &[name, func] : funcs) {
+    RTL::set_string_to_int_map(global_strings);
+    for (auto const &[name, func] : funcs)
         func->generateRTL();
-    }
 }
 
 void Program::printRTL(std::ostream &out) {
-    for (auto const &[name, func] : funcs) {
+    for (auto const &[name, func] : funcs)
         func->printRTL(out);
+}
+
+void Program::generateSPIM() {
+    for (auto const &[name, func] : funcs)
+        func->generateSPIM();
+}
+
+void Program::printSPIM(std::ostream &out) {
+    // print globals first
+    out << "\t.data" << std::endl;
+    for (auto const &[dt, name] : global_vars) {
+        if (dt == BaseType::FLOAT)
+            out << name << "_\t.double 0.0" << std::endl;
+        else
+            out << name << "_\t.word 0" << std::endl;
     }
+    int i = 0;
+    for (auto const &str : string_consts)
+        out << "_str_" << i++ << "\t.asciiz " << str << std::endl;
+
+    for (auto const &[name, func] : funcs)
+        func->printSPIM(out);
 }
 
 Program::~Program() { delete global; }

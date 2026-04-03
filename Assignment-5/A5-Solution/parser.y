@@ -25,7 +25,6 @@
     }
 
     std::string scope_name;
-    int num_func_decl;  // remove in L5
     std::stack<SymbolTable*> symbolTableStack;
 }
 
@@ -108,6 +107,7 @@
 %type <int> pointer_decl
 %type <std::pair<std::string, DataType>> var_decl_item
 %type <std::vector<std::pair<std::string, DataType>>> var_decl_item_list
+%type <std::pair<DataType, std::vector<std::string>>> var_decl_stmt
 %type <std::unique_ptr<Expression_Ast>> actual_arg
 %type <std::vector<std::unique_ptr<Expression_Ast>>> non_empty_arg_list
 %type <std::vector<std::unique_ptr<Expression_Ast>>> actual_arg_list
@@ -131,7 +131,6 @@
     symbolTableStack.push(ast.global);
 
     scope_name = "";
-    num_func_decl = 0; // remove this guy in L5 pls pls pls trust
 }
 
 %%
@@ -144,19 +143,15 @@ program
     }
 ;
 
-// remove all code blocks in the next assignment L5 (pls pls pls remember)
 global_decl_statement_list
-    : global_decl_statement_list func_decl {
-        num_func_decl++;
-        if (num_func_decl > 1) {
-            exit_with_err_msg("sclp error: L5 feature");
-        }
+    : global_decl_statement_list func_decl
+    | global_decl_statement_list var_decl_stmt {
+        ast.addGlobal($2);
     }
-    | global_decl_statement_list var_decl_stmt
-    | func_decl {
-        num_func_decl++;
+    | func_decl
+    | var_decl_stmt {
+        ast.addGlobal($1);
     }
-    | var_decl_stmt
 ;
 
 func_decl
@@ -178,7 +173,6 @@ func_decl
 
 func_def_list
     : func_def_list func_def {
-        exit_with_err_msg("sclp error: L5 feature"); // remove this line in L5 (pls pls pls remember)
         ast.addFuncDef($2->name, $2->returnType);
         $$ = std::move($1);
         $$.push_back(std::move($2));
@@ -199,11 +193,11 @@ func_header
 func_def
     : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
         scope_name = $1.second;
-        SymbolTable* local = new SymbolTable(symbolTableStack.top());
+        SymbolTable* local = new SymbolTable(symbolTableStack.top(), $1.first);
         std::vector<DataType> sub_signature;
         for (const auto & ptr : $3) {
             sub_signature.push_back(ptr.second);
-            local->insert(ptr.first, ptr.second);    
+            local->insert(ptr.first, ptr.second, true);    
         }
         symbolTableStack.top()->insert_func($1.second, $1.first, sub_signature, true);
         symbolTableStack.push(local);
@@ -278,25 +272,21 @@ statement
         $$ = std::move($1);
     }
     | call_statement {
-        exit_with_err_msg("sclp error: L5 feature"); // remove in L5 macha (trust)
         $$ = std::move($1);
     }
     | return_statement {
-        exit_with_err_msg("sclp error: L5 feature"); // this too L5 gone (pls)
         $$ = std::move($1);
     }
 ;
 
 call_statement
     : func_call SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature"); // remove in L5 remember pls
         $$ = std::make_unique<Call_Stmt_Ast>(std::move($1));
     }
 ;
 
 func_call
     : NAME LEFT_ROUND_BRACKET actual_arg_list RIGHT_ROUND_BRACKET {
-        exit_with_err_msg("sclp error: L5 feature"); // kys in L5 pls
         $$ = std::make_unique<Function_Call_Ast>($1, std::move($3));
     }
 ;
@@ -329,7 +319,6 @@ actual_arg
 
 return_statement
     : RETURN expression SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature"); // remove this macha in L5
         $$ = std::make_unique<Return_Stmt_Ast>(std::move($2), scope_name);
     }
 ;
@@ -346,11 +335,14 @@ var_decl_stmt_list
 
 var_decl_stmt
     : named_type var_decl_item_list SEMICOLON {
+        std::vector<std::string> names;
         for (const auto & var : $2){
             DataType dt = var.second;
             dt.base = $1.base;
             symbolTableStack.top()->insert(var.first, dt);
+            names.push_back(var.first);
         }
+        $$ = std::make_pair($1, names);
     }
 ;
 
@@ -414,7 +406,6 @@ assignment_statement
         $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
     }
     | variable_as_operand ASSIGN_OP func_call SEMICOLON {
-        exit_with_err_msg("sclp error: L5 feature"); // vvimp remove in L5 (trust)
         $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
     }
     | variable_as_operand ASSIGN_OP ADDRESSOF variable_name SEMICOLON {
@@ -591,6 +582,7 @@ constant_as_operand
     }
     | STR_CONST {
         $$ = std::make_unique<Literal_Expr_Ast<std::string>>($1);
+        ast.addStringConst($1);
     }
 ;
 %%

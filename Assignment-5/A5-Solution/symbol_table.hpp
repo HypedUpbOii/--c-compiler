@@ -1,15 +1,14 @@
 #pragma once
 #include "common_utils.hpp"
 #include <map>
-#include <string>
-#include <vector>
 
 class SymbolTableEntry {
     std::string name;
     DataType type;
+    int stack_position;
 
   public:
-    SymbolTableEntry(std::string n, DataType dt);
+    SymbolTableEntry(std::string n, DataType dt, int stack_pos);
     DataType get_type() const;
     std::string get_name() const;
     bool get_need_float() const;
@@ -35,17 +34,22 @@ class SymbolTable {
     std::map<std::string, SymbolTableFunction *> funcs;
     SymbolTable *parent;
     bool encounteredDuplicate;
+    int stackLocals;
+    int stackParams;
 
   public:
-    SymbolTable(SymbolTable *p = nullptr);
+    SymbolTableEntry *return_stemp;
+    SymbolTable(SymbolTable *p = nullptr, DataType dt = BaseType::VOID);
     ~SymbolTable();
 
-    void insert(std::string name, DataType dt);
+    void insert(std::string name, DataType dt, bool is_param = false);
     void insert_stemp(std::string name, DataType dt);
     void insert_func(std::string, DataType, std::vector<DataType>,
                      bool = false);
+    void setReturnStemp(DataType dt);
     SymbolTableEntry *lookup(std::string name);
     SymbolTableEntry *stemp_lookup(std::string name);
     SymbolTableFunction *func_lookup(std::string name);
+    int getStackSpace();
     bool hasDuplicate();
 };

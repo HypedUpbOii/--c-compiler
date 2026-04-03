@@ -1,9 +1,6 @@
 #pragma once
 #include "common_utils.hpp"
-#include <fstream>
-#include <iostream>
 #include <sstream>
-#include <streambuf>
 
 class NullBuffer : public std::streambuf {
   protected:
@@ -25,16 +22,19 @@ class OutputHandler {
     std::string ast_file;
     std::string tac_file;
     std::string rtl_file;
+    std::string asm_file;
 
     std::stringstream token_buffer;
     std::stringstream ast_buffer;
     std::stringstream tac_buffer;
     std::stringstream rtl_buffer;
+    std::stringstream asm_buffer;
 
     std::ostream *token_stream;
     std::ostream *ast_stream;
     std::ostream *tac_stream;
     std::ostream *rtl_stream;
+    std::ostream *asm_stream;
 
   public:
     OutputHandler(const Arguments &args);
@@ -43,9 +43,11 @@ class OutputHandler {
     std::ostream &astStream();
     std::ostream &tacStream();
     std::ostream &rtlStream();
+    std::ostream &asmStream();
 
     void commitTokens();
     void commitAst();
     void commitTac();
     void commitRtl();
+    void commitAsm();
 };

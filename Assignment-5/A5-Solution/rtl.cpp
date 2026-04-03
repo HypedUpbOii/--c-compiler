@@ -1,5 +1,5 @@
 #include "rtl.hpp"
-#include <cstdio>
+#include <iostream>
 
 RTL_Double_Const_Opd::RTL_Double_Const_Opd(double v) : value(v) {
     opd_type = OpdType::DOUBLE_CONST;
@@ -269,13 +269,15 @@ void Transfer_RTL_Stmt::print(std::ostream &out) {
         instruction_name = "move";
         if (isfloat)
             instruction_name += ".d";
-    } else if ((dest_type == OpdType::VARIABLE || dest_type == OpdType::TEMPORARY) &&
+    } else if ((dest_type == OpdType::VARIABLE ||
+                dest_type == OpdType::TEMPORARY) &&
                src_type == OpdType::REGISTER) {
         instruction_name = "store";
         if (isfloat)
             instruction_name += ".d";
     } else if (dest_type == OpdType::REGISTER &&
-               (src_type == OpdType::VARIABLE || src_type == OpdType::TEMPORARY)) {
+               (src_type == OpdType::VARIABLE ||
+                src_type == OpdType::TEMPORARY)) {
         instruction_name = "load";
         if (isfloat)
             instruction_name += ".d";
@@ -323,25 +325,23 @@ void Mov_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << " , " << flag << std::endl;
 }
 
-RTL::RTL() {
-    string_const_num = 0;
-    machine_descriptor = new MachineDescriptor();
-}
+// RTL class
+std::map<std::string, unsigned int> RTL::string_to_int;
+
+RTL::RTL() { machine_descriptor = new MachineDescriptor(); }
 
 RTL::~RTL() { delete machine_descriptor; }
 
+void RTL::set_string_to_int_map(std::map<std::string, unsigned int> mp) {
+    string_to_int = mp;
+}
+
 void RTL::print(std::ostream &out) {
-    for (auto &stmt : rtl_code) {
+    for (auto &stmt : rtl_code)
         stmt->print(out);
-    }
 }
 
-unsigned int RTL::getStringConstNum(std::string s) {
-    if (string_to_int.find(s) == string_to_int.end())
-        string_to_int[s] = string_const_num++;
-
-    return string_to_int[s];
-}
+unsigned int RTL::getStringConstNum(std::string s) { return string_to_int[s]; }
 
 void RTL::addRTLStatement(std::shared_ptr<RTL_Stmt> stmt) {
     rtl_code.push_back(stmt);

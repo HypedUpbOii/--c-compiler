@@ -1,7 +1,6 @@
 #pragma once
 #include "common_utils.hpp"
 #include <argp.h>
-#include <iostream>
 
 class ArgumentHandler {
   private:

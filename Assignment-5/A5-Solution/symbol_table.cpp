@@ -1,14 +1,16 @@
 #include "symbol_table.hpp"
 #include <iostream>
 
-SymbolTableEntry::SymbolTableEntry(std::string n, DataType dt)
-    : name(n), type(dt) {}
+SymbolTableEntry::SymbolTableEntry(std::string n, DataType dt, int stack_pos)
+    : name(n), type(dt), stack_position(stack_pos) {}
 
 DataType SymbolTableEntry::get_type() const { return type; }
 
 std::string SymbolTableEntry::get_name() const { return name; }
 
-bool SymbolTableEntry::get_need_float() const { return type.base == BaseType::FLOAT; }
+bool SymbolTableEntry::get_need_float() const {
+    return type.base == BaseType::FLOAT;
+}
 
 SymbolTableFunction::SymbolTableFunction(std::string n, DataType rt,
                                          std::vector<DataType> &params,
@@ -23,8 +25,15 @@ const std::vector<DataType> &SymbolTableFunction::get_params() const {
     return sub_signature;
 }
 
-SymbolTable::SymbolTable(SymbolTable *p)
-    : parent(p), encounteredDuplicate(false) {}
+SymbolTable::SymbolTable(SymbolTable *p, DataType dt)
+    : parent(p), encounteredDuplicate(false), stackLocals(0), stackParams(8) {
+    if (dt == BaseType::VOID) {
+        return_stemp = nullptr;
+    } else {
+        insert_stemp("stemp0", dt);
+        return_stemp = stemps["stemp0"];
+    }
+}
 
 SymbolTable::~SymbolTable() {
     // delete all STEs
@@ -40,7 +49,7 @@ SymbolTable::~SymbolTable() {
 }
 
 // insertion always happens in the current scope
-void SymbolTable::insert(std::string name, DataType dt) {
+void SymbolTable::insert(std::string name, DataType dt, bool is_param) {
     name = (name == "main") ? "main" : name + "_";
     if (func_lookup(name)) {
         encounteredDuplicate = true;
@@ -51,15 +60,32 @@ void SymbolTable::insert(std::string name, DataType dt) {
         return;
     }
 
-    entries[name] = new SymbolTableEntry(name, dt);
+    int stack_pos = 0;
+    if (is_param) {
+        stack_pos = stackParams;
+        if (dt.base == BaseType::FLOAT)
+            stackParams += 8;
+        else
+            stackParams += 4;
+    } else {
+        if (dt.base == BaseType::FLOAT)
+            stackLocals -= 8;
+        else
+            stackLocals -= 4;
+        stack_pos = stackLocals;
+    }
+    entries[name] = new SymbolTableEntry(name, dt, stack_pos);
 }
 
 void SymbolTable::insert_stemp(std::string name, DataType dt) {
-    if (stemps.find(name) != stemps.end()) {
-        std::cerr << "WTAF" << std::endl;
-        exit(1);
-    }
-    stemps[name] = new SymbolTableEntry(name, dt);
+    if (stemps.find(name) != stemps.end())
+        exit_with_err_msg("BRUH");
+
+    if (dt.base == BaseType::FLOAT)
+        stackLocals -= 8;
+    else
+        stackLocals -= 4;
+    stemps[name] = new SymbolTableEntry(name, dt, stackLocals);
 }
 
 void SymbolTable::insert_func(std::string name, DataType rt,
@@ -70,7 +96,8 @@ void SymbolTable::insert_func(std::string name, DataType rt,
         return;
     }
     if (func_lookup(name) != nullptr) {
-        if (funcs[name]->get_return_type() != rt || funcs[name]->get_params() != params) {
+        if (funcs[name]->get_return_type() != rt ||
+            funcs[name]->get_params() != params) {
             encounteredDuplicate = true;
             return;
         }
@@ -115,5 +142,7 @@ SymbolTableFunction *SymbolTable::func_lookup(std::string name) {
 
     return nullptr;
 }
+
+int SymbolTable::getStackSpace() { return stackLocals; }
 
 bool SymbolTable::hasDuplicate() { return encounteredDuplicate; }

@@ -50,7 +50,7 @@ float                               {return parser::Parser::token::FLOAT;}
 
 print                               {return parser::Parser::token::WRITE;}
 read                                {return parser::Parser::token::READ;}
-return                              {std::cerr << "Higher level language feature" << std::endl; exit(1); return parser::Parser::token::RETURN;} //L5
+return                              {return parser::Parser::token::RETURN;}
 if                                  {return parser::Parser::token::IF;}
 else                                {return parser::Parser::token::ELSE;}
 while                               {return parser::Parser::token::WHILE;}

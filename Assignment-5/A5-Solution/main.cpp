@@ -1,4 +1,7 @@
-#include "defs.hpp"
+#include "argument_handler.hpp"
+#include "lexer.hpp"
+#include "output_handler.hpp"
+#include <fstream>
 
 int main(int argc, char *argv[]) {
     ArgumentHandler args_handler(argc, argv);
@@ -8,6 +11,7 @@ int main(int argc, char *argv[]) {
     std::ostream &ast_stream = out_handler.astStream();
     std::ostream &tac_stream = out_handler.tacStream();
     std::ostream &rtl_stream = out_handler.rtlStream();
+    std::ostream &asm_stream = out_handler.asmStream();
 
     std::ifstream in(args.input_file);
     if (!in) {
@@ -34,29 +38,32 @@ int main(int argc, char *argv[]) {
     int result = parser.parse();
     out_handler.commitTokens();
 
-    if (args.stop_after_parse) {
+    if (args.stop_after_parse)
         return result;
-    }
 
     program.validateProgram();
     program.print(ast_stream);
     out_handler.commitAst();
 
-    if (args.stop_after_ast) {
+    if (args.stop_after_ast)
         return 0;
-    }
 
     program.generateTAC();
     program.printTAC(tac_stream);
     out_handler.commitTac();
 
-    if (args.stop_after_tac) {
+    if (args.stop_after_tac)
         return 0;
-    }
 
-    // do rtl stuff here
     program.generateRTL();
     program.printRTL(rtl_stream);
     out_handler.commitRtl();
+
+    if (args.stop_after_rtl)
+        return 0;
+
+    program.generateSPIM();
+    program.printSPIM(asm_stream);
+    out_handler.commitAsm();
     return 0;
 }

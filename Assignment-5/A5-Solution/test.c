@@ -1,16 +1,42 @@
-int foo();
+float c, d;
+int a, b;
+bool x;
+string s;
 
-int add(int a, int b) {
-    return (a > b) ? (a + 2 * b) : (a * 3 + b);
+void hehe(int a) {
+    int d, b, c;
 }
 
-int foo() {
-    return 5;
+int hooha(int b) {
+    int a,c,d,e;
+    s = "HOHOHOHOH";
+    a = 1;
+    c = 2;
+    d = 3;
+    e = 4;
+
+    return (a + b) + (c - d + e);
 }
 
-int main() {
-    int a, b, c;
-    c = add(a, b);
-    print c;
-    return 0;
+void foo() {
+    s = "AHAHAHAHA";
+    a = 5;
+    b = 7;
+}
+
+float main(int d, int c) {
+    bool o;
+    s = "HARITH";
+    s = "HOHOHOHOH";
+    foo();
+    c = a + b;
+    d = a - b;
+    o = a > b;
+    if (o) {
+        print c;
+    } else {
+        print d;
+    }
+
+    return 0.0;
 }

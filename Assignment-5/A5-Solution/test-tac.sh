@@ -60,12 +60,11 @@ do
     fi
 
     # run their implementation
-    ./$reference --show-rtl -d $file > their.rtl 2> /dev/null
-    sed 's/;;.*//' their.rtl > theirs.rtl
+    ./$reference --show-rtl --sa-rtl -d -s $file > their.rtl 2> /dev/null
     rm their.rtl
     their_status=$?
     # run our implementation
-    ./$our --show-rtl -d $file > ours.rtl 2> /dev/null
+    ./$our --show-rtl --sa-rtl -d $file > ours.rtl 2> /dev/null
     our_status=$?
 
     if [ $their_status -eq $our_status ]; then
@@ -86,8 +85,35 @@ do
         echo "Failed show-rtl : parsed incorrectly on file $file"
         exit 1
     fi
+
+    # run their implementation
+    ./$reference --show-asm -d -s $file > theirs.spim 2> /dev/null
+    their_status=$?
+    # run our implementation
+    ./$our --show-asm -d $file > ours.spim 2> /dev/null
+    our_status=$?
+
+    if [ $their_status -eq $our_status ]; then
+        if [ $their_status -eq 1 ]; then
+            echo "Passed show-asm"
+            continue
+        fi
+
+        diff -Bw ours.spim theirs.spim > err.log
+
+        if [ $? -eq 0 ]; then
+            echo "Passed show-asm"
+        else 
+            echo "Failed show-asm: SPIM don't match in file $file"
+            exit 1
+        fi
+    else 
+        echo "Failed show-asm : parsed incorrectly on file $file"
+        exit 1
+    fi
 done
 
 rm ours.ast theirs.ast
 rm ours.tac theirs.tac
 rm ours.rtl theirs.rtl
+rm ours.spim theirs.spim

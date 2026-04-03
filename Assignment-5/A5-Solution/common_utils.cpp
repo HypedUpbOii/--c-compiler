@@ -1,4 +1,6 @@
 #include "common_utils.hpp"
+#include <array>
+#include <iostream>
 
 static std::array<std::string, 5> type_strings = {"<int>", "<float>", "<bool>",
                                                   "<string>", "<void>"};
@@ -52,6 +54,9 @@ RelationalOperator anti_op(RelationalOperator op) {
         return RelationalOperator::LESS_THAN;
     case RelationalOperator::NOT_EQUAL:
         return RelationalOperator::EQUAL;
+    default:
+        exit_with_err_msg("kys");
+        return RelationalOperator::EQUAL;
     }
 }
 
@@ -104,37 +109,30 @@ void exit_with_err_msg(std::string msg) {
 }
 
 static std::array<std::string, 48> reg_symbols = {
-    "none",
-    "empty",
-    "v0",
-    "v1",
-    
-    "a0", "a1", "a2", "a3",
-    
-    "t0", "t1", "t2", "t3", "t4",
-    "t5", "t6", "t7", "t8", "t9",
+    "none", "empty", "v0",  "v1",
 
-    "s0", "s1", "s2", "s3",
-    "s4", "s5", "s6", "s7",
+    "a0",   "a1",    "a2",  "a3",
 
-    "mfc",
-    "mtc",
+    "t0",   "t1",    "t2",  "t3",  "t4",  "t5",  "t6",  "t7",  "t8",  "t9",
 
-    "f0", "f2", "f4", "f6", "f8",
-    "f10", "f12", "f14", "f16", "f18",
-    "f20", "f22", "f24", "f26", "f28",
-    "f30",
+    "s0",   "s1",    "s2",  "s3",  "s4",  "s5",  "s6",  "s7",
 
-    "gp", "sp", "fp",
-    "ra",
+    "mfc",  "mtc",
+
+    "f0",   "f2",    "f4",  "f6",  "f8",  "f10", "f12", "f14", "f16", "f18",
+    "f20",  "f22",   "f24", "f26", "f28", "f30",
+
+    "gp",   "sp",    "fp",  "ra",
 };
 
-std::string reg_to_symbols(Register r){
+std::string reg_to_symbols(Register r) {
     return reg_symbols.at(static_cast<int>(r));
 }
 
-static std::array<std::string, 4> arith_op_rtl_strings = {"add", "sub", "mul", "div"};
-static std::array<std::string, 6> rel_op_rtl_strings = {"slt", "sle", "sgt", "sge", "seq", "sne"};
+static std::array<std::string, 4> arith_op_rtl_strings = {"add", "sub", "mul",
+                                                          "div"};
+static std::array<std::string, 6> rel_op_rtl_strings = {"slt", "sle", "sgt",
+                                                        "sge", "seq", "sne"};
 static std::array<std::string, 2> bool_op_rtl_strings = {"or", "and"};
 
 std::string arith_op_to_rtl_string(ArithmeticOperator op) {

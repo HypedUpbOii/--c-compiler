@@ -1,6 +1,4 @@
 #pragma once
-#include <array>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -10,10 +8,12 @@ struct Arguments {
     bool stop_after_parse = false;
     bool stop_after_ast = false;
     bool stop_after_tac = false;
+    bool stop_after_rtl = false;
     bool show_tokens = false;
     bool show_ast = false;
     bool show_tac = false;
     bool show_rtl = false;
+    bool show_asm = true;
     bool demo_mode = false;
 };
 
@@ -45,7 +45,6 @@ std::string bool_op_to_rtl_string(BooleanOperator op);
 
 enum class ArithmeticOperator : int { PLUS, MINUS, MULT, DIVIDE };
 
-
 std::string arith_op_to_string(ArithmeticOperator op);
 std::string arith_op_to_symbol(ArithmeticOperator op);
 std::string arith_op_to_rtl_string(ArithmeticOperator op);
@@ -70,7 +69,7 @@ enum class UnaryOperator : int { UMINUS, NOT };
 std::string unary_op_to_string(UnaryOperator op);
 std::string unary_op_to_symbol(UnaryOperator op);
 
-enum class OpdType {
+enum class OpdType : int {
     INT_CONST,
     DOUBLE_CONST,
     STRING_CONST,
@@ -81,38 +80,73 @@ enum class OpdType {
     REGISTER
 };
 
-typedef enum {
+enum class Register : int {
     none,
     zero,
-    v0,                     // expression result
-    v1,                     // function result
-    
-    a0, a1, a2, a3,         // argument registers
-    
-    t0, t1, t2, t3, t4,     // temporary
-    t5, t6, t7, t8, t9,
+    v0, // expression result
+    v1, // function result
 
-    s0, s1, s2, s3,         // saved
-    s4, s5, s6, s7,
+    // argument registers
+    a0,
+    a1,
+    a2,
+    a3,
+
+    // temporary
+    t0,
+    t1,
+    t2,
+    t3,
+    t4,
+    t5,
+    t6,
+    t7,
+    t8,
+    t9,
+
+    // saved
+    s0,
+    s1,
+    s2,
+    s3,
+    s4,
+    s5,
+    s6,
+    s7,
 
     mfc,
     mtc,
 
-    f0, f2, f4, f6, f8,     // float registers
-    f10, f12, f14, f16, f18,
-    f20, f22, f24, f26, f28,
+    // float registers
+    f0,
+    f2,
+    f4,
+    f6,
+    f8,
+    f10,
+    f12,
+    f14,
+    f16,
+    f18,
+    f20,
+    f22,
+    f24,
+    f26,
+    f28,
     f30,
 
-    gp, sp, fp,
+    gp,
+    sp,
+    fp,
     ra
-} Register;
+};
 
-typedef enum {
+enum class RegisterType : int {
     int_num,
     float_num,
-} RegisterType;
+};
 
-typedef enum {
+enum class RegisterUseCategory : int {
     fixed_reg,
     int_reg,
     fn_result,
@@ -120,7 +154,6 @@ typedef enum {
     pointer,
     ret_address,
     float_reg
-} RegisterUseCategory;
-
+};
 
 void exit_with_err_msg(std::string msg);

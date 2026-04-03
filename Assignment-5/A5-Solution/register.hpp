@@ -1,13 +1,8 @@
 #pragma once
-#include "common_utils.hpp"
-#include "symbol_table.hpp"
 #include "tac_operand.hpp"
-#include <map>
-#include <list>
 
 class RegisterDescriptor {
-public:
-    
+  public:
     Register reg_id;
     std::string reg_name;
     RegisterType reg_type;
@@ -16,7 +11,8 @@ public:
     bool used_for_expr_result;
     bool reg_occupied;
     bool used_for_fn_result;
-    RegisterDescriptor(Register reg, std::string _name, RegisterType type, RegisterUseCategory use_cat);
+    RegisterDescriptor(Register reg, std::string _name, RegisterType type,
+                       RegisterUseCategory use_cat);
 
     RegisterUseCategory get_use_category();
     Register get_register();
@@ -34,12 +30,11 @@ public:
     void set_used_for_expr_return();
     void reset_used_for_expr_return();
 
-    template<RegisterUseCategory dt>
-    bool is_free();
+    template <RegisterUseCategory dt> bool is_free();
 };
 
 class MachineDescriptor {
-public:
+  public:
     std::map<Register, RegisterDescriptor *> register_table;
 
     // std::shared_ptr<TAC_Opd> -> RegisterDescriptor *
@@ -52,16 +47,15 @@ public:
 
     void clear_reg_not_used_for_expr_result();
 
-    RegisterDescriptor * get_register(Register r);
+    RegisterDescriptor *get_register(Register r);
 
-    RegisterDescriptor * allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
-    RegisterDescriptor * get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
+    RegisterDescriptor *
+    allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
+    RegisterDescriptor *get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void clear_tac_opd_to_rd();
 
-    template <RegisterUseCategory dt>
-    int count_free_register();
+    template <RegisterUseCategory dt> int count_free_register();
 
-    template <RegisterUseCategory dt>
-    RegisterDescriptor * get_new_register();
+    template <RegisterUseCategory dt> RegisterDescriptor *get_new_register();
 };

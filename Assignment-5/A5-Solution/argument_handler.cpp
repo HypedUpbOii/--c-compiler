@@ -1,4 +1,5 @@
 #include "argument_handler.hpp"
+#include <iostream>
 
 const char *argp_program_version = "Sclp Version: A3";
 const char *argp_program_bug_address =
@@ -13,13 +14,19 @@ argp_option ArgumentHandler::options[] = {
     {"sa-ast", 1002, 0, 0,
      "Stop after constructing Abstract Syntax Tree (AST)"},
     {"sa-tac", 1003, 0, 0, "Stop after constructing Three Address Code (TAC)"},
-    {"show-tokens", 1004, 0, 0, "Show the tokens in FILE.toks (or out.toks)"},
-    {"show-ast", 1005, 0, 0,
+    {"sa-rtl", 1004, 0, 0,
+     "Stop after constructing Register Transfer Language (RTL) code"},
+    {"show-tokens", 1005, 0, 0, "Show the tokens in FILE.toks (or out.toks)"},
+    {"show-ast", 1006, 0, 0,
      "Show abstract syntax trees in FILE.ast (or out.ast)"},
-    {"show-tac", 1006, 0, 0,
+    {"show-tac", 1007, 0, 0,
      "Show the Three Address Code in FILE.tac (or out.tac)"},
-    {"show-rtl", 1007, 0, 0,
+    {"show-rtl", 1008, 0, 0,
      "Show the Register Transfer Language code in FILE.rtl (or out.rtl)"},
+    {"show-asm", 1009, 0, 0,
+     "Generate the assembly program in FILE.spim (or out.spim). This is the "
+     "default action and is suppressed only if a valid \'sa-...\' option i "
+     "given to stop the compilation after some earlier phase."},
     {"demo", 'd', 0, 0,
      "Demo version. Use stdout for the output instead of files"},
     {0}};
@@ -46,19 +53,27 @@ error_t ArgumentHandler::parse_opt(int key, char *arg,
         break;
 
     case 1004:
-        self->args.show_tokens = true;
+        self->args.stop_after_rtl = true;
         break;
 
     case 1005:
-        self->args.show_ast = true;
+        self->args.show_tokens = true;
         break;
 
     case 1006:
-        self->args.show_tac = true;
+        self->args.show_ast = true;
         break;
 
     case 1007:
+        self->args.show_tac = true;
+        break;
+
+    case 1008:
         self->args.show_rtl = true;
+        break;
+
+    case 1009:
+        self->args.show_asm = true;
         break;
 
     case 'd':

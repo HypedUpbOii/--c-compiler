@@ -1,8 +1,5 @@
 #pragma once
-#include "common_utils.hpp"
 #include "symbol_table.hpp"
-#include <string>
-#include <vector>
 #include <memory>
 
 class TAC_Opd {
@@ -67,6 +64,7 @@ class Temporary_TAC_Opd : public TAC_Opd {
   private:
     unsigned int temp_num;
     bool needfloat;
+
   public:
     Temporary_TAC_Opd(unsigned int num, bool need_float = false);
     std::string get_name() override;
@@ -81,7 +79,7 @@ class Variable_TAC_Opd : public TAC_Opd {
   public:
     Variable_TAC_Opd(SymbolTableEntry *symtab_entry);
     std::string get_name() override;
-    SymbolTableEntry * get_sym_tab_entry() const;
+    SymbolTableEntry *get_sym_tab_entry() const;
 };
 
 class Function_TAC_Opd : public TAC_Opd {

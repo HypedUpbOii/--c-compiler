@@ -1,23 +1,19 @@
 all : sclp
 
-sclp : lex.yy.o parser.tab.o common_utils.o lexer.o main.o symbol_table.o ast.o tac.o rtl.o register.o argument_handler.o output_handler.o
-	g++ -fsanitize=address -g -o sclp lex.yy.o common_utils.o parser.tab.o lexer.o main.o symbol_table.o ast.o tac.o rtl.o register.o argument_handler.o output_handler.o -ly -ll
-
-main.o : main.cpp defs.hpp argument_handler.hpp output_handler.hpp ast.hpp lexer.hpp parser.tab.hh location.hh
-	g++ -fsanitize=address -c -g main.cpp
-
-parser.tab.o : parser.tab.cc
-	g++ -fsanitize=address -c -g parser.tab.cc
-
-parser.tab.cc parser.tab.hh location.hh : parser.y
-	bison -dv -Wcounterexamples parser.y
-	mv parser.output y.output
-
 gdb : sclp
 	gdb sclp
 
 test:
 	bash test-tac.sh
+
+sclp : parser.tab.o lex.yy.o lexer.o common_utils.o symbol_table.o output_handler.o argument_handler.o spim.o register.o rtl.o tac.o ast.o main.o
+	g++ -fsanitize=address -g -o sclp parser.tab.o lex.yy.o lexer.o common_utils.o symbol_table.o output_handler.o argument_handler.o spim.o register.o rtl.o tac.o ast.o main.o -ly -ll
+
+parser.tab.cc parser.tab.hh location.hh : parser.y
+	bison -dv -Wcounterexamples parser.y
+
+parser.tab.o : parser.tab.cc
+	g++ -fsanitize=address -c -g parser.tab.cc
 
 lex.yy.o : scanner.l parser.tab.hh lexer.hpp
 	flex scanner.l
@@ -26,31 +22,37 @@ lex.yy.o : scanner.l parser.tab.hh lexer.hpp
 lexer.o : lexer.cpp lexer.hpp parser.tab.hh
 	g++ -fsanitize=address -c -g lexer.cpp
 
-symbol_table.o: symbol_table.hpp common_utils.hpp symbol_table.cpp
-	g++ -fsanitize=address -c -g symbol_table.cpp
-
-ast.o: ast.hpp common_utils.hpp symbol_table.hpp tac.hpp ast.cpp
-	g++ -fsanitize=address -c -g ast.cpp
-
-tac.o: tac.hpp common_utils.hpp symbol_table.hpp tac.cpp
-	g++ -fsanitize=address -c -g tac.cpp
-
-rtl.o: common_utils.hpp symbol_table.hpp register.hpp rtl.hpp rtl.cpp
-	g++ -fsanitize=address -c -g rtl.cpp
-	
-register.o: common_utils.hpp symbol_table.hpp tac.hpp register.hpp register.cpp
-	g++ -fsanitize=address -c -g register.cpp
-
 common_utils.o : common_utils.cpp common_utils.hpp
 	g++ -fsanitize=address -c -g common_utils.cpp
 
-argument_handler.o : argument_handler.cpp argument_handler.hpp common_utils.hpp
-	g++ -fsanitize=address -c -g argument_handler.cpp
+symbol_table.o: symbol_table.cpp symbol_table.hpp common_utils.hpp
+	g++ -fsanitize=address -c -g symbol_table.cpp
 
 output_handler.o : output_handler.cpp output_handler.hpp common_utils.hpp
 	g++ -fsanitize=address -c -g output_handler.cpp
 
+argument_handler.o : argument_handler.cpp argument_handler.hpp common_utils.hpp
+	g++ -fsanitize=address -c -g argument_handler.cpp
+
+spim.o : spim.cpp spim.hpp common_utils.hpp
+	g++ -fsanitize=address -c -g spim.cpp
+
+register.o: register.cpp register.hpp tac_operand.hpp symbol_table.hpp common_utils.hpp
+	g++ -fsanitize=address -c -g register.cpp
+
+rtl.o: rtl.cpp rtl.hpp register.hpp symbol_table.hpp common_utils.hpp spim.hpp
+	g++ -fsanitize=address -c -g rtl.cpp
+
+tac.o: tac.cpp tac.hpp rtl.hpp register.hpp symbol_table.hpp common_utils.hpp spim.hpp
+	g++ -fsanitize=address -c -g tac.cpp
+
+ast.o: ast.cpp ast.hpp tac.hpp rtl.hpp register.hpp symbol_table.hpp common_utils.hpp spim.hpp
+	g++ -fsanitize=address -c -g ast.cpp
+
+main.o : main.cpp argument_handler.cpp lexer.hpp parser.tab.hh output_handler.hpp common_utils.hpp 
+	g++ -fsanitize=address -c -g main.cpp
+
 clean :
-	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac exp? *.tab.cc a.out sclp
+	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac *.rtl exp? *.tab.cc a.out sclp
 
 .PHONY: all clean gdb test
