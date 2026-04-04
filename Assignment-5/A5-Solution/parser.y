@@ -207,7 +207,7 @@ func_def
     }
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
         scope_name = $1.second;
-        SymbolTable* local = new SymbolTable(symbolTableStack.top());
+        SymbolTable* local = new SymbolTable(symbolTableStack.top(), $1.first);
         symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<DataType>(), true);
         symbolTableStack.push(local);
     } optional_local_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
