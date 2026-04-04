@@ -14,12 +14,13 @@ std::shared_ptr<Temporary_TAC_Opd> TAC::genNewTemporary(bool need_float) {
 std::shared_ptr<Variable_TAC_Opd>
 TAC::genNewSTemporary(DataType dt, SymbolTable *local, bool is_ret) {
     std::string stemp_name = "stemp" + std::to_string(stemp_number++);
-    if (is_ret) {
+    if (is_ret)
+        return std::make_shared<Variable_TAC_Opd>(local->return_stemp);
+    else {
         local->insert_stemp(stemp_name, dt);
         return std::make_shared<Variable_TAC_Opd>(
             local->stemp_lookup(stemp_name));
-    } else
-        return std::make_shared<Variable_TAC_Opd>(local->return_stemp);
+    }
 }
 
 std::shared_ptr<Label_TAC_Opd> TAC::genNewLabel() {

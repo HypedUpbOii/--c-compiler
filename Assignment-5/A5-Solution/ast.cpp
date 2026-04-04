@@ -846,6 +846,15 @@ void Function_Ast::validateFunction() {
             "sclp error: Redeclaration of variable outside function");
     for (auto &stmt_node : statements)
         stmt_node->validateNode(local);
+
+    if (returnType != BaseType::VOID) {
+        for (auto &stmt_node : statements)
+            if (stmt_node->hasReturn())
+                return;
+
+        exit_with_err_msg(
+            "sclp error: No return statement in a non void function");
+    }
 }
 
 void Function_Ast::printTree(std::ostream &out) {
@@ -927,7 +936,7 @@ void Function_Ast::printSPIM(std::ostream &out) {
     out << "\tadd $sp, $sp, " << stack_space << std::endl;
     out << "\tlw $fp, -4($sp)" << std::endl;
     out << "\tlw $ra, 0($sp)" << std::endl;
-    out << "\t jr $ra" << std::endl;
+    out << "\tjr $ra" << std::endl;
 }
 
 Function_Ast::~Function_Ast() { delete local; }
@@ -1005,7 +1014,8 @@ void Program::generateSPIM() {
 
 void Program::printSPIM(std::ostream &out) {
     // print globals first
-    out << "\t.data" << std::endl;
+    if (!global_vars.empty() || !string_consts.empty())
+        out << "\t.data" << std::endl;
     for (auto const &[dt, name] : global_vars) {
         if (dt == BaseType::FLOAT)
             out << name << "_\t.double 0.0" << std::endl;

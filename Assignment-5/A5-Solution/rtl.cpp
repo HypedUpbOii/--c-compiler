@@ -348,3 +348,5 @@ void RTL::addRTLStatement(std::shared_ptr<RTL_Stmt> stmt) {
 }
 
 bool RTL::isEmpty() { return rtl_code.empty(); }
+
+void RTL::generateSPIM(SPIM &spim) {}

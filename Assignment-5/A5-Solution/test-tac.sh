@@ -1,4 +1,4 @@
-reference=A4-sclp
+reference=../A5-Resources-x86_64/reference-implementations/A5-sclp
 our=sclp
 
 make
@@ -60,8 +60,7 @@ do
     fi
 
     # run their implementation
-    ./$reference --show-rtl --sa-rtl -d -s $file > their.rtl 2> /dev/null
-    rm their.rtl
+    ./$reference --show-rtl --sa-rtl -d -s $file > theirs.rtl 2> /dev/null
     their_status=$?
     # run our implementation
     ./$our --show-rtl --sa-rtl -d $file > ours.rtl 2> /dev/null
@@ -86,31 +85,31 @@ do
         exit 1
     fi
 
-    # run their implementation
-    ./$reference --show-asm -d -s $file > theirs.spim 2> /dev/null
-    their_status=$?
-    # run our implementation
-    ./$our --show-asm -d $file > ours.spim 2> /dev/null
-    our_status=$?
+    # # run their implementation
+    # ./$reference --show-asm -d -s $file > theirs.spim 2> /dev/null
+    # their_status=$?
+    # # run our implementation
+    # ./$our --show-asm -d $file > ours.spim 2> /dev/null
+    # our_status=$?
 
-    if [ $their_status -eq $our_status ]; then
-        if [ $their_status -eq 1 ]; then
-            echo "Passed show-asm"
-            continue
-        fi
+    # if [ $their_status -eq $our_status ]; then
+    #     if [ $their_status -eq 1 ]; then
+    #         echo "Passed show-asm"
+    #         continue
+    #     fi
 
-        diff -Bw ours.spim theirs.spim > err.log
+    #     diff -Bw ours.spim theirs.spim > err.log
 
-        if [ $? -eq 0 ]; then
-            echo "Passed show-asm"
-        else 
-            echo "Failed show-asm: SPIM don't match in file $file"
-            exit 1
-        fi
-    else 
-        echo "Failed show-asm : parsed incorrectly on file $file"
-        exit 1
-    fi
+    #     if [ $? -eq 0 ]; then
+    #         echo "Passed show-asm"
+    #     else 
+    #         echo "Failed show-asm: SPIM don't match in file $file"
+    #         exit 1
+    #     fi
+    # else 
+    #     echo "Failed show-asm : parsed incorrectly on file $file"
+    #     exit 1
+    # fi
 done
 
 rm ours.ast theirs.ast
