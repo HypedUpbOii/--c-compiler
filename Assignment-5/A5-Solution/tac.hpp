@@ -116,8 +116,11 @@ class Label_TAC_Stmt : public TAC_Stmt {
 };
 
 class Return_TAC_Stmt : public TAC_Stmt {
+  private:
+    std::string func_name;
+
   public:
-    Return_TAC_Stmt(std::shared_ptr<Variable_TAC_Opd> stemp);
+    Return_TAC_Stmt(std::shared_ptr<Variable_TAC_Opd> stemp, std::string);
     void print(std::ostream &) override;
     void generateRTL(RTL &__rtl) override;
 };

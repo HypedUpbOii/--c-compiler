@@ -154,6 +154,30 @@ void Not_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
+Call_RTL_Stmt::Call_RTL_Stmt(SymbolTableFunction *ste) {
+    entry = ste;
+    result = nullptr;
+    oper1 = nullptr;
+    oper2 = nullptr;
+}
+
+void Call_RTL_Stmt::print(std::ostream &out) {
+    switch (entry->get_return_type().base) {
+    case BaseType::VOID: {
+        out << "\tcall " << entry->get_name() << std::endl;
+        return;
+    }
+    case BaseType::FLOAT: {
+        out << "\tf0 = call " << entry->get_name() << std::endl;
+        return;
+    }
+    default: {
+        out << "\tv0 = call " << entry->get_name() << std::endl;
+        return;
+    }
+    }
+}
+
 Goto_RTL_Stmt::Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = nullptr;
@@ -176,6 +200,16 @@ void If_Goto_RTL_Stmt::print(std::ostream &out) {
         << result->get_name() << std::endl;
 }
 
+Return_RTL_Stmt::Return_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> reg,
+                                 std::string name)
+    : func_name(name) {
+    result = reg;
+}
+
+void Return_RTL_Stmt::print(std::ostream &out) {
+    out << "\treturn\t" << result->get_name() << std::endl;
+}
+
 Label_RTL_Stmt::Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = nullptr;
@@ -183,7 +217,7 @@ Label_RTL_Stmt::Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
 }
 
 void Label_RTL_Stmt::print(std::ostream &out) {
-    out << "\t" << result->get_name() << ":" << std::endl;
+    out << result->get_name() << ":" << std::endl;
 }
 
 Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest,
@@ -324,6 +358,27 @@ void Mov_RTL_Stmt::print(std::ostream &out) {
     out << "\t" << instruction_name << ":\t\t" << result->get_name() << " <- "
         << oper1->get_name() << " , " << flag << std::endl;
 }
+
+Push_RTL_Stmt::Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
+                             unsigned int sz) {
+    size = sz;
+    result = res;
+    oper1 = nullptr;
+    oper2 = nullptr;
+}
+
+void Push_RTL_Stmt::print(std::ostream &out) {
+    out << "\tpush:\t" << result->get_name() << std::endl;
+}
+
+Pop_RTL_Stmt::Pop_RTL_Stmt(unsigned int sz) {
+    size = sz;
+    result = nullptr;
+    oper1 = nullptr;
+    oper2 = nullptr;
+}
+
+void Pop_RTL_Stmt::print(std::ostream &out) { out << "\tpop" << std::endl; }
 
 // RTL class
 std::map<std::string, unsigned int> RTL::string_to_int;

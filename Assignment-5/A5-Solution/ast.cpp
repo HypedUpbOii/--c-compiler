@@ -878,8 +878,9 @@ void Function_Ast::printTree(std::ostream &out) {
 
 void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
     std::shared_ptr<Variable_TAC_Opd> return_stemp =
-        (returnType == BaseType::VOID) ? nullptr
-                         : tac.genNewSTemporary(returnType, local, true);
+        (returnType == BaseType::VOID)
+            ? nullptr
+            : tac.genNewSTemporary(returnType, local, true);
     for (auto &stmt : statements)
         tac.addTACStatements(
             stmt->generateTAC(tac, local, return_stemp, return_label));
@@ -887,7 +888,7 @@ void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
     if (returnType != BaseType::VOID) {
         std::vector<TAC_Stmt *> ret_statements;
         Label_TAC_Stmt *ret_label = new Label_TAC_Stmt(return_label);
-        Return_TAC_Stmt *ret_stmt = new Return_TAC_Stmt(return_stemp);
+        Return_TAC_Stmt *ret_stmt = new Return_TAC_Stmt(return_stemp, name);
         ret_statements.push_back(ret_label);
         ret_statements.push_back(ret_stmt);
         tac.addTACStatements(ret_statements);

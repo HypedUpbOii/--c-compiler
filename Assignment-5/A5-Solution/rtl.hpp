@@ -81,7 +81,7 @@ class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
                         std::shared_ptr<RTL_Register_Opd> op1,
                         std::shared_ptr<RTL_Register_Opd> op2,
                         ArithmeticOperator opr);
-    void print(std::ostream &out) override;
+    void print(std::ostream &) override;
 };
 
 class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
@@ -92,7 +92,7 @@ class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
                      std::shared_ptr<RTL_Register_Opd> op1,
                      std::shared_ptr<RTL_Register_Opd> op2,
                      BooleanOperator opr);
-    void print(std::ostream &out) override;
+    void print(std::ostream &) override;
 };
 
 class Relational_RTL_Stmt : public Compute_RTL_Stmt {
@@ -106,28 +106,33 @@ class Relational_RTL_Stmt : public Compute_RTL_Stmt {
     Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> op1,
                         std::shared_ptr<RTL_Register_Opd> op2,
                         RelationalOperator opr);
-    void print(std::ostream &out) override;
+    void print(std::ostream &) override;
 };
 
 class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
   public:
     UMinus_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                     std::shared_ptr<RTL_Register_Opd> op);
-    void print(std::ostream &out) override;
+    void print(std::ostream &) override;
 };
 
 class Not_RTL_Stmt : public Compute_RTL_Stmt {
   public:
     Not_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                  std::shared_ptr<RTL_Register_Opd> op);
-    void print(std::ostream &out) override;
+    void print(std::ostream &) override;
+};
+
+class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
+  private:
+    SymbolTableFunction *entry;
+
+  public:
+    Call_RTL_Stmt(SymbolTableFunction *);
+    void print(std::ostream &) override;
 };
 
 class Control_Flow_RTL_Stmt : public RTL_Stmt {};
-
-class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
-    // TODO L5
-};
 
 class Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
   public:
@@ -144,7 +149,13 @@ class If_Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
 };
 
 class Return_RTL_Stmt : public Control_Flow_RTL_Stmt {
-    // TODO L5
+  private:
+    std::string func_name;
+
+  public:
+    Return_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> reg,
+                    std::string func_nae);
+    void print(std::ostream &) override;
 };
 
 class Label_RTL_Stmt : public RTL_Stmt {
@@ -195,6 +206,24 @@ class Mov_RTL_Stmt : public RTL_Stmt {
     Mov_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                  std::shared_ptr<RTL_Register_Opd> opd, unsigned int _flag,
                  bool _movt);
+    void print(std::ostream &) override;
+};
+
+class Push_RTL_Stmt : public RTL_Stmt {
+  private:
+    unsigned int size;
+
+  public:
+    Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, unsigned int sz);
+    void print(std::ostream &) override;
+};
+
+class Pop_RTL_Stmt : public RTL_Stmt {
+  private:
+    unsigned int size;
+
+  public:
+    Pop_RTL_Stmt(unsigned int sz);
     void print(std::ostream &) override;
 };
 
