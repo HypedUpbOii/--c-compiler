@@ -123,6 +123,8 @@ class Not_RTL_Stmt : public Compute_RTL_Stmt {
     void print(std::ostream &) override;
 };
 
+class Control_Flow_RTL_Stmt : public RTL_Stmt {};
+
 class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
   private:
     SymbolTableFunction *entry;
@@ -131,8 +133,6 @@ class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
     Call_RTL_Stmt(SymbolTableFunction *);
     void print(std::ostream &) override;
 };
-
-class Control_Flow_RTL_Stmt : public RTL_Stmt {};
 
 class Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
   public:
