@@ -128,9 +128,10 @@ class Control_Flow_RTL_Stmt : public RTL_Stmt {};
 class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
   private:
     SymbolTableFunction *entry;
+    std::shared_ptr<RTL_Register_Opd> reg_opd;
 
   public:
-    Call_RTL_Stmt(SymbolTableFunction *);
+    Call_RTL_Stmt(SymbolTableFunction *, std::shared_ptr<RTL_Register_Opd> reg_op = nullptr);
     void print(std::ostream &) override;
 };
 

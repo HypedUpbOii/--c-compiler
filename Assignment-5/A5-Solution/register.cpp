@@ -220,6 +220,7 @@ MachineDescriptor::allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
     bool is_temp = tac_opd->get_opd_type() == OpdType::TEMPORARY;
     bool is_var = tac_opd->get_opd_type() == OpdType::VARIABLE;
     bool is_float_const = tac_opd->get_opd_type() == OpdType::DOUBLE_CONST;
+    bool is_func = tac_opd->get_opd_type() == OpdType::FUNCTION;
 
     bool needfloat =
         (is_temp && (std::dynamic_pointer_cast<Temporary_TAC_Opd>(tac_opd))
@@ -227,7 +228,9 @@ MachineDescriptor::allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
         (is_var && (std::dynamic_pointer_cast<Variable_TAC_Opd>(tac_opd))
                        ->get_sym_tab_entry()
                        ->get_need_float()) ||
-        is_float_const;
+        is_float_const ||
+        (is_func && (std::dynamic_pointer_cast<Function_TAC_Opd>(tac_opd))
+                        ->get_need_float());
 
     RegisterDescriptor *new_rd;
     if (needfloat) {
@@ -242,6 +245,7 @@ MachineDescriptor::allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
 
 RegisterDescriptor *
 MachineDescriptor::get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
+    if (tac_opd_to_rd.find(tac_opd) == tac_opd_to_rd.end()) return nullptr;
     return tac_opd_to_rd[tac_opd];
 }
 
@@ -251,6 +255,11 @@ void MachineDescriptor::unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd) {
 }
 
 void MachineDescriptor::clear_tac_opd_to_rd() { tac_opd_to_rd.clear(); }
+
+RegisterDescriptor * MachineDescriptor::get_rd_for_func(std::shared_ptr<Function_TAC_Opd> func_tac_opd) {
+    bool needfloat = func_tac_opd->get_sym_tab_func()->get_return_type() == BaseType::FLOAT;
+    return needfloat ? register_table[Register::f0] : register_table[Register::v1];
+}
 
 template <RegisterUseCategory dt> int MachineDescriptor::count_free_register() {
     std::map<Register, RegisterDescriptor *>::iterator i;

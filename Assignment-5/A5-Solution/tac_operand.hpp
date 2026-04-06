@@ -93,4 +93,5 @@ class Function_TAC_Opd : public TAC_Opd {
     std::string get_name() override;
     SymbolTableFunction *get_sym_tab_func() const;
     std::vector<std::shared_ptr<TAC_Opd>> get_params();
+    bool get_need_float() const;
 };

@@ -154,8 +154,10 @@ void Not_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
-Call_RTL_Stmt::Call_RTL_Stmt(SymbolTableFunction *ste) {
+Call_RTL_Stmt::Call_RTL_Stmt(SymbolTableFunction *ste, std::shared_ptr<RTL_Register_Opd> reg_op) {
     entry = ste;
+    reg_opd = reg_op;
+
     result = nullptr;
     oper1 = nullptr;
     oper2 = nullptr;
@@ -167,12 +169,8 @@ void Call_RTL_Stmt::print(std::ostream &out) {
         out << "\tcall " << entry->get_name() << std::endl;
         return;
     }
-    case BaseType::FLOAT: {
-        out << "\tf0 = call " << entry->get_name() << std::endl;
-        return;
-    }
     default: {
-        out << "\tv0 = call " << entry->get_name() << std::endl;
+        out << "\t" << reg_opd->get_name() << " = call " << entry->get_name() << std::endl;
         return;
     }
     }

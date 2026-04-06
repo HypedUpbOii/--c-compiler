@@ -925,7 +925,7 @@ void Function_Ast::printSPIM(std::ostream &out) {
     out << name << ":" << std::endl;
     int stack_space = local->getStackSpace();
     // Prologue
-    out << "\tsw $ram 0($sp)" << std::endl;
+    out << "\tsw $ra, 0($sp)" << std::endl;
     out << "\tsw $fp, -4($sp)" << std::endl;
     out << "\tsub $fp, $sp, 4" << std::endl;
     out << "\tsub $sp, $sp, " << stack_space << std::endl;

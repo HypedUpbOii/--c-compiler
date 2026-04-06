@@ -55,6 +55,8 @@ class MachineDescriptor {
     void unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void clear_tac_opd_to_rd();
 
+    RegisterDescriptor * get_rd_for_func(std::shared_ptr<Function_TAC_Opd> func_tac_opd);
+
     template <RegisterUseCategory dt> int count_free_register();
 
     template <RegisterUseCategory dt> RegisterDescriptor *get_new_register();
