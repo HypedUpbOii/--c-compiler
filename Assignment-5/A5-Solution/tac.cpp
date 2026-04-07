@@ -229,8 +229,7 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
 
         std::vector<std::shared_ptr<TAC_Opd>> params = func_tac_opd->get_params();
 
-        for (auto it = params.rbegin();
-         it != params.rend(); it++) {
+        for (auto it = params.rbegin(); it != params.rend(); it++) {
             auto opd = *it;
 
             bool isTemp = opd->get_opd_type() == OpdType::TEMPORARY;
@@ -333,6 +332,7 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     if (is_oper1_func) {
         std::shared_ptr<Function_TAC_Opd> func_tac_opd = std::dynamic_pointer_cast<Function_TAC_Opd>(oper1);
         res_rd = __rtl.machine_descriptor->get_rd_for_func(func_tac_opd);
+        __rtl.machine_descriptor->set_rd_for_tac_opd(result, res_rd);
 
         std::shared_ptr<RTL_Register_Opd> res_reg_opd = std::make_shared<RTL_Register_Opd>(res_rd);
 
@@ -376,7 +376,6 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     }
 
     __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
-    std::cout << "oper1_rd : " << oper1_rd << std::endl;
     if (oper1_rd != nullptr) oper1_rd->reset_used_for_expr_return();
 }
 

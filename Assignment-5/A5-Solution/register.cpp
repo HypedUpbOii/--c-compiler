@@ -258,7 +258,14 @@ void MachineDescriptor::clear_tac_opd_to_rd() { tac_opd_to_rd.clear(); }
 
 RegisterDescriptor * MachineDescriptor::get_rd_for_func(std::shared_ptr<Function_TAC_Opd> func_tac_opd) {
     bool needfloat = func_tac_opd->get_sym_tab_func()->get_return_type() == BaseType::FLOAT;
-    return needfloat ? register_table[Register::f0] : register_table[Register::v1];
+    Register reg = needfloat ? Register::f0 : Register::v1;
+    RegisterDescriptor * rd = register_table[reg];
+    rd->set_used_for_expr_return(); // ideally set used for fn return
+    return rd;
+}
+
+void MachineDescriptor::set_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd, RegisterDescriptor * rd) {
+    tac_opd_to_rd[tac_opd] = rd;
 }
 
 template <RegisterUseCategory dt> int MachineDescriptor::count_free_register() {

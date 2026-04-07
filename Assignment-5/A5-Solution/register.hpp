@@ -52,6 +52,7 @@ class MachineDescriptor {
     RegisterDescriptor *
     allocate_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     RegisterDescriptor *get_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
+    void set_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd, RegisterDescriptor * rd);
     void unset_rd_for_tac_opd(std::shared_ptr<TAC_Opd> tac_opd);
     void clear_tac_opd_to_rd();
 
