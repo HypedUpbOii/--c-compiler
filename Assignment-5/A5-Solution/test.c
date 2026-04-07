@@ -27,7 +27,7 @@ float main(int d, int c) {
     float e;
     s = "HARITH";
     s = "HOHOHOHOH";
-    c = hooha(d, e, c);
+    c = hooha(5, e, c);
     c = a + b;
     d = a - b;
     o = a > b;
