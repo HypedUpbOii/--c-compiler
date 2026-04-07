@@ -1,9 +1,9 @@
-reference=../A5-Resources-x86_64/reference-implementations/A5-sclp
+reference=A5-sclp
 our=sclp
 
 make
 
-for file in ../../AllTestCases/NonError/*.c
+for file in tests/*.c
 do
     echo "Checking file $file"
 

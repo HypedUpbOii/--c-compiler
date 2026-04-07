@@ -40,8 +40,11 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
                                                        SymbolTable *local) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
-    if (funcEntry->get_return_type() != BaseType::VOID)
-        place = tac.genNewTemporary();
+    if (funcEntry->get_return_type() != BaseType::VOID){
+        bool needfloat = funcEntry->get_return_type() == BaseType::FLOAT;
+        place = tac.genNewTemporary(needfloat);
+    }
+
     for (auto &ptr : arguments) {
         for (auto &stmt : ptr->generateTAC(tac, local))
             result.push_back(stmt);
