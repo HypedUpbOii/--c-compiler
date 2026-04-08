@@ -7,6 +7,7 @@ class SymbolTableEntry {
     DataType type;
 
   public:
+    bool is_global;
     int stack_position;
     SymbolTableEntry(std::string n, DataType dt, int stack_pos);
     DataType get_type() const;
@@ -52,4 +53,5 @@ class SymbolTable {
     SymbolTableFunction *func_lookup(std::string name);
     int getStackSpace();
     bool hasDuplicate();
+    void mark_global(std::string);
 };

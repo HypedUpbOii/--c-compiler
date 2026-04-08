@@ -1023,13 +1023,13 @@ void Program::printSPIM(std::ostream &out) {
         out << "\t.data" << std::endl;
     for (auto const &[dt, name] : global_vars) {
         if (dt == BaseType::FLOAT)
-            out << name << "_\t.double 0.0" << std::endl;
+            out << name << "_:\t.double 0.0" << std::endl;
         else
-            out << name << "_\t.word 0" << std::endl;
+            out << name << "_:\t.word 0" << std::endl;
     }
     int i = 0;
     for (auto const &str : string_consts)
-        out << "_str_" << i++ << "\t.asciiz " << str << std::endl;
+        out << "_str_" << i++ << ":\t.asciiz " << str << std::endl;
 
     for (auto const &[name, func] : funcs)
         func->printSPIM(out);

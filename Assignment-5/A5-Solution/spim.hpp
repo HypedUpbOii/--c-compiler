@@ -42,11 +42,13 @@ class ASM_Label_Opd : public ASM_Opd {
 
 class ASM_Mem_Opd : public ASM_Opd {
   private:
+    std::string name;
     int fp_offset;
     RegisterDescriptor *rd;
 
   public:
     ASM_Mem_Opd(int offset, RegisterDescriptor *r);
+    ASM_Mem_Opd(std::string);
     std::string get_name() override;
 };
 

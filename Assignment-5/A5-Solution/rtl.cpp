@@ -159,17 +159,24 @@ void Relational_RTL_Stmt::print(std::ostream &out) {
 }
 
 void Relational_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
-    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
-        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
-
     std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
         (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
 
     std::shared_ptr<ASM_Register_Opd> op2 = std::make_shared<ASM_Register_Opd>(
         (std::dynamic_pointer_cast<RTL_Register_Opd>(oper2))->reg_desc);
 
-    std::shared_ptr<Relational_ASM_Stmt> stmt =
-        std::make_shared<Relational_ASM_Stmt>(res, op1, op2, oper);
+    std::shared_ptr<Relational_ASM_Stmt> stmt;
+
+    if (isfloat) {
+        stmt = std::make_shared<Relational_ASM_Stmt>(op1, op2, oper);
+    } else {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        stmt = std::make_shared<Relational_ASM_Stmt>(res, op1, op2, oper);
+    }
 
     spim.addSPIM(stmt);
 }
@@ -472,10 +479,14 @@ void Transfer_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
         spim.addSPIM(stmt);
     } else if (dest_type == OpdType::VARIABLE &&
                src_type == OpdType::REGISTER) {
-        std::shared_ptr<ASM_Mem_Opd> res = std::make_shared<ASM_Mem_Opd>(
-            (std::dynamic_pointer_cast<RTL_Var_Opd>(result))
-                ->entry->stack_position,
-            md->get_register(Register::fp));
+        std::shared_ptr<RTL_Var_Opd> var =
+            std::dynamic_pointer_cast<RTL_Var_Opd>(result);
+        std::shared_ptr<ASM_Mem_Opd> res;
+        if (var->entry->is_global)
+            res = std::make_shared<ASM_Mem_Opd>(var->entry->get_name());
+        else
+            res = std::make_shared<ASM_Mem_Opd>(var->entry->stack_position,
+                                                md->get_register(Register::fp));
 
         std::shared_ptr<ASM_Register_Opd> op1 =
             std::make_shared<ASM_Register_Opd>(
@@ -492,10 +503,14 @@ void Transfer_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
                 (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
                     ->reg_desc);
 
-        std::shared_ptr<ASM_Mem_Opd> op1 = std::make_shared<ASM_Mem_Opd>(
-            (std::dynamic_pointer_cast<RTL_Var_Opd>(oper1))
-                ->entry->stack_position,
-            md->get_register(Register::fp));
+        std::shared_ptr<RTL_Var_Opd> var =
+            std::dynamic_pointer_cast<RTL_Var_Opd>(oper1);
+        std::shared_ptr<ASM_Mem_Opd> op1;
+        if (var->entry->is_global)
+            op1 = std::make_shared<ASM_Mem_Opd>(var->entry->get_name());
+        else
+            op1 = std::make_shared<ASM_Mem_Opd>(var->entry->stack_position,
+                                                md->get_register(Register::fp));
 
         std::shared_ptr<Load_Mem_ASM_Stmt> stmt =
             std::make_shared<Load_Mem_ASM_Stmt>(res, op1);
@@ -627,7 +642,7 @@ void Push_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
         (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
 
     std::shared_ptr<ASM_Mem_Opd> sp_mem =
-        std::make_shared<ASM_Mem_Opd>(0, md->get_register(Register::sp));
+        std::make_shared<ASM_Mem_Opd>(4 - size, md->get_register(Register::sp));
 
     std::shared_ptr<ASM_Register_Opd> sp =
         std::make_shared<ASM_Register_Opd>(md->get_register(Register::sp));
@@ -644,7 +659,7 @@ void Push_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
         std::make_shared<Arithmetic_ASM_Stmt>(sp, sp, offset,
                                               ArithmeticOperator::MINUS);
 
-    spim.addSPIM(stmt);
+    spim.addSPIM(smt);
 }
 
 Pop_RTL_Stmt::Pop_RTL_Stmt(unsigned int sz) {

@@ -2,7 +2,7 @@
 #include <iostream>
 
 SymbolTableEntry::SymbolTableEntry(std::string n, DataType dt, int stack_pos)
-    : name(n), type(dt), stack_position(stack_pos) {}
+    : name(n), type(dt), stack_position(stack_pos), is_global(false) {}
 
 DataType SymbolTableEntry::get_type() const { return type; }
 
@@ -146,3 +146,9 @@ SymbolTableFunction *SymbolTable::func_lookup(std::string name) {
 int SymbolTable::getStackSpace() { return stackLocals; }
 
 bool SymbolTable::hasDuplicate() { return encounteredDuplicate; }
+
+void SymbolTable::mark_global(std::string name) {
+    name = (name == "main") ? "main" : name + "_";
+    SymbolTableEntry *ste = lookup(name);
+    ste->is_global = true;
+}

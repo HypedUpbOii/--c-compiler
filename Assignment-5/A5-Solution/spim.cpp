@@ -35,7 +35,7 @@ ASM_Register_Opd::ASM_Register_Opd(RegisterDescriptor *rd) : reg_desc(rd) {
     opd_type = OpdType::REGISTER;
 }
 
-std::string ASM_Register_Opd::get_name() { return reg_desc->get_name(); }
+std::string ASM_Register_Opd::get_name() { return "$" + reg_desc->get_name(); }
 
 ASM_String_Const_Opd::ASM_String_Const_Opd(unsigned int str_num, std::string s)
     : string_num(str_num), value(s) {
@@ -51,8 +51,13 @@ ASM_Mem_Opd::ASM_Mem_Opd(int offset, RegisterDescriptor *r)
     opd_type = OpdType::VARIABLE;
 }
 
+ASM_Mem_Opd::ASM_Mem_Opd(std::string nam) : name(nam) {}
+
 std::string ASM_Mem_Opd::get_name() {
-    return std::to_string(fp_offset) + "(" + rd->get_name() + ")";
+    if (name.empty())
+        return std::to_string(fp_offset) + "($" + rd->get_name() + ")";
+    else
+        return name;
 }
 
 // ------------------------------------------------------------------------
@@ -129,6 +134,7 @@ void Relational_ASM_Stmt::print(std::ostream &out) {
         case RelationalOperator::LESS_THAN:
         case RelationalOperator::GREATER_THAN_EQUAL: {
             operator_string = "c.lt.d";
+            break;
         }
         default: {
             operator_string = "c.le.d";
@@ -169,7 +175,7 @@ Not_ASM_Stmt::Not_ASM_Stmt(std::shared_ptr<ASM_Register_Opd> res,
 }
 
 void Not_ASM_Stmt::print(std::ostream &out) {
-    out << "\txori " << result->get_name() << ", " << oper1->get_name()
+    out << "\txori " << result->get_name() << ", " << oper1->get_name() << ", 1"
         << std::endl;
 }
 
@@ -238,7 +244,7 @@ Move_ASM_Stmt::Move_ASM_Stmt(std::shared_ptr<ASM_Register_Opd> dst,
 }
 
 void Move_ASM_Stmt::print(std::ostream &out) {
-    out << (isFloat ? "\tmov.s " : "\tmove ") << dest->get_name() << ", "
+    out << (isFloat ? "\tmov.d " : "\tmove ") << dest->get_name() << ", "
         << source->get_name() << std::endl;
 }
 

@@ -147,10 +147,14 @@ global_decl_statement_list
     : global_decl_statement_list func_decl
     | global_decl_statement_list var_decl_stmt {
         ast.addGlobal($2);
+        for (auto &name : $2.second)
+            symbolTableStack.top()->mark_global(name);
     }
     | func_decl
     | var_decl_stmt {
         ast.addGlobal($1);
+        for (auto &name : $1.second)
+            symbolTableStack.top()->mark_global(name);
     }
 ;
 
