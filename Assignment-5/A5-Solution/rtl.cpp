@@ -71,6 +71,22 @@ void Arithmetic_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << " , " << oper2->get_name() << std::endl;
 }
 
+void Arithmetic_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op2 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper2))->reg_desc);
+
+    std::shared_ptr<Arithmetic_ASM_Stmt> stmt =
+        std::make_shared<Arithmetic_ASM_Stmt>(res, op1, op2, oper);
+
+    spim.addSPIM(stmt);
+}
+
 Boolean_RTL_Stmt::Boolean_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                                    std::shared_ptr<RTL_Register_Opd> op1,
                                    std::shared_ptr<RTL_Register_Opd> op2,
@@ -86,6 +102,22 @@ void Boolean_RTL_Stmt::print(std::ostream &out) {
     out << "\t" << bool_op_to_rtl_string(oper) << ":\t\t" << result->get_name()
         << " <- " << oper1->get_name() << " , " << oper2->get_name()
         << std::endl;
+}
+
+void Boolean_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op2 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper2))->reg_desc);
+
+    std::shared_ptr<Boolean_ASM_Stmt> stmt =
+        std::make_shared<Boolean_ASM_Stmt>(res, op1, op2, oper);
+
+    spim.addSPIM(stmt);
 }
 
 Relational_RTL_Stmt::Relational_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
@@ -126,6 +158,22 @@ void Relational_RTL_Stmt::print(std::ostream &out) {
     }
 }
 
+void Relational_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op2 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper2))->reg_desc);
+
+    std::shared_ptr<Relational_ASM_Stmt> stmt =
+        std::make_shared<Relational_ASM_Stmt>(res, op1, op2, oper);
+
+    spim.addSPIM(stmt);
+}
+
 UMinus_RTL_Stmt::UMinus_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                                  std::shared_ptr<RTL_Register_Opd> op) {
     result = res;
@@ -142,6 +190,19 @@ void UMinus_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
+void UMinus_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<UMinus_ASM_Stmt> stmt =
+        std::make_shared<UMinus_ASM_Stmt>(res, op1);
+
+    spim.addSPIM(stmt);
+}
+
 Not_RTL_Stmt::Not_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                            std::shared_ptr<RTL_Register_Opd> op) {
     result = res;
@@ -154,7 +215,21 @@ void Not_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
-Call_RTL_Stmt::Call_RTL_Stmt(SymbolTableFunction *ste, std::shared_ptr<RTL_Register_Opd> reg_op) {
+void Not_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<Not_ASM_Stmt> stmt =
+        std::make_shared<Not_ASM_Stmt>(res, op1);
+
+    spim.addSPIM(stmt);
+}
+
+Call_RTL_Stmt::Call_RTL_Stmt(SymbolTableFunction *ste,
+                             std::shared_ptr<RTL_Register_Opd> reg_op) {
     entry = ste;
     reg_opd = reg_op;
 
@@ -170,10 +245,21 @@ void Call_RTL_Stmt::print(std::ostream &out) {
         return;
     }
     default: {
-        out << "\t" << reg_opd->get_name() << " = call " << entry->get_name() << std::endl;
+        out << "\t" << reg_opd->get_name() << " = call " << entry->get_name()
+            << std::endl;
         return;
     }
     }
+}
+
+void Call_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Label_Opd> label =
+        std::make_shared<ASM_Label_Opd>(entry->get_name());
+
+    std::shared_ptr<Call_ASM_Stmt> stmt =
+        std::make_shared<Call_ASM_Stmt>(label);
+
+    spim.addSPIM(stmt);
 }
 
 Goto_RTL_Stmt::Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
@@ -184,6 +270,16 @@ Goto_RTL_Stmt::Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
 
 void Goto_RTL_Stmt::print(std::ostream &out) {
     out << "\t" << "goto:\t\t" << result->get_name() << std::endl;
+}
+
+void Goto_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Label_Opd> label = std::make_shared<ASM_Label_Opd>(
+        std::dynamic_pointer_cast<RTL_Label_Opd>(result)->label_num);
+
+    std::shared_ptr<Goto_ASM_Stmt> stmt =
+        std::make_shared<Goto_ASM_Stmt>(label);
+
+    spim.addSPIM(stmt);
 }
 
 If_Goto_RTL_Stmt::If_Goto_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> r,
@@ -198,6 +294,19 @@ void If_Goto_RTL_Stmt::print(std::ostream &out) {
         << result->get_name() << std::endl;
 }
 
+void If_Goto_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Label_Opd> label = std::make_shared<ASM_Label_Opd>(
+        std::dynamic_pointer_cast<RTL_Label_Opd>(result)->label_num);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<If_Goto_ASM_Stmt> stmt =
+        std::make_shared<If_Goto_ASM_Stmt>(op1, label);
+
+    spim.addSPIM(stmt);
+}
+
 Return_RTL_Stmt::Return_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> reg,
                                  std::string name)
     : func_name(name) {
@@ -208,6 +317,16 @@ void Return_RTL_Stmt::print(std::ostream &out) {
     out << "\treturn\t" << result->get_name() << std::endl;
 }
 
+void Return_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Label_Opd> label =
+        std::make_shared<ASM_Label_Opd>("epilogue_" + func_name);
+
+    std::shared_ptr<Goto_ASM_Stmt> stmt =
+        std::make_shared<Goto_ASM_Stmt>(label);
+
+    spim.addSPIM(stmt);
+}
+
 Label_RTL_Stmt::Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
     result = l;
     oper1 = nullptr;
@@ -215,7 +334,17 @@ Label_RTL_Stmt::Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l) {
 }
 
 void Label_RTL_Stmt::print(std::ostream &out) {
-    out << result->get_name() << ":" << std::endl;
+    out << std::endl << result->get_name() << ":" << std::endl;
+}
+
+void Label_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Label_Opd> label = std::make_shared<ASM_Label_Opd>(
+        std::dynamic_pointer_cast<RTL_Label_Opd>(result)->label_num);
+
+    std::shared_ptr<Label_ASM_Stmt> stmt =
+        std::make_shared<Label_ASM_Stmt>(label);
+
+    spim.addSPIM(stmt);
 }
 
 Transfer_RTL_Stmt::Transfer_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> dest,
@@ -301,15 +430,13 @@ void Transfer_RTL_Stmt::print(std::ostream &out) {
         instruction_name = "move";
         if (isfloat)
             instruction_name += ".d";
-    } else if ((dest_type == OpdType::VARIABLE ||
-                dest_type == OpdType::TEMPORARY) &&
+    } else if (dest_type == OpdType::VARIABLE &&
                src_type == OpdType::REGISTER) {
         instruction_name = "store";
         if (isfloat)
             instruction_name += ".d";
     } else if (dest_type == OpdType::REGISTER &&
-               (src_type == OpdType::VARIABLE ||
-                src_type == OpdType::TEMPORARY)) {
+               src_type == OpdType::VARIABLE) {
         instruction_name = "load";
         if (isfloat)
             instruction_name += ".d";
@@ -328,16 +455,129 @@ void Transfer_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
+void Transfer_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    if (dest_type == OpdType::REGISTER && src_type == OpdType::REGISTER) {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        std::shared_ptr<ASM_Register_Opd> op1 =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+        std::shared_ptr<Move_ASM_Stmt> stmt =
+            std::make_shared<Move_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else if (dest_type == OpdType::VARIABLE &&
+               src_type == OpdType::REGISTER) {
+        std::shared_ptr<ASM_Mem_Opd> res = std::make_shared<ASM_Mem_Opd>(
+            (std::dynamic_pointer_cast<RTL_Var_Opd>(result))
+                ->entry->stack_position,
+            md->get_register(Register::fp));
+
+        std::shared_ptr<ASM_Register_Opd> op1 =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+        std::shared_ptr<Store_Mem_ASM_Stmt> stmt =
+            std::make_shared<Store_Mem_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else if (dest_type == OpdType::REGISTER &&
+               src_type == OpdType::VARIABLE) {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        std::shared_ptr<ASM_Mem_Opd> op1 = std::make_shared<ASM_Mem_Opd>(
+            (std::dynamic_pointer_cast<RTL_Var_Opd>(oper1))
+                ->entry->stack_position,
+            md->get_register(Register::fp));
+
+        std::shared_ptr<Load_Mem_ASM_Stmt> stmt =
+            std::make_shared<Load_Mem_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else if (dest_type == OpdType::REGISTER &&
+               src_type == OpdType::INT_CONST) {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        std::shared_ptr<ASM_Int_Const_Opd> op1 =
+            std::make_shared<ASM_Int_Const_Opd>(
+                (std::dynamic_pointer_cast<RTL_Int_Const_Opd>(oper1))->value);
+
+        std::shared_ptr<Load_Int_Immediate_ASM_Stmt> stmt =
+            std::make_shared<Load_Int_Immediate_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else if (dest_type == OpdType::REGISTER &&
+               src_type == OpdType::DOUBLE_CONST) {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        std::shared_ptr<ASM_Double_Const_Opd> op1 =
+            std::make_shared<ASM_Double_Const_Opd>(
+                (std::dynamic_pointer_cast<RTL_Double_Const_Opd>(oper1))
+                    ->value);
+
+        std::shared_ptr<Load_Double_Immediate_ASM_Stmt> stmt =
+            std::make_shared<Load_Double_Immediate_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else if (dest_type == OpdType::REGISTER &&
+               src_type == OpdType::STRING_CONST) {
+        std::shared_ptr<ASM_Register_Opd> res =
+            std::make_shared<ASM_Register_Opd>(
+                (std::dynamic_pointer_cast<RTL_Register_Opd>(result))
+                    ->reg_desc);
+
+        std::shared_ptr<ASM_String_Const_Opd> op1 =
+            std::make_shared<ASM_String_Const_Opd>(
+                (std::dynamic_pointer_cast<RTL_String_Const_Opd>(oper1))
+                    ->string_num,
+                (std::dynamic_pointer_cast<RTL_String_Const_Opd>(oper1))
+                    ->value);
+
+        std::shared_ptr<Load_Address_ASM_Stmt> stmt =
+            std::make_shared<Load_Address_ASM_Stmt>(res, op1);
+
+        spim.addSPIM(stmt);
+    } else
+        exit_with_err_msg("kys");
+}
+
 Read_RTL_Stmt::Read_RTL_Stmt() {}
 
 void Read_RTL_Stmt::print(std::ostream &out) {
     out << "\t" << "read" << std::endl;
 }
 
+void Read_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<Syscall_ASM_Stmt> stmt =
+        std::make_shared<Syscall_ASM_Stmt>();
+
+    spim.addSPIM(stmt);
+}
+
 Write_RTL_Stmt::Write_RTL_Stmt() {}
 
 void Write_RTL_Stmt::print(std::ostream &out) {
     out << "\t" << "write" << std::endl;
+}
+
+void Write_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<Syscall_ASM_Stmt> stmt =
+        std::make_shared<Syscall_ASM_Stmt>();
+
+    spim.addSPIM(stmt);
 }
 
 Mov_RTL_Stmt::Mov_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
@@ -357,6 +597,19 @@ void Mov_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << " , " << flag << std::endl;
 }
 
+void Mov_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Register_Opd> op1 = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(oper1))->reg_desc);
+
+    std::shared_ptr<Move_If_ASM_Stmt> stmt =
+        std::make_shared<Move_If_ASM_Stmt>(res, op1, flag, movt);
+
+    spim.addSPIM(stmt);
+}
+
 Push_RTL_Stmt::Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                              unsigned int sz) {
     size = sz;
@@ -369,6 +622,31 @@ void Push_RTL_Stmt::print(std::ostream &out) {
     out << "\tpush:\t" << result->get_name() << std::endl;
 }
 
+void Push_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> res = std::make_shared<ASM_Register_Opd>(
+        (std::dynamic_pointer_cast<RTL_Register_Opd>(result))->reg_desc);
+
+    std::shared_ptr<ASM_Mem_Opd> sp_mem =
+        std::make_shared<ASM_Mem_Opd>(0, md->get_register(Register::sp));
+
+    std::shared_ptr<ASM_Register_Opd> sp =
+        std::make_shared<ASM_Register_Opd>(md->get_register(Register::sp));
+
+    std::shared_ptr<Store_Mem_ASM_Stmt> stmt =
+        std::make_shared<Store_Mem_ASM_Stmt>(sp_mem, res);
+
+    spim.addSPIM(stmt);
+
+    std::shared_ptr<ASM_Int_Const_Opd> offset =
+        std::make_shared<ASM_Int_Const_Opd>(size);
+
+    std::shared_ptr<Arithmetic_ASM_Stmt> smt =
+        std::make_shared<Arithmetic_ASM_Stmt>(sp, sp, offset,
+                                              ArithmeticOperator::MINUS);
+
+    spim.addSPIM(stmt);
+}
+
 Pop_RTL_Stmt::Pop_RTL_Stmt(unsigned int sz) {
     size = sz;
     result = nullptr;
@@ -377,6 +655,20 @@ Pop_RTL_Stmt::Pop_RTL_Stmt(unsigned int sz) {
 }
 
 void Pop_RTL_Stmt::print(std::ostream &out) { out << "\tpop" << std::endl; }
+
+void Pop_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> sp =
+        std::make_shared<ASM_Register_Opd>(md->get_register(Register::sp));
+
+    std::shared_ptr<ASM_Int_Const_Opd> offset =
+        std::make_shared<ASM_Int_Const_Opd>(size);
+
+    std::shared_ptr<Arithmetic_ASM_Stmt> stmt =
+        std::make_shared<Arithmetic_ASM_Stmt>(sp, sp, offset,
+                                              ArithmeticOperator::PLUS);
+
+    spim.addSPIM(stmt);
+}
 
 // RTL class
 std::map<std::string, unsigned int> RTL::string_to_int;
@@ -402,4 +694,7 @@ void RTL::addRTLStatement(std::shared_ptr<RTL_Stmt> stmt) {
 
 bool RTL::isEmpty() { return rtl_code.empty(); }
 
-void RTL::generateSPIM(SPIM &spim) {}
+void RTL::generateSPIM(SPIM &spim) {
+    for (auto &stmt : rtl_code)
+        stmt->generateSPIM(spim, machine_descriptor);
+}

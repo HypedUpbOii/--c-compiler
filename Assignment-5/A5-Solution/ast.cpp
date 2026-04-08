@@ -40,7 +40,7 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
                                                        SymbolTable *local) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
-    if (funcEntry->get_return_type() != BaseType::VOID){
+    if (funcEntry->get_return_type() != BaseType::VOID) {
         bool needfloat = funcEntry->get_return_type() == BaseType::FLOAT;
         place = tac.genNewTemporary(needfloat);
     }
@@ -931,13 +931,13 @@ void Function_Ast::printSPIM(std::ostream &out) {
     out << "\tsw $ra, 0($sp)" << std::endl;
     out << "\tsw $fp, -4($sp)" << std::endl;
     out << "\tsub $fp, $sp, 4" << std::endl;
-    out << "\tsub $sp, $sp, " << stack_space << std::endl;
+    out << "\tsub $sp, $sp, " << 8 - stack_space << std::endl;
 
     spim.print(out); // treat return as jump to epilogue
 
     // Epilogue
     out << "epilogue_" << name << ":" << std::endl;
-    out << "\tadd $sp, $sp, " << stack_space << std::endl;
+    out << "\tadd $sp, $sp, " << 8 - stack_space << std::endl;
     out << "\tlw $fp, -4($sp)" << std::endl;
     out << "\tlw $ra, 0($sp)" << std::endl;
     out << "\tjr $ra" << std::endl;
@@ -1018,6 +1018,7 @@ void Program::generateSPIM() {
 
 void Program::printSPIM(std::ostream &out) {
     // print globals first
+    out << std::endl;
     if (!global_vars.empty() || !string_consts.empty())
         out << "\t.data" << std::endl;
     for (auto const &[dt, name] : global_vars) {

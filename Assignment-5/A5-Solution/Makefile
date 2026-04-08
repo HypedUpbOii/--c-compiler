@@ -15,13 +15,13 @@ output_handler.hpp : common_utils.hpp
 
 symbol_table.hpp : common_utils.hpp
 
-spim.hpp : common_utils.hpp
-
 tac_operand.hpp : symbol_table.hpp
 
 register.hpp : tac_operand.hpp
 
-rtl.hpp : register.hpp spim.hpp
+spim.hpp : register.hpp
+
+rtl.hpp : spim.hpp
 
 tac.hpp : rtl.hpp
 
@@ -73,6 +73,6 @@ main.o : main.cpp argument_handler.cpp lexer.hpp output_handler.hpp
 	g++ -fsanitize=address -c -g main.cpp
 
 clean :
-	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac *.rtl exp? *.tab.cc a.out sclp
+	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac *.rtl *.spim exp? *.tab.cc a.out sclp
 
 .PHONY: all clean gdb test

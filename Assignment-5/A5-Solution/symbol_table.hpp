@@ -5,9 +5,9 @@
 class SymbolTableEntry {
     std::string name;
     DataType type;
-    int stack_position;
 
   public:
+    int stack_position;
     SymbolTableEntry(std::string n, DataType dt, int stack_pos);
     DataType get_type() const;
     std::string get_name() const;

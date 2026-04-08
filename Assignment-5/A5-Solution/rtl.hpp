@@ -1,33 +1,30 @@
 #pragma once
-#include "register.hpp"
 #include "spim.hpp"
 
 class RTL_Opd {
   public:
     OpdType opd_type;
     virtual std::string get_name() = 0;
+    virtual ~RTL_Opd() = default;
 };
 
 class RTL_Double_Const_Opd : public RTL_Opd {
-    double value;
-
   public:
+    double value;
     RTL_Double_Const_Opd(double v);
     std::string get_name() override;
 };
 
 class RTL_Int_Const_Opd : public RTL_Opd {
-    int value;
-
   public:
+    int value;
     RTL_Int_Const_Opd(int v);
     std::string get_name() override;
 };
 
 class RTL_Label_Opd : public RTL_Opd {
-    unsigned int label_num;
-
   public:
+    unsigned int label_num;
     RTL_Label_Opd(int num);
     std::string get_name() override;
 };
@@ -40,10 +37,9 @@ class RTL_Register_Opd : public RTL_Opd {
 };
 
 class RTL_String_Const_Opd : public RTL_Opd {
+  public:
     unsigned int string_num;
     std::string value;
-
-  public:
     RTL_String_Const_Opd(unsigned int str_num, std::string s);
     std::string get_name() override;
     unsigned int get_string_num() const;
@@ -65,12 +61,17 @@ class RTL_Stmt {
     std::shared_ptr<RTL_Opd> oper2;
 
   public:
+    virtual ~RTL_Stmt() = default;
     virtual void print(std::ostream &) = 0;
+    virtual void generateSPIM(SPIM &, MachineDescriptor *md) = 0;
 };
 
 class Compute_RTL_Stmt : public RTL_Stmt {
   protected:
     bool isfloat;
+
+  public:
+    virtual ~Compute_RTL_Stmt() = default;
 };
 
 class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
@@ -82,6 +83,7 @@ class Arithmetic_RTL_Stmt : public Compute_RTL_Stmt {
                         std::shared_ptr<RTL_Register_Opd> op2,
                         ArithmeticOperator opr);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
@@ -93,6 +95,7 @@ class Boolean_RTL_Stmt : public Compute_RTL_Stmt {
                      std::shared_ptr<RTL_Register_Opd> op2,
                      BooleanOperator opr);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Relational_RTL_Stmt : public Compute_RTL_Stmt {
@@ -107,6 +110,7 @@ class Relational_RTL_Stmt : public Compute_RTL_Stmt {
                         std::shared_ptr<RTL_Register_Opd> op2,
                         RelationalOperator opr);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
@@ -114,6 +118,7 @@ class UMinus_RTL_Stmt : public Compute_RTL_Stmt {
     UMinus_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                     std::shared_ptr<RTL_Register_Opd> op);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Not_RTL_Stmt : public Compute_RTL_Stmt {
@@ -121,9 +126,13 @@ class Not_RTL_Stmt : public Compute_RTL_Stmt {
     Not_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                  std::shared_ptr<RTL_Register_Opd> op);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
-class Control_Flow_RTL_Stmt : public RTL_Stmt {};
+class Control_Flow_RTL_Stmt : public RTL_Stmt {
+  public:
+    virtual ~Control_Flow_RTL_Stmt() = default;
+};
 
 class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
   private:
@@ -131,14 +140,17 @@ class Call_RTL_Stmt : public Control_Flow_RTL_Stmt {
     std::shared_ptr<RTL_Register_Opd> reg_opd;
 
   public:
-    Call_RTL_Stmt(SymbolTableFunction *, std::shared_ptr<RTL_Register_Opd> reg_op = nullptr);
+    Call_RTL_Stmt(SymbolTableFunction *,
+                  std::shared_ptr<RTL_Register_Opd> reg_op = nullptr);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
   public:
     Goto_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class If_Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
@@ -147,6 +159,7 @@ class If_Goto_RTL_Stmt : public Control_Flow_RTL_Stmt {
     If_Goto_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> r,
                      std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Return_RTL_Stmt : public Control_Flow_RTL_Stmt {
@@ -157,12 +170,14 @@ class Return_RTL_Stmt : public Control_Flow_RTL_Stmt {
     Return_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> reg,
                     std::string func_nae);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Label_RTL_Stmt : public RTL_Stmt {
   public:
     Label_RTL_Stmt(std::shared_ptr<RTL_Label_Opd> l);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Transfer_RTL_Stmt : public RTL_Stmt {
@@ -185,18 +200,21 @@ class Transfer_RTL_Stmt : public RTL_Stmt {
                       std::shared_ptr<RTL_String_Const_Opd> src);
 
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Read_RTL_Stmt : public RTL_Stmt {
   public:
     Read_RTL_Stmt();
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Write_RTL_Stmt : public RTL_Stmt {
   public:
     Write_RTL_Stmt();
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Mov_RTL_Stmt : public RTL_Stmt {
@@ -208,6 +226,7 @@ class Mov_RTL_Stmt : public RTL_Stmt {
                  std::shared_ptr<RTL_Register_Opd> opd, unsigned int _flag,
                  bool _movt);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Push_RTL_Stmt : public RTL_Stmt {
@@ -217,6 +236,7 @@ class Push_RTL_Stmt : public RTL_Stmt {
   public:
     Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res, unsigned int sz);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class Pop_RTL_Stmt : public RTL_Stmt {
@@ -226,6 +246,7 @@ class Pop_RTL_Stmt : public RTL_Stmt {
   public:
     Pop_RTL_Stmt(unsigned int sz);
     void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
 class RTL {
