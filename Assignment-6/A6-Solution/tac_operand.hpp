@@ -11,11 +11,6 @@ class TAC_Opd {
     OpdType get_opd_type() const;
 };
 
-class Array_Acces_TAC_Opd : public TAC_Opd {
-  public:
-    // TODO: L6
-};
-
 class Double_Const_TAC_Opd : public TAC_Opd {
   private:
     double value;
@@ -56,7 +51,8 @@ class Label_TAC_Opd : public TAC_Opd {
 };
 
 class Pointer_Deref_TAC_Opd : public TAC_Opd {
-  std::shared_ptr<TAC_Opd> operand;
+    std::shared_ptr<TAC_Opd> operand;
+
   public:
     // TODO: L6
     Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper);
@@ -64,10 +60,11 @@ class Pointer_Deref_TAC_Opd : public TAC_Opd {
 };
 
 class Address_Of_TAC_Opd : public TAC_Opd {
-  SymbolTableEntry * steEntry;
+    SymbolTableEntry *steEntry;
+
   public:
-  Address_Of_TAC_Opd(SymbolTableEntry * ste);
-  std::string get_name() override;
+    Address_Of_TAC_Opd(SymbolTableEntry *ste);
+    std::string get_name() override;
 };
 
 class Temporary_TAC_Opd : public TAC_Opd {

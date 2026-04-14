@@ -229,6 +229,24 @@ class Mov_RTL_Stmt : public RTL_Stmt {
     void generateSPIM(SPIM &, MachineDescriptor *md) override;
 };
 
+class Load_Address_RTL_Stmt : public RTL_Stmt {
+  public:
+    Load_Address_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
+                          std::shared_ptr<RTL_Var_Opd> opd);
+    void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
+};
+
+class Indirect_Op_RTL_Stmt : public RTL_Stmt {
+    bool isload;
+
+  public:
+    Indirect_Op_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
+                         std::shared_ptr<RTL_Register_Opd> opd, bool);
+    void print(std::ostream &) override;
+    void generateSPIM(SPIM &, MachineDescriptor *md) override;
+};
+
 class Push_RTL_Stmt : public RTL_Stmt {
   private:
     unsigned int size;

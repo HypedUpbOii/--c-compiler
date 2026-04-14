@@ -33,6 +33,7 @@ class DataType {
     bool operator!=(BaseType) const;
     DataType &operator=(const DataType &);
     DataType &operator=(const BaseType &);
+    int size();
 };
 
 std::string type_to_string(DataType t);
@@ -75,6 +76,9 @@ enum class OpdType : int {
     STRING_CONST,
     LABEL,
     TEMPORARY,
+    ADDRESS,
+    POINTER,
+    ARRAY,
     VARIABLE,
     FUNCTION,
     REGISTER

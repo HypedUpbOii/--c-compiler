@@ -625,6 +625,34 @@ void Mov_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
     spim.addSPIM(stmt);
 }
 
+Load_Address_RTL_Stmt::Load_Address_RTL_Stmt(
+    std::shared_ptr<RTL_Register_Opd> res, std::shared_ptr<RTL_Var_Opd> opd) {
+    result = res;
+    oper1 = opd;
+}
+
+void Load_Address_RTL_Stmt::print(std::ostream &out) {
+    out << "\tload_addr:\t\t" << result->get_name() << " <- "
+        << oper1->get_name() << std::endl;
+}
+
+void Load_Address_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {}
+
+Indirect_Op_RTL_Stmt::Indirect_Op_RTL_Stmt(
+    std::shared_ptr<RTL_Register_Opd> res,
+    std::shared_ptr<RTL_Register_Opd> opd, bool load)
+    : isload(load) {
+    result = res;
+    oper1 = opd;
+}
+
+void Indirect_Op_RTL_Stmt::print(std::ostream &out) {
+    out << ((isload) ? "\tload_ind:\t\t" : "\tstore_ind:\t\t")
+        << result->get_name() << " <- " << oper1->get_name() << std::endl;
+}
+
+void Indirect_Op_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {}
+
 Push_RTL_Stmt::Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                              unsigned int sz) {
     size = sz;

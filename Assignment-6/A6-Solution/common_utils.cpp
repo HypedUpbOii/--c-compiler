@@ -46,6 +46,20 @@ DataType &DataType::operator=(const BaseType &t) {
     return *this;
 }
 
+int DataType::size() {
+    if (pointer_level > 0)
+        return 4;
+    else if (array_dimensions.empty()) {
+        return (base == BaseType::FLOAT) ? 8 : 4;
+    }
+
+    int basesize = (base == BaseType::FLOAT) ? 8 : 4;
+    for (auto sz : array_dimensions) {
+        basesize *= sz;
+    }
+    return basesize;
+}
+
 RelationalOperator anti_op(RelationalOperator op) {
     switch (op) {
     case RelationalOperator::GREATER_THAN:

@@ -251,14 +251,12 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
 
     std::shared_ptr<Address_Of_TAC_Opd> address_var_tac_opd =
         std::make_shared<Address_Of_TAC_Opd>(steEntry);
-
     std::shared_ptr<Temporary_TAC_Opd> arr_loc_temp = tac.genNewTemporary();
-    
-    Asgn_TAC_Stmt * address_asgn = new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
+    Asgn_TAC_Stmt *address_asgn =
+        new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
     ans.push_back(address_asgn);
-        
-    std::shared_ptr<Temporary_TAC_Opd> final_loc = tac.genNewTemporary();
 
+    std::shared_ptr<Temporary_TAC_Opd> final_loc = tac.genNewTemporary();
     Arith_Comp_TAC_Stmt *add_offset_stmt = new Arith_Comp_TAC_Stmt(
         final_loc, arr_loc_temp, ArithmeticOperator::PLUS, offset);
     ans.push_back(add_offset_stmt);
@@ -547,7 +545,7 @@ std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
         std::make_shared<Variable_TAC_Opd>(steEntry);
 
     place = var_tac_opd;
-    for (int i = 0; i < pointerLevel; i++) {
+    for (int i = 0; i < pointerLevel - 1; i++) {
         std::shared_ptr<Pointer_Deref_TAC_Opd> deref =
             std::make_shared<Pointer_Deref_TAC_Opd>(place);
         std::shared_ptr<Temporary_TAC_Opd> temp = tac.genNewTemporary();
@@ -555,6 +553,7 @@ std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
         ans.push_back(asgn);
         place = temp;
     }
+    place = std::make_shared<Pointer_Deref_TAC_Opd>(place);
     return ans;
 }
 
@@ -657,14 +656,23 @@ void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Assignment_Stmt_Ast::generateTAC(TAC &tac,
                                                          Context &ctx) {
-    auto target_tac = target->generateTAC(tac, ctx);
     auto value_tac = value->generateTAC(tac, ctx);
-    Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(target->place, value->place);
-
     std::vector<TAC_Stmt *> result;
-    for (auto s : target_tac)
-        result.push_back(s);
     for (auto s : value_tac)
+        result.push_back(s);
+    auto target_tac = target->generateTAC(tac, ctx);
+
+    Asgn_TAC_Stmt *stmt;
+    if (target->place->get_opd_type() == OpdType::POINTER &&
+        value->place->get_opd_type() == OpdType::POINTER) {
+        auto temp = tac.genNewTemporary();
+        Asgn_TAC_Stmt *shift = new Asgn_TAC_Stmt(temp, value->place);
+        result.push_back(shift);
+        stmt = new Asgn_TAC_Stmt(target->place, temp);
+    } else
+        stmt = new Asgn_TAC_Stmt(target->place, value->place);
+
+    for (auto s : target_tac)
         result.push_back(s);
     result.push_back(stmt);
     return result;

@@ -91,16 +91,20 @@ std::string Label_TAC_Opd::get_name() {
 unsigned int Label_TAC_Opd::get_label_num() const { return label_num; }
 
 Pointer_Deref_TAC_Opd::Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper)
-    : operand(oper) {}
-
-std::string Pointer_Deref_TAC_Opd::get_name() {
-    return "* " + operand->get_name(); 
+    : operand(oper) {
+    opd_type = OpdType::POINTER;
 }
 
-Address_Of_TAC_Opd::Address_Of_TAC_Opd(SymbolTableEntry * ste) : steEntry(ste) {}
+std::string Pointer_Deref_TAC_Opd::get_name() {
+    return "* " + operand->get_name();
+}
+
+Address_Of_TAC_Opd::Address_Of_TAC_Opd(SymbolTableEntry *ste) : steEntry(ste) {
+    opd_type = OpdType::ADDRESS;
+}
 
 std::string Address_Of_TAC_Opd::get_name() {
-    return "& " + steEntry->get_name(); 
+    return "& " + steEntry->get_name();
 }
 
 Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, bool need_float)
@@ -175,6 +179,7 @@ void Asgn_TAC_Stmt::print(std::ostream &out) {
 void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     bool is_result_temp = result->get_opd_type() == OpdType::TEMPORARY;
     bool is_result_var = result->get_opd_type() == OpdType::VARIABLE;
+    bool is_result_pointer = result->get_opd_type() == OpdType::POINTER;
 
     bool is_oper1_temp = oper1->get_opd_type() == OpdType::TEMPORARY;
     bool is_oper1_var = oper1->get_opd_type() == OpdType::VARIABLE;
@@ -182,6 +187,7 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     bool is_oper1_float_const = oper1->get_opd_type() == OpdType::DOUBLE_CONST;
     bool is_oper1_string_const = oper1->get_opd_type() == OpdType::STRING_CONST;
     bool is_oper1_func = oper1->get_opd_type() == OpdType::FUNCTION;
+    bool is_oper1_address = oper1->get_opd_type() == OpdType::ADDRESS;
 
     RegisterDescriptor *oper1_rd = nullptr;
     if (is_oper1_temp) {

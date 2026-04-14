@@ -64,15 +64,9 @@ void SymbolTable::insert(std::string name, DataType dt, bool is_param) {
     int stack_pos = 0;
     if (is_param) {
         stack_pos = stackParams;
-        if (dt.base == BaseType::FLOAT)
-            stackParams += 8;
-        else
-            stackParams += 4;
+        stackParams += dt.size();
     } else {
-        if (dt.base == BaseType::FLOAT)
-            stackLocals -= 8;
-        else
-            stackLocals -= 4;
+        stackLocals -= dt.size();
         stack_pos = stackLocals;
     }
     entries[name] = new SymbolTableEntry(name, dt, stack_pos);
