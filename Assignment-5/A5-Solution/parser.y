@@ -160,16 +160,12 @@ global_decl_statement_list
 
 func_decl
     : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET SEMICOLON {
-        std::vector<DataType> param_types = std::vector<DataType>();
-        for (auto [s, t] : $3) {
-            param_types.push_back(t);
-        }
-        symbolTableStack.top()->insert_func($1.second, $1.first, param_types);
+        symbolTableStack.top()->insert_func($1.second, $1.first, $3);
         std::string name = ($1.second == "main") ? "main" : $1.second + "_";
         ast.addFuncDef(name, $1.first);
     }
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET SEMICOLON {
-        symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<DataType>());
+        symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<std::pair<std::string, DataType>>());
         std::string name = ($1.second == "main") ? "main" : $1.second + "_";
         ast.addFuncDef(name, $1.first);
     }
@@ -198,12 +194,10 @@ func_def
     : func_header LEFT_ROUND_BRACKET formal_param_list RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
         scope_name = $1.second;
         SymbolTable* local = new SymbolTable(symbolTableStack.top(), $1.first);
-        std::vector<DataType> sub_signature;
         for (const auto & ptr : $3) {
-            sub_signature.push_back(ptr.second);
             local->insert(ptr.first, ptr.second, true);    
         }
-        symbolTableStack.top()->insert_func($1.second, $1.first, sub_signature, true);
+        symbolTableStack.top()->insert_func($1.second, $1.first, $3, true);
         symbolTableStack.push(local);
     } optional_local_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
         $$ = std::make_unique<Function_Ast>($1.first, $3, $1.second, std::move($8), symbolTableStack.top());
@@ -212,7 +206,7 @@ func_def
     | func_header LEFT_ROUND_BRACKET RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {
         scope_name = $1.second;
         SymbolTable* local = new SymbolTable(symbolTableStack.top(), $1.first);
-        symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<DataType>(), true);
+        symbolTableStack.top()->insert_func($1.second, $1.first, std::vector<std::pair<std::string, DataType>>(), true);
         symbolTableStack.push(local);
     } optional_local_var_decl_stmt_list statement_list RIGHT_CURLY_BRACKET {
         $$ = std::make_unique<Function_Ast>($1.first, std::vector<std::pair<std::string, DataType>>(), $1.second, std::move($7), symbolTableStack.top());

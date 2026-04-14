@@ -21,7 +21,7 @@ void Function_Call_Ast::validateNode(SymbolTable *sym_tab) {
 
     for (int i = 0; i < arguments.size(); ++i) {
         arguments[i]->validateNode(sym_tab);
-        if (arguments[i]->exprType != funcEntry->get_params()[i])
+        if (arguments[i]->exprType != funcEntry->get_params()[i].second)
             exit_with_err_msg("sclp error: Argument type mismatch");
     }
     exprType = funcEntry->get_return_type();
@@ -516,9 +516,15 @@ void While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "While:" << std::endl
         << std::string(tab, ' ') << "  Condition (";
     condition->printTree(out, tab + 6);
-    out << ")" << std::endl << std::string(tab, ' ') << "  Body (" << std::endl;
-    body->printTree(out, tab + 6);
-    out << ")";
+    auto new_body = dynamic_cast<Sequence_Stmt_Ast *>(body.get());
+    if (new_body != nullptr && new_body->statement_list.empty()) {
+        out << ")" << std::endl << std::string(tab, ' ') << "  Body ()";
+    } else {
+        out << ")" << std::endl
+            << std::string(tab, ' ') << "  Body (" << std::endl;
+        body->printTree(out, tab + 6);
+        out << ")";
+    }
 }
 
 std::vector<TAC_Stmt *>
@@ -552,10 +558,16 @@ While_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
 }
 
 void Do_While_Stmt_Ast::printTree(std::ostream &out, int tab) {
-    out << std::string(tab, ' ') << "Do:" << std::endl
-        << std::string(tab, ' ') << "  Body (" << std::endl;
-    body->printTree(out, tab + 6);
-    out << ")" << std::endl << std::string(tab, ' ') << "  While Condition (";
+    out << std::string(tab, ' ') << "Do:" << std::endl;
+    auto new_body = dynamic_cast<Sequence_Stmt_Ast *>(body.get());
+    if (new_body != nullptr && new_body->statement_list.empty()) {
+        out << std::string(tab, ' ') << "  Body ()" << std::endl;
+    } else {
+        out << std::string(tab, ' ') << "  Body (" << std::endl;
+        body->printTree(out, tab + 6);
+        out << ")" << std::endl;
+    }
+    out << std::string(tab, ' ') << "  While Condition (";
     condition->printTree(out, tab + 6);
     out << ")";
 }
@@ -672,13 +684,25 @@ void Selection_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "If:" << std::endl
         << std::string(tab, ' ') << "  Condition (";
     condition->printTree(out, tab + 6);
-    out << ")" << std::endl << std::string(tab, ' ') << "  Then (" << std::endl;
-    then_stmt->printTree(out, tab + 6);
-    out << ")";
-    if (else_stmt != nullptr) {
-        out << std::endl << std::string(tab, ' ') << "  Else (" << std::endl;
-        else_stmt->printTree(out, tab + 6);
+    auto new_then_stmt = dynamic_cast<Sequence_Stmt_Ast *>(then_stmt.get());
+    if (new_then_stmt != nullptr && new_then_stmt->statement_list.empty()) {
+        out << ")" << std::endl << std::string(tab, ' ') << "  Then ()";
+    } else {
+        out << ")" << std::endl
+            << std::string(tab, ' ') << "  Then (" << std::endl;
+        then_stmt->printTree(out, tab + 6);
         out << ")";
+    }
+    if (else_stmt != nullptr) {
+        auto new_else_stmt = dynamic_cast<Sequence_Stmt_Ast *>(else_stmt.get());
+        if (new_else_stmt != nullptr && new_else_stmt->statement_list.empty()) {
+            out << std::endl << std::string(tab, ' ') << "  Else ()";
+        } else {
+            out << std::endl
+                << std::string(tab, ' ') << "  Else (" << std::endl;
+            else_stmt->printTree(out, tab + 6);
+            out << ")";
+        }
     }
 }
 
@@ -826,9 +850,9 @@ std::vector<TAC_Stmt *>
 Call_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
                            std::shared_ptr<Variable_TAC_Opd> ret_var,
                            std::shared_ptr<Label_TAC_Opd> ret_label) {
-    func_call->generateTAC(tac, local);
+    std::vector<TAC_Stmt *> result = func_call->generateTAC(tac, local);
     Call_TAC_Stmt *call_stmt = new Call_TAC_Stmt(func_call->place);
-    std::vector<TAC_Stmt *> result = {call_stmt};
+    result.push_back(call_stmt);
     return result;
 }
 
@@ -837,10 +861,11 @@ Function_Ast::Function_Ast(DataType ret,
                            std::vector<std::pair<std::string, DataType>> params,
                            std::string nam,
                            std::vector<std::unique_ptr<Statement_Ast>> stmts,
-                           SymbolTable *loc)
+                           SymbolTable *loc, bool add_underscore)
     : returnType(ret), parameters(params), name(nam),
       statements(std::move(stmts)), local(loc) {
-    name = (nam == "main") ? "main" : nam + "_";
+    if (add_underscore)
+        name = (nam == "main") ? "main" : nam + "_";
 }
 
 void Function_Ast::validateFunction() {
@@ -926,7 +951,7 @@ void Function_Ast::printSPIM(std::ostream &out) {
     out << "\t.text" << std::endl;
     out << "\t.globl " << name << std::endl;
     out << name << ":" << std::endl;
-    int stack_space = local->getStackSpace();
+    int stack_space = (local == nullptr) ? 0 : local->getStackSpace();
     // Prologue
     out << "\tsw $ra, 0($sp)" << std::endl;
     out << "\tsw $fp, -4($sp)" << std::endl;
@@ -983,6 +1008,14 @@ void Program::validateProgram() {
         exit_with_err_msg("sclp error: No main function defined");
     for (const auto &[name, func] : funcs)
         func->validateFunction();
+
+    auto defs = global->getOnlyFuncDecls();
+    for (auto &def : defs) {
+        auto ptr = std::make_unique<Function_Ast>(
+            def->get_return_type(), def->get_params(), def->get_name(),
+            std::vector<std::unique_ptr<Statement_Ast>>(), nullptr, false);
+        funcs.emplace(def->get_name(), std::move(ptr));
+    }
 }
 
 void Program::print(std::ostream &out) {

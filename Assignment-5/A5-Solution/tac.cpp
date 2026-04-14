@@ -348,7 +348,7 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
         __rtl.addRTLStatement(call);
         // pop all parameters from the stack
         for (auto &opd : func_tac_opd->get_sym_tab_func()->get_params()) {
-            unsigned int sz = (opd == BaseType::FLOAT) ? 8 : 4;
+            unsigned int sz = (opd.second == BaseType::FLOAT) ? 8 : 4;
             std::shared_ptr<Pop_RTL_Stmt> stmt =
                 std::make_shared<Pop_RTL_Stmt>(sz);
             __rtl.addRTLStatement(stmt);
@@ -512,7 +512,7 @@ void Call_TAC_Stmt::generateRTL(RTL &__rtl) {
     __rtl.addRTLStatement(call);
     // pop all parameters from the stack
     for (auto &opd : fnCall->get_sym_tab_func()->get_params()) {
-        unsigned int sz = (opd == BaseType::FLOAT) ? 8 : 4;
+        unsigned int sz = (opd.second == BaseType::FLOAT) ? 8 : 4;
         std::shared_ptr<Pop_RTL_Stmt> stmt = std::make_shared<Pop_RTL_Stmt>(sz);
         __rtl.addRTLStatement(stmt);
     }
@@ -1256,7 +1256,7 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
             std::make_shared<RTL_Register_Opd>(extra_reg);
         std::shared_ptr<Transfer_RTL_Stmt> mov =
             std::make_shared<Transfer_RTL_Stmt>(dest, src);
-
+        __rtl.machine_descriptor->set_rd_for_tac_opd(result, extra_reg);
         __rtl.addRTLStatement(mov);
     }
     if (is_write) {
@@ -1399,18 +1399,9 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
         __rtl.addRTLStatement(store_stmt);
     }
     if (!v0_free) {
-        // move extra_reg stuff back to rd
-        std::shared_ptr<RTL_Register_Opd> dest =
-            std::make_shared<RTL_Register_Opd>(rd);
-        std::shared_ptr<RTL_Register_Opd> src =
-            std::make_shared<RTL_Register_Opd>(extra_reg);
-        std::shared_ptr<Transfer_RTL_Stmt> mov =
-            std::make_shared<Transfer_RTL_Stmt>(dest, src);
-
-        __rtl.addRTLStatement(mov);
-
         extra_reg->reset_used_for_expr_return();
     }
+    __rtl.machine_descriptor->get_register(Register::v0)->reset_used_for_expr_return();
 }
 
 Label_TAC_Stmt::Label_TAC_Stmt(std::shared_ptr<Label_TAC_Opd> label) {

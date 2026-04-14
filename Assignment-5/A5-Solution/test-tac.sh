@@ -3,7 +3,7 @@ our=sclp
 
 make
 
-for file in ../A5-Resources-x86_64/example-programs/Level-5-test-cases/*.c
+for file in tests/*.c
 do
     echo "Checking file $file"
 

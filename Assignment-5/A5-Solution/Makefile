@@ -33,44 +33,44 @@ parser.tab.cc parser.tab.hh location.hh : parser.y
 	bison -dv -Wcounterexamples parser.y
 
 parser.tab.o : parser.tab.cc ast.hpp
-	g++ -fsanitize=address -c -g parser.tab.cc
+	g++ -fsanitize=address -g -c parser.tab.cc
 
 lex.yy.o : scanner.l parser.tab.hh lexer.hpp
 	flex scanner.l
-	g++ -fsanitize=address -c -g lex.yy.cc
+	g++ -fsanitize=address -g -c lex.yy.cc
 
 lexer.o : lexer.cpp lexer.hpp parser.tab.hh
-	g++ -fsanitize=address -c -g lexer.cpp
+	g++ -fsanitize=address -g -c lexer.cpp
 
 common_utils.o : common_utils.cpp common_utils.hpp
-	g++ -fsanitize=address -c -g common_utils.cpp
+	g++ -fsanitize=address -g -c common_utils.cpp
 
 symbol_table.o: symbol_table.cpp symbol_table.hpp
-	g++ -fsanitize=address -c -g symbol_table.cpp
+	g++ -fsanitize=address -g -c symbol_table.cpp
 
 output_handler.o : output_handler.cpp output_handler.hpp
-	g++ -fsanitize=address -c -g output_handler.cpp
+	g++ -fsanitize=address -g -c output_handler.cpp
 
 argument_handler.o : argument_handler.cpp argument_handler.hpp
-	g++ -fsanitize=address -c -g argument_handler.cpp
+	g++ -fsanitize=address -g -c argument_handler.cpp
 
 spim.o : spim.cpp spim.hpp
-	g++ -fsanitize=address -c -g spim.cpp
+	g++ -fsanitize=address -g -c spim.cpp
 
 register.o: register.cpp register.hpp
-	g++ -fsanitize=address -c -g register.cpp
+	g++ -fsanitize=address -g -c register.cpp
 
 rtl.o: rtl.cpp rtl.hpp
-	g++ -fsanitize=address -c -g rtl.cpp
+	g++ -fsanitize=address -g -c rtl.cpp
 
 tac.o: tac.cpp tac.hpp
-	g++ -fsanitize=address -c -g tac.cpp
+	g++ -fsanitize=address -g -c tac.cpp
 
 ast.o: ast.cpp ast.hpp
-	g++ -fsanitize=address -c -g ast.cpp
+	g++ -fsanitize=address -g -c ast.cpp
 
 main.o : main.cpp argument_handler.cpp lexer.hpp output_handler.hpp
-	g++ -fsanitize=address -c -g main.cpp
+	g++ -fsanitize=address -g -c main.cpp
 
 clean :
 	rm -f *.o lex.yy.* *.tab.h *.tab.c *.output *.log *.ast *.hh *.toks *.tac *.rtl *.spim exp? *.tab.cc a.out sclp

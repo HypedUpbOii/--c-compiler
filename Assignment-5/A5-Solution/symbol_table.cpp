@@ -12,16 +12,17 @@ bool SymbolTableEntry::get_need_float() const {
     return type.base == BaseType::FLOAT;
 }
 
-SymbolTableFunction::SymbolTableFunction(std::string n, DataType rt,
-                                         std::vector<DataType> &params,
-                                         bool def)
+SymbolTableFunction::SymbolTableFunction(
+    std::string n, DataType rt,
+    std::vector<std::pair<std::string, DataType>> &params, bool def)
     : name(n), return_type(rt), sub_signature(params), is_defined(def) {}
 
 DataType SymbolTableFunction::get_return_type() const { return return_type; }
 
 std::string SymbolTableFunction::get_name() const { return name; }
 
-const std::vector<DataType> &SymbolTableFunction::get_params() const {
+const std::vector<std::pair<std::string, DataType>> &
+SymbolTableFunction::get_params() const {
     return sub_signature;
 }
 
@@ -88,22 +89,25 @@ void SymbolTable::insert_stemp(std::string name, DataType dt) {
     stemps[name] = new SymbolTableEntry(name, dt, stackLocals);
 }
 
-void SymbolTable::insert_func(std::string name, DataType rt,
-                              std::vector<DataType> params, bool def) {
+void SymbolTable::insert_func(
+    std::string name, DataType rt,
+    std::vector<std::pair<std::string, DataType>> params, bool def) {
     name = (name == "main") ? "main" : name + "_";
     if (lookup(name) != nullptr) {
         encounteredDuplicate = true;
         return;
     }
     if (func_lookup(name) != nullptr) {
-        if (funcs[name]->get_return_type() != rt ||
-            funcs[name]->get_params() != params) {
+        if (funcs[name]->is_defined || funcs[name]->get_return_type() != rt ||
+            params.size() != funcs[name]->get_params().size()) {
             encounteredDuplicate = true;
             return;
         }
-        if (funcs[name]->is_defined) {
-            encounteredDuplicate = true;
-            return;
+        for (int i = 0; i < params.size(); ++i) {
+            if (funcs[name]->get_params()[i].second != params[i].second) {
+                encounteredDuplicate = true;
+                return;
+            }
         }
         funcs[name]->is_defined = true;
         return;
@@ -151,4 +155,13 @@ void SymbolTable::mark_global(std::string name) {
     name = (name == "main") ? "main" : name + "_";
     SymbolTableEntry *ste = lookup(name);
     ste->is_global = true;
+}
+
+std::vector<SymbolTableFunction *> SymbolTable::getOnlyFuncDecls() {
+    std::vector<SymbolTableFunction *> ret;
+    for (auto [funcName, func] : funcs) {
+        if (!func->is_defined)
+            ret.push_back(func);
+    }
+    return ret;
 }

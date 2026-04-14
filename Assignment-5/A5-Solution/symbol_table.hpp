@@ -18,15 +18,15 @@ class SymbolTableEntry {
 class SymbolTableFunction {
     std::string name;
     DataType return_type;
-    std::vector<DataType> sub_signature;
+    std::vector<std::pair<std::string, DataType>> sub_signature;
 
   public:
     bool is_defined;
-    SymbolTableFunction(std::string, DataType, std::vector<DataType> &,
+    SymbolTableFunction(std::string, DataType, std::vector<std::pair<std::string, DataType>> &,
                         bool = false);
     DataType get_return_type() const;
     std::string get_name() const;
-    const std::vector<DataType> &get_params() const;
+    const std::vector<std::pair<std::string, DataType>> &get_params() const;
 };
 
 class SymbolTable {
@@ -45,7 +45,7 @@ class SymbolTable {
 
     void insert(std::string name, DataType dt, bool is_param = false);
     void insert_stemp(std::string name, DataType dt);
-    void insert_func(std::string, DataType, std::vector<DataType>,
+    void insert_func(std::string, DataType, std::vector<std::pair<std::string, DataType>>,
                      bool = false);
     void setReturnStemp(DataType dt);
     SymbolTableEntry *lookup(std::string name);
@@ -54,4 +54,5 @@ class SymbolTable {
     int getStackSpace();
     bool hasDuplicate();
     void mark_global(std::string);
+    std::vector<SymbolTableFunction *> getOnlyFuncDecls();
 };

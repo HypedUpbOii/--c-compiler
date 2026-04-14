@@ -339,7 +339,7 @@ class Function_Ast {
                  std::vector<std::pair<std::string, DataType>> params,
                  std::string nam,
                  std::vector<std::unique_ptr<Statement_Ast>> stmts,
-                 SymbolTable *loc);
+                 SymbolTable *loc, bool add_underscore = true);
     ~Function_Ast();
     void validateFunction();
     void printTree(std::ostream &);
