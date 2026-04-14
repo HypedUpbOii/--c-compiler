@@ -56,8 +56,18 @@ class Label_TAC_Opd : public TAC_Opd {
 };
 
 class Pointer_Deref_TAC_Opd : public TAC_Opd {
+  std::shared_ptr<TAC_Opd> operand;
   public:
     // TODO: L6
+    Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper);
+    std::string get_name() override;
+};
+
+class Address_Of_TAC_Opd : public TAC_Opd {
+  SymbolTableEntry * steEntry;
+  public:
+  Address_Of_TAC_Opd(SymbolTableEntry * ste);
+  std::string get_name() override;
 };
 
 class Temporary_TAC_Opd : public TAC_Opd {

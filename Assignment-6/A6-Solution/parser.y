@@ -9,8 +9,8 @@
 %locations
 
 %code requires {
-    #include <iostream>
     #include <stack>
+    #include <algorithm>
     #include "common_utils.hpp"
     #include "ast.hpp"
     #include "symbol_table.hpp"
@@ -374,6 +374,7 @@ var_decl_item
         $$ = std::make_pair($1, DataType());
     }
     | NAME array_decl {
+        std::reverse($2.begin(), $2.end());
         $$ = std::make_pair($1, DataType(BaseType::VOID, 0, $2));
     }
     | pointer_decl NAME {

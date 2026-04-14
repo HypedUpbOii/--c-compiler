@@ -160,9 +160,9 @@ class Unary_Expr_Ast : public Expression_Ast {
 class Address_Expr_Ast : public Unary_Expr_Ast { // &a
   public:
     // L6
-    std::unique_ptr<Expression_Ast> operand;
+    std::unique_ptr<Name_Expr_Ast> operand;
 
-    Address_Expr_Ast(std::unique_ptr<Expression_Ast>);
+    Address_Expr_Ast(std::unique_ptr<Name_Expr_Ast>);
     void validateNode(Context &) override;
     void printTree(std::ostream &, int) override;
     std::vector<TAC_Stmt *> generateTAC(TAC &, Context &) override;

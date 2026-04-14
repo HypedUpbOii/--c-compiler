@@ -153,8 +153,6 @@ Array_Access_Expr_Ast::Array_Access_Expr_Ast(
     std::string nam, std::vector<std::unique_ptr<Expression_Ast>> &dim_accessed)
     : name(nam + "_"), dims(std::move(dim_accessed)) {}
 
-// steEntry being nullptr
-
 bool Array_Access_Expr_Ast::isLvalue() { return true; }
 
 void Array_Access_Expr_Ast::validateNode(Context &ctx) {
@@ -215,6 +213,58 @@ void Array_Access_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
                                                            Context &ctx) {
     std::vector<TAC_Stmt *> ans;
+    SymbolTableEntry *steEntry = ctx.local->lookup(name);
+    std::vector<int> sizes = steEntry->get_type().array_dimensions;
+    int num_dims = sizes.size();
+
+    std::vector<TAC_Stmt *> first_code = dims[0]->generateTAC(tac, ctx);
+    for (auto stmt : first_code)
+        ans.push_back(stmt);
+    place = dims[0]->place;
+
+    for (int i = 0; i < num_dims - 1; i++) {
+        std::shared_ptr<Int_Const_TAC_Opd> next_dim_tac_opd =
+            std::make_shared<Int_Const_TAC_Opd>(sizes[i + 1]);
+        std::shared_ptr<Temporary_TAC_Opd> mult_temp = tac.genNewTemporary();
+        Arith_Comp_TAC_Stmt *mult_stmt = new Arith_Comp_TAC_Stmt(
+            mult_temp, place, ArithmeticOperator::MULT, next_dim_tac_opd);
+        ans.push_back(mult_stmt);
+
+        std::vector<TAC_Stmt *> dim_code = dims[i + 1]->generateTAC(tac, ctx);
+        for (auto stmt : dim_code)
+            ans.push_back(stmt);
+        std::shared_ptr<Temporary_TAC_Opd> add_temp = tac.genNewTemporary();
+        Arith_Comp_TAC_Stmt *add_stmt = new Arith_Comp_TAC_Stmt(
+            add_temp, mult_temp, ArithmeticOperator::PLUS, dims[i + 1]->place);
+        ans.push_back(add_stmt);
+
+        place = add_temp;
+    }
+
+    int sz = (steEntry->get_type().base == BaseType::FLOAT) ? 8 : 4;
+    std::shared_ptr<Int_Const_TAC_Opd> size_opd =
+        std::make_shared<Int_Const_TAC_Opd>(sz);
+    std::shared_ptr<Temporary_TAC_Opd> offset = tac.genNewTemporary();
+    Arith_Comp_TAC_Stmt *size_mult_stmt = new Arith_Comp_TAC_Stmt(
+        offset, place, ArithmeticOperator::MULT, size_opd);
+    ans.push_back(size_mult_stmt);
+
+    std::shared_ptr<Address_Of_TAC_Opd> address_var_tac_opd =
+        std::make_shared<Address_Of_TAC_Opd>(steEntry);
+
+    std::shared_ptr<Temporary_TAC_Opd> arr_loc_temp = tac.genNewTemporary();
+    
+    Asgn_TAC_Stmt * address_asgn = new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
+    ans.push_back(address_asgn);
+        
+    std::shared_ptr<Temporary_TAC_Opd> final_loc = tac.genNewTemporary();
+
+    Arith_Comp_TAC_Stmt *add_offset_stmt = new Arith_Comp_TAC_Stmt(
+        final_loc, arr_loc_temp, ArithmeticOperator::PLUS, offset);
+    ans.push_back(add_offset_stmt);
+
+    place = std::make_shared<Pointer_Deref_TAC_Opd>(final_loc);
+
     return ans;
 }
 
@@ -430,7 +480,7 @@ std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
 
 // Unary Expressions
 // Address Expression
-Address_Expr_Ast::Address_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
+Address_Expr_Ast::Address_Expr_Ast(std::unique_ptr<Name_Expr_Ast> oper)
     : operand(std::move(oper)) {}
 
 void Address_Expr_Ast::validateNode(Context &ctx) {
@@ -451,6 +501,13 @@ void Address_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Address_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<TAC_Stmt *> ans;
+    std::shared_ptr<Address_Of_TAC_Opd> add_tac_opd =
+        std::make_shared<Address_Of_TAC_Opd>(operand->steEntry);
+    std::shared_ptr<Temporary_TAC_Opd> new_temp = tac.genNewTemporary();
+    place = new_temp;
+
+    Asgn_TAC_Stmt *asgn_stmt = new Asgn_TAC_Stmt(new_temp, add_tac_opd);
+    ans.push_back(asgn_stmt);
     return ans;
 }
 
@@ -485,6 +542,19 @@ void Pointer_Deref_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
                                                             Context &ctx) {
     std::vector<TAC_Stmt *> ans;
+    SymbolTableEntry *steEntry = ctx.local->lookup(name);
+    std::shared_ptr<Variable_TAC_Opd> var_tac_opd =
+        std::make_shared<Variable_TAC_Opd>(steEntry);
+
+    place = var_tac_opd;
+    for (int i = 0; i < pointerLevel; i++) {
+        std::shared_ptr<Pointer_Deref_TAC_Opd> deref =
+            std::make_shared<Pointer_Deref_TAC_Opd>(place);
+        std::shared_ptr<Temporary_TAC_Opd> temp = tac.genNewTemporary();
+        Asgn_TAC_Stmt *asgn = new Asgn_TAC_Stmt(temp, deref);
+        ans.push_back(asgn);
+        place = temp;
+    }
     return ans;
 }
 

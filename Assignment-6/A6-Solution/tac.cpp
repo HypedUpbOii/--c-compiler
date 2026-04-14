@@ -90,6 +90,19 @@ std::string Label_TAC_Opd::get_name() {
 
 unsigned int Label_TAC_Opd::get_label_num() const { return label_num; }
 
+Pointer_Deref_TAC_Opd::Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper)
+    : operand(oper) {}
+
+std::string Pointer_Deref_TAC_Opd::get_name() {
+    return "* " + operand->get_name(); 
+}
+
+Address_Of_TAC_Opd::Address_Of_TAC_Opd(SymbolTableEntry * ste) : steEntry(ste) {}
+
+std::string Address_Of_TAC_Opd::get_name() {
+    return "& " + steEntry->get_name(); 
+}
+
 Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, bool need_float)
     : temp_num(num) {
     opd_type = OpdType::TEMPORARY;
@@ -1401,7 +1414,8 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
     if (!v0_free) {
         extra_reg->reset_used_for_expr_return();
     }
-    __rtl.machine_descriptor->get_register(Register::v0)->reset_used_for_expr_return();
+    __rtl.machine_descriptor->get_register(Register::v0)
+        ->reset_used_for_expr_return();
 }
 
 Label_TAC_Stmt::Label_TAC_Stmt(std::shared_ptr<Label_TAC_Opd> label) {
