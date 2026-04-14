@@ -64,10 +64,13 @@
 %token WRITE
 %token READ
 %token RETURN
+%token BREAK
+%token CONTINUE
 %token IF
 %token ELSE
 %token WHILE
 %token DO
+%token FOR
 %token <double> FLOAT_NUM
 %token <int> INT_NUM
 %token <std::string> NAME
@@ -82,8 +85,11 @@
 
 %type <std::unique_ptr<Assignment_Stmt_Ast>> assignment_statement
 %type <std::unique_ptr<While_Stmt_Ast>> while_statement
+%type <std::unique_ptr<For_Stmt_Ast>> for_statement
 %type <std::unique_ptr<Do_While_Stmt_Ast>> do_while_statement
 %type <std::unique_ptr<Read_Stmt_Ast>> read_statement
+%type <std::unique_ptr<Break_Stmt_Ast>> break_statement
+%type <std::unique_ptr<Continue_Stmt_Ast>> continue_statement
 %type <std::unique_ptr<Return_Stmt_Ast>> return_statement
 %type <std::unique_ptr<Selection_Stmt_Ast>> if_statement
 %type <std::unique_ptr<Sequence_Stmt_Ast>> compound_statement
@@ -260,6 +266,9 @@ statement
     | while_statement {
         $$ = std::move($1);
     }
+    | for_statement {
+        $$ = std::move($1);
+    }
     | compound_statement {
         $$ = std::move($1);
     }
@@ -273,6 +282,12 @@ statement
         $$ = std::move($1);
     }
     | return_statement {
+        $$ = std::move($1);
+    }
+    | break_statement {
+        $$ = std::move($1);
+    }
+    | continue_statement {
         $$ = std::move($1);
     }
 ;
@@ -440,6 +455,12 @@ while_statement
     }
 ;
 
+for_statement
+    : FOR LEFT_ROUND_BRACKET assignment_statement SEMICOLON expression SEMICOLON assignment_statement RIGHT_ROUND_BRACKET statement {
+        $$ = std::make_unique<For_Stmt_Ast>(std::move($3), std::move($5), std::move($7), std::move($9));
+    }
+;
+
 compound_statement
     : LEFT_CURLY_BRACKET statement_list RIGHT_CURLY_BRACKET {
         $$ = std::make_unique<Sequence_Stmt_Ast>($2);
@@ -455,6 +476,18 @@ print_statement
 read_statement
     : READ NAME SEMICOLON {
         $$ = std::make_unique<Read_Stmt_Ast>(std::move(std::make_unique<Name_Expr_Ast>($2)));
+    }
+;
+
+break_statement
+    : BREAK SEMICOLON {
+        $$ = std::make_unique<Break_Stmt_Ast>();
+    }
+;
+
+continue_statement
+    : CONTINUE SEMICOLON {
+        $$ = std::make_unique<Continue_Stmt_Ast>();
     }
 ;
 

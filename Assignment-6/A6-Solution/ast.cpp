@@ -11,8 +11,8 @@ Function_Call_Ast::Function_Call_Ast(
     name = (nam == "main") ? "main" : nam + "_";
 }
 
-void Function_Call_Ast::validateNode(SymbolTable *sym_tab) {
-    funcEntry = sym_tab->func_lookup(name);
+void Function_Call_Ast::validateNode(Context &ctx) {
+    funcEntry = (ctx.local)->func_lookup(name);
     if (funcEntry == nullptr)
         exit_with_err_msg("sclp error: Could not look up function " + name);
 
@@ -20,7 +20,7 @@ void Function_Call_Ast::validateNode(SymbolTable *sym_tab) {
         exit_with_err_msg("sclp error: Number of arguments mismatch");
 
     for (int i = 0; i < arguments.size(); ++i) {
-        arguments[i]->validateNode(sym_tab);
+        arguments[i]->validateNode(ctx);
         if (arguments[i]->exprType != funcEntry->get_params()[i].second)
             exit_with_err_msg("sclp error: Argument type mismatch");
     }
@@ -36,8 +36,7 @@ void Function_Call_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
-                                                       SymbolTable *local) {
+std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
     if (funcEntry->get_return_type() != BaseType::VOID) {
@@ -46,7 +45,7 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
     }
 
     for (auto &ptr : arguments) {
-        for (auto &stmt : ptr->generateTAC(tac, local))
+        for (auto &stmt : ptr->generateTAC(tac, ctx))
             result.push_back(stmt);
         params.push_back(ptr->place);
     }
@@ -64,8 +63,8 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac,
 Name_Expr_Ast::Name_Expr_Ast(std::string nam)
     : name(nam + "_"), steEntry(nullptr) {}
 
-void Name_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    steEntry = sym_tab->lookup(name);
+void Name_Expr_Ast::validateNode(Context &ctx) {
+    steEntry = (ctx.local)->lookup(name);
     if (steEntry == nullptr)
         exit_with_err_msg("sclp error: Could not look up variable " + name);
 
@@ -76,8 +75,7 @@ void Name_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << "Name : " << name << type_to_string(exprType);
 }
 
-std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &tac,
-                                                   SymbolTable *local) {
+std::vector<TAC_Stmt *> Name_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     place = std::make_shared<Variable_TAC_Opd>(steEntry);
     return std::vector<TAC_Stmt *>();
 }
@@ -92,16 +90,16 @@ template class Literal_Expr_Ast<std::string>;
 template <typename T>
 Literal_Expr_Ast<T>::Literal_Expr_Ast(T val) : value(val) {}
 
-template <> void Literal_Expr_Ast<int>::validateNode(SymbolTable *sym_tab) {
+template <> void Literal_Expr_Ast<int>::validateNode(Context &ctx) {
     exprType = BaseType::INT;
 }
 
-template <> void Literal_Expr_Ast<double>::validateNode(SymbolTable *sym_tab) {
+template <> void Literal_Expr_Ast<double>::validateNode(Context &ctx) {
     exprType = BaseType::FLOAT;
 }
 
 template <>
-void Literal_Expr_Ast<std::string>::validateNode(SymbolTable *sym_tab) {
+void Literal_Expr_Ast<std::string>::validateNode(Context &ctx) {
     exprType = BaseType::STRING;
 }
 
@@ -122,21 +120,21 @@ void Literal_Expr_Ast<std::string>::printTree(std::ostream &out, int tab) {
 
 template <>
 std::vector<TAC_Stmt *> Literal_Expr_Ast<int>::generateTAC(TAC &tac,
-                                                           SymbolTable *local) {
+                                                           Context &ctx) {
     place = std::make_shared<Int_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
-std::vector<TAC_Stmt *>
-Literal_Expr_Ast<double>::generateTAC(TAC &tac, SymbolTable *local) {
+std::vector<TAC_Stmt *> Literal_Expr_Ast<double>::generateTAC(TAC &tac,
+                                                              Context &ctx) {
     place = std::make_shared<Double_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
 
 template <>
 std::vector<TAC_Stmt *>
-Literal_Expr_Ast<std::string>::generateTAC(TAC &tac, SymbolTable *local) {
+Literal_Expr_Ast<std::string>::generateTAC(TAC &tac, Context &ctx) {
     place = std::make_shared<String_Const_TAC_Opd>(value);
     return std::vector<TAC_Stmt *>();
 }
@@ -167,9 +165,9 @@ Boolean_Expr_Ast::Boolean_Expr_Ast(std::unique_ptr<Expression_Ast> oper1,
     rightOp = std::move(oper2);
 }
 
-void Boolean_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    leftOp->validateNode(sym_tab);
-    rightOp->validateNode(sym_tab);
+void Boolean_Expr_Ast::validateNode(Context &ctx) {
+    leftOp->validateNode(ctx);
+    rightOp->validateNode(ctx);
     if (leftOp->exprType != BaseType::BOOL ||
         rightOp->exprType != BaseType::BOOL)
         exit_with_err_msg(
@@ -186,10 +184,9 @@ void Boolean_Expr_Ast::printTree(std::ostream &out, int tab) {
     printChildren(out, tab);
 }
 
-std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac,
-                                                      SymbolTable *local) {
-    auto left_tac = leftOp->generateTAC(tac, local);
-    auto right_tac = rightOp->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto left_tac = leftOp->generateTAC(tac, ctx);
+    auto right_tac = rightOp->generateTAC(tac, ctx);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Bool_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -212,9 +209,9 @@ Arithmetic_Expr_Ast::Arithmetic_Expr_Ast(std::unique_ptr<Expression_Ast> oper1,
     rightOp = std::move(oper2);
 }
 
-void Arithmetic_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    leftOp->validateNode(sym_tab);
-    rightOp->validateNode(sym_tab);
+void Arithmetic_Expr_Ast::validateNode(Context &ctx) {
+    leftOp->validateNode(ctx);
+    rightOp->validateNode(ctx);
     if (leftOp->exprType != rightOp->exprType)
         exit_with_err_msg("sclp error: Operand types must match");
     else if (leftOp->exprType != BaseType::INT &&
@@ -234,9 +231,9 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac,
-                                                         SymbolTable *local) {
-    auto left_tac = leftOp->generateTAC(tac, local);
-    auto right_tac = rightOp->generateTAC(tac, local);
+                                                         Context &ctx) {
+    auto left_tac = leftOp->generateTAC(tac, ctx);
+    auto right_tac = rightOp->generateTAC(tac, ctx);
     // may need float
     place = tac.genNewTemporary(leftOp->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
@@ -260,9 +257,9 @@ Relational_Expr_Ast::Relational_Expr_Ast(std::unique_ptr<Expression_Ast> oper1,
     rightOp = std::move(oper2);
 }
 
-void Relational_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    leftOp->validateNode(sym_tab);
-    rightOp->validateNode(sym_tab);
+void Relational_Expr_Ast::validateNode(Context &ctx) {
+    leftOp->validateNode(ctx);
+    rightOp->validateNode(ctx);
     if (leftOp->exprType != rightOp->exprType)
         exit_with_err_msg("sclp error: Operand types must match");
     else if (leftOp->exprType != BaseType::INT &&
@@ -282,9 +279,9 @@ void Relational_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac,
-                                                         SymbolTable *local) {
-    auto left_tac = leftOp->generateTAC(tac, local);
-    auto right_tac = rightOp->generateTAC(tac, local);
+                                                         Context &ctx) {
+    auto left_tac = leftOp->generateTAC(tac, ctx);
+    auto right_tac = rightOp->generateTAC(tac, ctx);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Rel_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -305,10 +302,10 @@ Ternary_Expr_Ast::Ternary_Expr_Ast(std::unique_ptr<Expression_Ast> cond,
     : condition(std::move(cond)), trueExpr(std::move(tExpr)),
       falseExpr(std::move(fExpr)) {}
 
-void Ternary_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    condition->validateNode(sym_tab);
-    trueExpr->validateNode(sym_tab);
-    falseExpr->validateNode(sym_tab);
+void Ternary_Expr_Ast::validateNode(Context &ctx) {
+    condition->validateNode(ctx);
+    trueExpr->validateNode(ctx);
+    falseExpr->validateNode(ctx);
 
     if (condition->exprType != BaseType::BOOL)
         exit_with_err_msg("sclp error: Condition in the ternary expression "
@@ -331,14 +328,13 @@ void Ternary_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac,
-                                                      SymbolTable *local) {
-    auto cond_tac = condition->generateTAC(tac, local);
-    place = tac.genNewSTemporary(exprType, local);
+std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto cond_tac = condition->generateTAC(tac, ctx);
+    place = tac.genNewSTemporary(exprType, ctx.local);
     std::shared_ptr<Label_TAC_Opd> false_label = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
-    auto true_tac = trueExpr->generateTAC(tac, local);
-    auto false_tac = falseExpr->generateTAC(tac, local);
+    auto true_tac = trueExpr->generateTAC(tac, ctx);
+    auto false_tac = falseExpr->generateTAC(tac, ctx);
 
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
@@ -385,8 +381,8 @@ bool Pointer_Deref_Expr_Ast::isLvalue() { return true; }
 UMinus_Expr_Ast::UMinus_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
     : operand(std::move(oper)) {}
 
-void UMinus_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    operand->validateNode(sym_tab);
+void UMinus_Expr_Ast::validateNode(Context &ctx) {
+    operand->validateNode(ctx);
 
     if (operand->exprType != BaseType::INT &&
         operand->exprType != BaseType::FLOAT)
@@ -404,9 +400,8 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac,
-                                                     SymbolTable *local) {
-    auto oper_tac = operand->generateTAC(tac, local);
+std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto oper_tac = operand->generateTAC(tac, ctx);
     // may need float
     place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
     Compute_TAC_Stmt *stmt =
@@ -423,8 +418,8 @@ std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac,
 Not_Expr_Ast::Not_Expr_Ast(std::unique_ptr<Expression_Ast> expr)
     : operand(std::move(expr)) {}
 
-void Not_Expr_Ast::validateNode(SymbolTable *sym_tab) {
-    operand->validateNode(sym_tab);
+void Not_Expr_Ast::validateNode(Context &ctx) {
+    operand->validateNode(ctx);
 
     if (operand->exprType != BaseType::BOOL)
         exit_with_err_msg(
@@ -441,9 +436,8 @@ void Not_Expr_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac,
-                                                  SymbolTable *local) {
-    auto oper_tac = operand->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto oper_tac = operand->generateTAC(tac, ctx);
     place = tac.genNewTemporary();
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::NOT, operand->place);
@@ -463,9 +457,9 @@ Assignment_Stmt_Ast::Assignment_Stmt_Ast(std::unique_ptr<Expression_Ast> dst,
                                          std::unique_ptr<Expression_Ast> src)
     : target(std::move(dst)), value(std::move(src)) {}
 
-void Assignment_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    target->validateNode(sym_tab);
-    value->validateNode(sym_tab);
+void Assignment_Stmt_Ast::validateNode(Context &ctx) {
+    target->validateNode(ctx);
+    value->validateNode(ctx);
 
     if (!target->isLvalue() || target->exprType != value->exprType)
         exit_with_err_msg("sclp error: LHS and RHS have different types");
@@ -480,12 +474,10 @@ void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *>
-Assignment_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                                 std::shared_ptr<Variable_TAC_Opd> ret_var,
-                                 std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac, local);
-    auto value_tac = value->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Assignment_Stmt_Ast::generateTAC(TAC &tac,
+                                                         Context &ctx) {
+    auto target_tac = target->generateTAC(tac, ctx);
+    auto value_tac = value->generateTAC(tac, ctx);
     Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(target->place, value->place);
 
     std::vector<TAC_Stmt *> result;
@@ -502,9 +494,9 @@ Iteration_Stmt_Ast::Iteration_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
                                        std::unique_ptr<Statement_Ast> bod)
     : condition(std::move(cond)), body(std::move(bod)) {}
 
-void Iteration_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    condition->validateNode(sym_tab);
-    body->validateNode(sym_tab);
+void Iteration_Stmt_Ast::validateNode(Context &ctx) {
+    condition->validateNode(ctx);
+    body->validateNode(ctx);
 
     if (condition->exprType != BaseType::BOOL)
         exit_with_err_msg("sclp error: Loop condition must be a boolean value");
@@ -527,16 +519,20 @@ void While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     }
 }
 
-std::vector<TAC_Stmt *>
-While_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                            std::shared_ptr<Variable_TAC_Opd> ret_var,
-                            std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto cond_tac = condition->generateTAC(tac, local);
-    auto body_tac = body->generateTAC(tac, local, ret_var, ret_label);
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::shared_ptr<Label_TAC_Opd> check_cond = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
 
+    ctx.loop_start.push(check_cond);
+    ctx.loop_end.push(exit_label);
+    ctx.loop_depth++;
+    auto cond_tac = condition->generateTAC(tac, ctx);
+    auto body_tac = body->generateTAC(tac, ctx);
+    ctx.loop_start.pop();
+    ctx.loop_end.pop();
+    ctx.loop_depth--;
+
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -572,34 +568,121 @@ void Do_While_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *>
-Do_While_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                               std::shared_ptr<Variable_TAC_Opd> ret_var,
-                               std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto body_tac = body->generateTAC(tac, local, ret_var, ret_label);
-    auto cond_tac = condition->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Do_While_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    std::shared_ptr<Label_TAC_Opd> start_label = tac.genNewLabel();
+    std::shared_ptr<Label_TAC_Opd> check_cond = tac.genNewLabel();
+    std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
 
-    std::shared_ptr<Label_TAC_Opd> begin = tac.genNewLabel();
-    Label_TAC_Stmt *begin_stmt = new Label_TAC_Stmt(begin);
+    ctx.loop_start.push(check_cond);
+    ctx.loop_end.push(exit_label);
+    ctx.loop_depth++;
+    auto body_tac = condition->generateTAC(tac, ctx);
+    auto cond_tac = body->generateTAC(tac, ctx);
+    ctx.loop_start.pop();
+    ctx.loop_end.pop();
+    ctx.loop_depth--;
+
+    Label_TAC_Stmt *begin_stmt = new Label_TAC_Stmt(start_label);
     If_Goto_TAC_Stmt *jump_to_start =
-        new If_Goto_TAC_Stmt(condition->place, begin);
+        new If_Goto_TAC_Stmt(condition->place, start_label);
+    Label_TAC_Stmt *cond_stmt = new Label_TAC_Stmt(check_cond);
+    Label_TAC_Stmt *exit_stmt = new Label_TAC_Stmt(exit_label);
 
     std::vector<TAC_Stmt *> result;
     result.push_back(begin_stmt);
     for (auto s : body_tac)
         result.push_back(s);
+    result.push_back(cond_stmt);
     for (auto s : cond_tac)
         result.push_back(s);
     result.push_back(jump_to_start);
+    result.push_back(exit_stmt);
     return result;
 }
+
+// For statement class
+For_Stmt_Ast::For_Stmt_Ast(std::unique_ptr<Assignment_Stmt_Ast> init,
+                           std::unique_ptr<Expression_Ast> cond,
+                           std::unique_ptr<Assignment_Stmt_Ast> update,
+                           std::unique_ptr<Statement_Ast> bod)
+    : initialize_stmt(std::move(init)), condition(std::move(cond)),
+      update_stmt(std::move(update)), body(std::move(bod)) {}
+
+void For_Stmt_Ast::validateNode(Context &ctx) {
+    initialize_stmt->validateNode(ctx);
+    condition->validateNode(ctx);
+    body->validateNode(ctx);
+    update_stmt->validateNode(ctx);
+
+    if (condition->exprType != BaseType::BOOL)
+        exit_with_err_msg("sclp error: Loop condition must be a boolean value");
+}
+
+void For_Stmt_Ast::printTree(std::ostream &out, int tab) {
+    out << std::string(tab, ' ') << "For:" << std::endl
+        << std::string(tab, ' ') << "  Initialize (";
+    initialize_stmt->printTree(out, tab + 6);
+    out << ")" << std::endl << std::string(tab, ' ') << "  Condition (";
+    condition->printTree(out, tab + 6);
+    out << ")" << std::endl << std::string(tab, ' ') << "  Body (" << std::endl;
+    body->printTree(out, tab + 6);
+    out << ")" << std::endl
+        << std::string(tab, ' ') << "  Update (" << std::endl;
+    update_stmt->printTree(out, tab + 6);
+    out << ")";
+}
+
+std::vector<TAC_Stmt *> For_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    std::shared_ptr<Label_TAC_Opd> check_cond = tac.genNewLabel();
+    std::shared_ptr<Label_TAC_Opd> update_label = tac.genNewLabel();
+    std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
+    
+    ctx.loop_start.push(update_label);
+    ctx.loop_end.push(exit_label);
+    ctx.loop_depth++;
+    auto init_tac = initialize_stmt->generateTAC(tac, ctx);
+    auto update_tac = update_stmt->generateTAC(tac, ctx);
+    auto cond_tac = condition->generateTAC(tac, ctx);
+    auto body_tac = body->generateTAC(tac, ctx);
+    ctx.loop_start.pop();
+    ctx.loop_end.pop();
+    ctx.loop_depth--;
+    
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+    Compute_TAC_Stmt *negate_stmt =
+        new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
+    If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
+    Goto_TAC_Stmt *go_to_cond = new Goto_TAC_Stmt(check_cond);
+    Label_TAC_Stmt *check_cond_stmt = new Label_TAC_Stmt(check_cond);
+    Label_TAC_Stmt *update_stmt = new Label_TAC_Stmt(update_label);
+    Label_TAC_Stmt *exit_label_stmt = new Label_TAC_Stmt(exit_label);
+
+    std::vector<TAC_Stmt *> result;
+    for (auto s : init_tac)
+        result.push_back(s);
+    result.push_back(check_cond_stmt);
+    for (auto s : cond_tac)
+        result.push_back(s);
+    result.push_back(negate_stmt);
+    result.push_back(go_to_exit);
+    for (auto s : body_tac)
+        result.push_back(s);
+    result.push_back(update_stmt);
+    for (auto s : update_tac)
+        result.push_back(s);
+    result.push_back(go_to_cond);
+    result.push_back(exit_label_stmt);
+    return result;
+}
+
+bool For_Stmt_Ast::hasReturn() { return body->hasReturn(); }
 
 // Read Statement class
 Read_Stmt_Ast::Read_Stmt_Ast(std::unique_ptr<Name_Expr_Ast> t)
     : target(std::move(t)) {}
 
-void Read_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    target->validateNode(sym_tab);
+void Read_Stmt_Ast::validateNode(Context &ctx) {
+    target->validateNode(ctx);
 
     if (target->exprType != BaseType::INT &&
         target->exprType != BaseType::FLOAT)
@@ -612,11 +695,8 @@ void Read_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out;
 }
 
-std::vector<TAC_Stmt *>
-Read_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                           std::shared_ptr<Variable_TAC_Opd> ret_var,
-                           std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Read_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto target_tac = target->generateTAC(tac, ctx);
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(false, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -633,10 +713,10 @@ Return_Stmt_Ast::Return_Stmt_Ast(std::unique_ptr<Expression_Ast> ret,
     funcName = (func == "main") ? "main" : func + "_";
 }
 
-void Return_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    return_value->validateNode(sym_tab);
+void Return_Stmt_Ast::validateNode(Context &ctx) {
+    return_value->validateNode(ctx);
     if (return_value->exprType !=
-        (sym_tab->func_lookup(funcName))->get_return_type())
+        ((ctx.local)->func_lookup(funcName))->get_return_type())
         exit_with_err_msg("sclp error: Return type mistmatch");
 }
 
@@ -645,13 +725,11 @@ void Return_Stmt_Ast::printTree(std::ostream &out, int tab) {
     return_value->printTree(out, tab + 2);
 }
 
-std::vector<TAC_Stmt *>
-Return_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                             std::shared_ptr<Variable_TAC_Opd> ret_var,
-                             std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto ret_val_tac = return_value->generateTAC(tac, local);
-    Asgn_TAC_Stmt *set_stemp = new Asgn_TAC_Stmt(ret_var, return_value->place);
-    Goto_TAC_Stmt *go_func_end = new Goto_TAC_Stmt(ret_label);
+std::vector<TAC_Stmt *> Return_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto ret_val_tac = return_value->generateTAC(tac, ctx);
+    Asgn_TAC_Stmt *set_stemp =
+        new Asgn_TAC_Stmt(ctx.return_stemp, return_value->place);
+    Goto_TAC_Stmt *go_func_end = new Goto_TAC_Stmt(ctx.return_label);
 
     std::vector<TAC_Stmt *> result;
     for (auto s : ret_val_tac)
@@ -663,6 +741,40 @@ Return_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
 
 bool Return_Stmt_Ast::hasReturn() { return true; }
 
+// Break Statement class
+void Break_Stmt_Ast::validateNode(Context &ctx) {
+    if (ctx.loop_depth == 0)
+        exit_with_err_msg("sclp error: Break cannot be used outside a loop");
+}
+
+void Break_Stmt_Ast::printTree(std::ostream &out, int tab) {
+    out << std::string(tab, ' ') << "Break";
+}
+
+std::vector<TAC_Stmt *> Break_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    std::vector<TAC_Stmt *> result;
+    Goto_TAC_Stmt *stmt = new Goto_TAC_Stmt(ctx.loop_end.top());
+    result.push_back(stmt);
+    return result;
+}
+
+// Continue Statement class
+void Continue_Stmt_Ast::validateNode(Context &ctx) {
+    if (ctx.loop_depth == 0)
+        exit_with_err_msg("sclp error: Break cannot be used outside a loop");
+}
+
+void Continue_Stmt_Ast::printTree(std::ostream &out, int tab) {
+    out << std::string(tab, ' ') << "Continue";
+}
+
+std::vector<TAC_Stmt *> Break_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    std::vector<TAC_Stmt *> result;
+    Goto_TAC_Stmt *stmt = new Goto_TAC_Stmt(ctx.loop_start.top());
+    result.push_back(stmt);
+    return result;
+}
+
 // Selection Statement class
 Selection_Stmt_Ast::Selection_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
                                        std::unique_ptr<Statement_Ast> then,
@@ -670,11 +782,11 @@ Selection_Stmt_Ast::Selection_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
     : condition(std::move(cond)), then_stmt(std::move(then)),
       else_stmt(std::move(els)) {}
 
-void Selection_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    condition->validateNode(sym_tab);
-    then_stmt->validateNode(sym_tab);
+void Selection_Stmt_Ast::validateNode(Context &ctx) {
+    condition->validateNode(ctx);
+    then_stmt->validateNode(ctx);
     if (else_stmt != nullptr)
-        else_stmt->validateNode(sym_tab);
+        else_stmt->validateNode(ctx);
 
     if (condition->exprType != BaseType::BOOL)
         exit_with_err_msg("sclp error: If condition must be a bool");
@@ -706,12 +818,10 @@ void Selection_Stmt_Ast::printTree(std::ostream &out, int tab) {
     }
 }
 
-std::vector<TAC_Stmt *>
-Selection_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                                std::shared_ptr<Variable_TAC_Opd> ret_var,
-                                std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto cond_tac = condition->generateTAC(tac, local);
-    auto then_tac = then_stmt->generateTAC(tac, local, ret_var, ret_label);
+std::vector<TAC_Stmt *> Selection_Stmt_Ast::generateTAC(TAC &tac,
+                                                        Context &ctx) {
+    auto cond_tac = condition->generateTAC(tac, ctx);
+    auto then_tac = then_stmt->generateTAC(tac, ctx);
 
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_cond =
@@ -736,7 +846,7 @@ Selection_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
     if (else_stmt != nullptr) {
         Label_TAC_Stmt *else_label_stmt = new Label_TAC_Stmt(else_label);
         result.push_back(else_label_stmt);
-        auto else_tac = else_stmt->generateTAC(tac, local, ret_var, ret_label);
+        auto else_tac = else_stmt->generateTAC(tac, ctx);
         for (auto s : else_tac)
             result.push_back(s);
     }
@@ -754,9 +864,9 @@ Sequence_Stmt_Ast::Sequence_Stmt_Ast(
     std::vector<std::unique_ptr<Statement_Ast>> &statements)
     : statement_list(std::move(statements)) {}
 
-void Sequence_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
+void Sequence_Stmt_Ast::validateNode(Context &ctx) {
     for (auto &ptr : statement_list) {
-        ptr->validateNode(sym_tab);
+        ptr->validateNode(ctx);
     }
 }
 
@@ -772,13 +882,10 @@ void Sequence_Stmt_Ast::printTree(std::ostream &out, int tab) {
     statement_list.back()->printTree(out, tab);
 }
 
-std::vector<TAC_Stmt *>
-Sequence_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                               std::shared_ptr<Variable_TAC_Opd> ret_var,
-                               std::shared_ptr<Label_TAC_Opd> ret_label) {
+std::vector<TAC_Stmt *> Sequence_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<TAC_Stmt *> result;
     for (auto &stmt : statement_list) {
-        auto stmt_tac = stmt->generateTAC(tac, local, ret_var, ret_label);
+        auto stmt_tac = stmt->generateTAC(tac, ctx);
         for (auto s : stmt_tac)
             result.push_back(s);
     }
@@ -798,8 +905,8 @@ bool Sequence_Stmt_Ast::hasReturn() {
 Write_Stmt_Ast::Write_Stmt_Ast(std::unique_ptr<Expression_Ast> t)
     : target(std::move(t)) {}
 
-void Write_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    target->validateNode(sym_tab);
+void Write_Stmt_Ast::validateNode(Context &ctx) {
+    target->validateNode(ctx);
 
     if (target->exprType != BaseType::INT &&
         target->exprType != BaseType::FLOAT &&
@@ -813,11 +920,8 @@ void Write_Stmt_Ast::printTree(std::ostream &out, int tab) {
     target->printTree(out, tab + 2);
 }
 
-std::vector<TAC_Stmt *>
-Write_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                            std::shared_ptr<Variable_TAC_Opd> ret_var,
-                            std::shared_ptr<Label_TAC_Opd> ret_label) {
-    auto target_tac = target->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Write_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    auto target_tac = target->generateTAC(tac, ctx);
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(true, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -831,10 +935,11 @@ Write_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
 Call_Stmt_Ast::Call_Stmt_Ast(std::unique_ptr<Function_Call_Ast> call)
     : func_call(std::move(call)) {}
 
-void Call_Stmt_Ast::validateNode(SymbolTable *sym_tab) {
-    func_call->validateNode(sym_tab);
+void Call_Stmt_Ast::validateNode(Context &ctx) {
+    func_call->validateNode(ctx);
     if (func_call->exprType != BaseType::VOID)
-        exit_with_err_msg("sclp error: Return type of function ignored");
+        exit_with_err_msg("sclp error: Return type "
+                          "of function ignored");
 }
 
 void Call_Stmt_Ast::printTree(std::ostream &out, int tab) {
@@ -846,13 +951,10 @@ void Call_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << ")";
 }
 
-std::vector<TAC_Stmt *>
-Call_Stmt_Ast::generateTAC(TAC &tac, SymbolTable *local,
-                           std::shared_ptr<Variable_TAC_Opd> ret_var,
-                           std::shared_ptr<Label_TAC_Opd> ret_label) {
-    std::vector<TAC_Stmt *> result = func_call->generateTAC(tac, local);
+std::vector<TAC_Stmt *> Call_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    func_call->generateTAC(tac, ctx);
     Call_TAC_Stmt *call_stmt = new Call_TAC_Stmt(func_call->place);
-    result.push_back(call_stmt);
+    std::vector<TAC_Stmt *> result = {call_stmt};
     return result;
 }
 
@@ -870,18 +972,21 @@ Function_Ast::Function_Ast(DataType ret,
 
 void Function_Ast::validateFunction() {
     if (local->hasDuplicate())
-        exit_with_err_msg(
-            "sclp error: Redeclaration of variable outside function");
+        exit_with_err_msg("sclp error: Redeclaration of variable "
+                          "outside function");
+    Context ctx;
+    ctx.local = this->local;
+    ctx.loop_depth = 0;
     for (auto &stmt_node : statements)
-        stmt_node->validateNode(local);
+        stmt_node->validateNode(ctx);
 
     if (returnType != BaseType::VOID) {
         for (auto &stmt_node : statements)
             if (stmt_node->hasReturn())
                 return;
 
-        exit_with_err_msg(
-            "sclp error: No return statement in a non void function");
+        exit_with_err_msg("sclp error: No return statement in a "
+                          "non void function");
     }
 }
 
@@ -909,9 +1014,13 @@ void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
         (returnType == BaseType::VOID)
             ? nullptr
             : tac.genNewSTemporary(returnType, local, true);
+    Context ctx;
+    ctx.local = this->local;
+    ctx.return_label = return_label;
+    ctx.return_stemp = return_stemp;
+    ctx.loop_depth = 0;
     for (auto &stmt : statements)
-        tac.addTACStatements(
-            stmt->generateTAC(tac, local, return_stemp, return_label));
+        tac.addTACStatements(stmt->generateTAC(tac, ctx));
 
     if (returnType != BaseType::VOID) {
         std::vector<TAC_Stmt *> ret_statements;
@@ -1002,7 +1111,8 @@ void Program::addGlobal(std::pair<DataType, std::vector<std::string>> line) {
 
 void Program::validateProgram() {
     if (global->hasDuplicate())
-        exit_with_err_msg("sclp error: Redeclaration of variable / function");
+        exit_with_err_msg("sclp error: Redeclaration of variable "
+                          "/ function");
     // Check if main type exists
     if (funcs.find("main") == funcs.end())
         exit_with_err_msg("sclp error: No main function defined");

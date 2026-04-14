@@ -1,0 +1,5 @@
+// unknown operator
+void main(){
+    int a;
+    a=1**1;
+}

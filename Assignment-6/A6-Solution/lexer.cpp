@@ -106,6 +106,12 @@ parser::Parser::symbol_type Lexer::nextToken() {
     case parser::Parser::token::RETURN:
         write_token("RETURN");
         return parser::Parser::make_RETURN(loc);
+    case parser::Parser::token::BREAK:
+        write_token("BREAK");
+        return parser::Parser::make_RETURN(loc);
+    case parser::Parser::token::CONTINUE:
+        write_token("CONTINUE");
+        return parser::Parser::make_RETURN(loc);
     case parser::Parser::token::IF:
         write_token("IF");
         return parser::Parser::make_IF(loc);
@@ -118,9 +124,13 @@ parser::Parser::symbol_type Lexer::nextToken() {
     case parser::Parser::token::DO:
         write_token("DO");
         return parser::Parser::make_DO(loc);
+    case parser::Parser::token::FOR:
+        write_token("FOR");
+        return parser::Parser::make_FOR(loc);
     case parser::Parser::token::FLOAT_NUM:
         write_token("FLOAT_NUM");
-        return parser::Parser::make_FLOAT_NUM(std::strtod(YYText(), nullptr), loc);
+        return parser::Parser::make_FLOAT_NUM(std::strtod(YYText(), nullptr),
+                                              loc);
     case parser::Parser::token::INT_NUM:
         write_token("INT_NUM");
         return parser::Parser::make_INT_NUM(std::atoi(YYText()), loc);
