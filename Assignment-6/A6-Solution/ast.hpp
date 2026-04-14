@@ -92,12 +92,14 @@ class Array_Access_Expr_Ast : public Binary_Expr_Ast {
   public:
     // L6
     std::string name;
-    SymbolTableEntry *steEntry;
     std::vector<std::unique_ptr<Expression_Ast>> dims;
 
     Array_Access_Expr_Ast(std::string,
                           std::vector<std::unique_ptr<Expression_Ast>> &);
     bool isLvalue() override;
+    void validateNode(Context &) override;
+    void printTree(std::ostream &, int) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, Context &) override;
 };
 
 class Boolean_Expr_Ast : public Binary_Expr_Ast { // bool operators - or, and
@@ -161,17 +163,22 @@ class Address_Expr_Ast : public Unary_Expr_Ast { // &a
     std::unique_ptr<Expression_Ast> operand;
 
     Address_Expr_Ast(std::unique_ptr<Expression_Ast>);
+    void validateNode(Context &) override;
+    void printTree(std::ostream &, int) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, Context &) override;
 };
 
 class Pointer_Deref_Expr_Ast : public Unary_Expr_Ast { // *a
   public:
     // L6
     std::string name;
-    SymbolTableEntry *steEntry;
     int pointerLevel;
 
     Pointer_Deref_Expr_Ast(std::string, int);
     bool isLvalue() override;
+    void validateNode(Context &) override;
+    void printTree(std::ostream &, int) override;
+    std::vector<TAC_Stmt *> generateTAC(TAC &, Context &) override;
 };
 
 class UMinus_Expr_Ast : public Unary_Expr_Ast {
@@ -246,7 +253,7 @@ class For_Stmt_Ast : public Statement_Ast {
     std::unique_ptr<Assignment_Stmt_Ast> update_stmt;
     std::unique_ptr<Statement_Ast> body;
 
-    For_Stmt_Ast::For_Stmt_Ast(std::unique_ptr<Assignment_Stmt_Ast>,
+    For_Stmt_Ast(std::unique_ptr<Assignment_Stmt_Ast>,
                                std::unique_ptr<Expression_Ast>,
                                std::unique_ptr<Assignment_Stmt_Ast>,
                                std::unique_ptr<Statement_Ast>);

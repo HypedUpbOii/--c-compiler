@@ -1,11 +1,8 @@
 #pragma once
 #include "rtl.hpp"
 
-// ----------------------------------------------------------------------------
-
 class TAC_Stmt {
   protected:
-    // these pointers are "owned" by the ast expr node and deleted by them
     std::shared_ptr<TAC_Opd> result;
     std::shared_ptr<TAC_Opd> oper1;
     std::shared_ptr<TAC_Opd> oper2;
@@ -135,7 +132,7 @@ class TAC {
   public:
     TAC();
     static std::shared_ptr<Label_TAC_Opd>
-    getRetLabel(); // sclp's retarted implementation
+    getRetLabel();
     std::shared_ptr<Temporary_TAC_Opd> genNewTemporary(bool need_float = false);
     std::shared_ptr<Variable_TAC_Opd>
     genNewSTemporary(DataType dt, SymbolTable *local, bool is_ret = false);

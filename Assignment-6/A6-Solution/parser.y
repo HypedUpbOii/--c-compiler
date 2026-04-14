@@ -374,35 +374,29 @@ var_decl_item
         $$ = std::make_pair($1, DataType());
     }
     | NAME array_decl {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_pair($1, DataType(BaseType::VOID, 0, $2));
+        $$ = std::make_pair($1, DataType(BaseType::VOID, 0, $2));
     }
     | pointer_decl NAME {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_pair($2, DataType(BaseType::VOID, $1));
+        $$ = std::make_pair($2, DataType(BaseType::VOID, $1));
     }
 ;
 
 pointer_decl
     : MULT {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = 1;
+        $$ = 1;
     }
     | MULT pointer_decl {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = $2 + 1;
+        $$ = $2 + 1;
     }
 ;
 
 array_decl
     : LEFT_SQUARE_BRACKET INT_NUM RIGHT_SQUARE_BRACKET {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::vector<int>({ $2 });
+        $$ = std::vector<int>({ $2 });
     }
     | LEFT_SQUARE_BRACKET INT_NUM RIGHT_SQUARE_BRACKET array_decl {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::move($4);
-        // $$.push_back($2);
+        $$ = std::move($4);
+        $$.push_back($2);
     }
 ;
 
@@ -422,9 +416,8 @@ assignment_statement
         $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move($3));
     }
     | variable_as_operand ASSIGN_OP ADDRESSOF variable_name SEMICOLON {
-        exit_with_err_msg("sclp error: L6 feature");
-        // std::unique_ptr<Address_Expr_Ast> temp = std::make_unique<Address_Expr_Ast>(std::make_unique<Name_Expr_Ast>($4);
-        // $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move(temp));
+        std::unique_ptr<Address_Expr_Ast> temp = std::make_unique<Address_Expr_Ast>(std::make_unique<Name_Expr_Ast>($4));
+        $$ = std::make_unique<Assignment_Stmt_Ast>(std::move($1), std::move(temp));
     }
 ;
 
@@ -456,8 +449,8 @@ while_statement
 ;
 
 for_statement
-    : FOR LEFT_ROUND_BRACKET assignment_statement SEMICOLON expression SEMICOLON assignment_statement RIGHT_ROUND_BRACKET statement {
-        $$ = std::make_unique<For_Stmt_Ast>(std::move($3), std::move($5), std::move($7), std::move($9));
+    : FOR LEFT_ROUND_BRACKET assignment_statement expression SEMICOLON assignment_statement RIGHT_ROUND_BRACKET statement {
+        $$ = std::make_unique<For_Stmt_Ast>(std::move($3), std::move($4), std::move($6), std::move($8));
     }
 ;
 
@@ -559,12 +552,10 @@ variable_as_operand
         $$ = std::make_unique<Name_Expr_Ast>($1);
     }
     | array_access {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_unique<Array_Access_Expr_Ast>($1.first, $1.second);
+        $$ = std::make_unique<Array_Access_Expr_Ast>($1.first, $1.second);
     }
     | pointer_access {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_unique<Pointer_Deref_Expr_Ast>($1.first, $1.second);
+        $$ = std::make_unique<Pointer_Deref_Expr_Ast>($1.first, $1.second);
     }
 ;
 
@@ -576,31 +567,27 @@ variable_name
 
 array_access
     : variable_name array_dimensions {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_pair($1, $2);
+        $$ = std::make_pair($1, std::move($2));
     }
 ;
 
 pointer_access
     : MULT variable_name {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_pair($2, 1);
+        $$ = std::make_pair($2, 1);
     }
     | MULT pointer_access {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::make_pair($2.first, $2.second + 1);
+        $$ = std::make_pair($2.first, $2.second + 1);
     }
 ;
 
 array_dimensions
     : LEFT_SQUARE_BRACKET expression RIGHT_SQUARE_BRACKET {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::vector<std::unique_ptr<Expression_Ast>>({ std::move($2) });
+        $$ = std::vector<std::unique_ptr<Expression_Ast>>();
+        $$.push_back(std::move($2));
     }
     | array_dimensions LEFT_SQUARE_BRACKET expression RIGHT_SQUARE_BRACKET {
-        exit_with_err_msg("sclp error: L6 feature");
-        // $$ = std::move($1);
-        // $$.push_back(std::move($3));
+        $$ = std::move($1);
+        $$.push_back(std::move($3));
     }
 ;
 

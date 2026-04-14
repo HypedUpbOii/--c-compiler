@@ -108,10 +108,10 @@ parser::Parser::symbol_type Lexer::nextToken() {
         return parser::Parser::make_RETURN(loc);
     case parser::Parser::token::BREAK:
         write_token("BREAK");
-        return parser::Parser::make_RETURN(loc);
+        return parser::Parser::make_BREAK(loc);
     case parser::Parser::token::CONTINUE:
         write_token("CONTINUE");
-        return parser::Parser::make_RETURN(loc);
+        return parser::Parser::make_CONTINUE(loc);
     case parser::Parser::token::IF:
         write_token("IF");
         return parser::Parser::make_IF(loc);

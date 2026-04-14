@@ -98,8 +98,7 @@ template <> void Literal_Expr_Ast<double>::validateNode(Context &ctx) {
     exprType = BaseType::FLOAT;
 }
 
-template <>
-void Literal_Expr_Ast<std::string>::validateNode(Context &ctx) {
+template <> void Literal_Expr_Ast<std::string>::validateNode(Context &ctx) {
     exprType = BaseType::STRING;
 }
 
@@ -152,9 +151,72 @@ void Binary_Expr_Ast::printChildren(std::ostream &out, int tab) {
 // Array Access class
 Array_Access_Expr_Ast::Array_Access_Expr_Ast(
     std::string nam, std::vector<std::unique_ptr<Expression_Ast>> &dim_accessed)
-    : name(nam), steEntry(nullptr), dims(std::move(dim_accessed)) {}
+    : name(nam + "_"), dims(std::move(dim_accessed)) {}
+
+// steEntry being nullptr
 
 bool Array_Access_Expr_Ast::isLvalue() { return true; }
+
+void Array_Access_Expr_Ast::validateNode(Context &ctx) {
+    int dims_size = dims.size();
+    SymbolTableEntry *steEntry = ctx.local->lookup(name);
+
+    if (steEntry == nullptr)
+        exit_with_err_msg("sclp error: variable not found");
+
+    std::vector<int> arr_dims = steEntry->get_type().array_dimensions;
+    int arr_dims_size = arr_dims.size();
+
+    // dims must be = dimensions of the array
+    if (dims_size != arr_dims_size)
+        exit_with_err_msg("sclp error: accessing different dimensions than "
+                          "present in array " +
+                          name);
+
+    for (auto &ptr : dims) {
+        ptr->validateNode(ctx);
+        if (ptr->exprType != BaseType::INT)
+            exit_with_err_msg(
+                "sclp error: array access dimension not an integer");
+    }
+
+    // ensure the types are int expressions
+    for (int i = 0; i < dims_size; i++) {
+        auto &ptr = dims[i];
+        // if the access values are integer constants at compile time, ensure
+        // they are valid (< size of that dim)
+        Literal_Expr_Ast<int> *literal_ptr =
+            dynamic_cast<Literal_Expr_Ast<int> *>(ptr.get());
+        if (literal_ptr && literal_ptr->value >= arr_dims[i])
+            exit_with_err_msg(
+                "sclp error: array access out of bounds at compile time");
+    }
+
+    // set exprType
+    exprType = DataType(steEntry->get_type().base);
+}
+
+void Array_Access_Expr_Ast::printTree(std::ostream &out, int tab) {
+    out << std::endl
+        << std::string(tab, ' ') << "Array_Access: " << type_to_string(exprType)
+        << std::endl
+        << std::string(tab + 2, ' ') << "Base (Name : " << name
+        << type_to_string(exprType) << ")";
+
+    int dim_num = 0;
+    for (auto &expr : dims) {
+        out << std::endl
+            << std::string(tab + 2, ' ') << "Dim " << dim_num++ << " : (";
+        expr->printTree(out, tab + 4);
+        out << ")";
+    }
+}
+
+std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
+                                                           Context &ctx) {
+    std::vector<TAC_Stmt *> ans;
+    return ans;
+}
 
 // Boolean Expression class
 Boolean_Expr_Ast::Boolean_Expr_Ast(std::unique_ptr<Expression_Ast> oper1,
@@ -371,11 +433,60 @@ std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
 Address_Expr_Ast::Address_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
     : operand(std::move(oper)) {}
 
+void Address_Expr_Ast::validateNode(Context &ctx) {
+    operand->validateNode(ctx);
+    exprType =
+        DataType(operand->exprType.base, operand->exprType.pointer_level + 1);
+}
+
+void Address_Expr_Ast::printTree(std::ostream &out, int tab) {
+    out << std::endl
+        << std::string(tab, ' ') << "Address_Of: " << type_to_string(exprType)
+        << std::endl
+        << std::string(tab + 2, ' ') << "Base (";
+    operand->printTree(out, tab);
+
+    out << ")";
+}
+
+std::vector<TAC_Stmt *> Address_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    std::vector<TAC_Stmt *> ans;
+    return ans;
+}
+
 // Pointer Deref Expression
 Pointer_Deref_Expr_Ast::Pointer_Deref_Expr_Ast(std::string nam, int level)
-    : name(nam), steEntry(nullptr), pointerLevel(level) {}
+    : name(nam + "_"), pointerLevel(level) {}
 
 bool Pointer_Deref_Expr_Ast::isLvalue() { return true; }
+
+void Pointer_Deref_Expr_Ast::validateNode(Context &ctx) {
+    SymbolTableEntry *steEntry = ctx.local->lookup(name);
+    if (steEntry == nullptr)
+        exit_with_err_msg("sclp error: variable not found");
+    DataType var_type = steEntry->get_type();
+
+    int var_ptr_level = var_type.pointer_level;
+    if (pointerLevel > var_ptr_level)
+        exit_with_err_msg("sclp error: derefencing more than allowed");
+
+    exprType = DataType(var_type.base, var_ptr_level - pointerLevel);
+}
+
+void Pointer_Deref_Expr_Ast::printTree(std::ostream &out, int tab) {
+    out << std::endl
+        << std::string(tab, ' ')
+        << "Pointer_Deref: " << type_to_string(exprType) << std::endl
+        << std::string(tab + 2, ' ') << "Operand (Name : " << name
+        << type_to_string(exprType) << ")" << std::endl
+        << std::string(tab + 2, ' ') << "Degree : " << pointerLevel;
+}
+
+std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
+                                                            Context &ctx) {
+    std::vector<TAC_Stmt *> ans;
+    return ans;
+}
 
 // Unary Minus Expression
 UMinus_Expr_Ast::UMinus_Expr_Ast(std::unique_ptr<Expression_Ast> oper)
@@ -496,7 +607,9 @@ Iteration_Stmt_Ast::Iteration_Stmt_Ast(std::unique_ptr<Expression_Ast> cond,
 
 void Iteration_Stmt_Ast::validateNode(Context &ctx) {
     condition->validateNode(ctx);
+    ctx.loop_depth++;
     body->validateNode(ctx);
+    ctx.loop_depth--;
 
     if (condition->exprType != BaseType::BOOL)
         exit_with_err_msg("sclp error: Loop condition must be a boolean value");
@@ -611,8 +724,11 @@ For_Stmt_Ast::For_Stmt_Ast(std::unique_ptr<Assignment_Stmt_Ast> init,
 void For_Stmt_Ast::validateNode(Context &ctx) {
     initialize_stmt->validateNode(ctx);
     condition->validateNode(ctx);
-    body->validateNode(ctx);
     update_stmt->validateNode(ctx);
+
+    ctx.loop_depth++;
+    body->validateNode(ctx);
+    ctx.loop_depth--;
 
     if (condition->exprType != BaseType::BOOL)
         exit_with_err_msg("sclp error: Loop condition must be a boolean value");
@@ -636,7 +752,7 @@ std::vector<TAC_Stmt *> For_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::shared_ptr<Label_TAC_Opd> check_cond = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> update_label = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
-    
+
     ctx.loop_start.push(update_label);
     ctx.loop_end.push(exit_label);
     ctx.loop_depth++;
@@ -647,7 +763,7 @@ std::vector<TAC_Stmt *> For_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     ctx.loop_start.pop();
     ctx.loop_end.pop();
     ctx.loop_depth--;
-    
+
     std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
@@ -768,7 +884,7 @@ void Continue_Stmt_Ast::printTree(std::ostream &out, int tab) {
     out << std::string(tab, ' ') << "Continue";
 }
 
-std::vector<TAC_Stmt *> Break_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+std::vector<TAC_Stmt *> Continue_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<TAC_Stmt *> result;
     Goto_TAC_Stmt *stmt = new Goto_TAC_Stmt(ctx.loop_start.top());
     result.push_back(stmt);
