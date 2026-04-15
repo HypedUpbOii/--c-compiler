@@ -262,6 +262,12 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
     ans.push_back(add_offset_stmt);
 
     place = std::make_shared<Pointer_Deref_TAC_Opd>(final_loc);
+    if (ctx.isRhs) {
+        auto tmp = tac.genNewTemporary();
+        Asgn_TAC_Stmt *shift = new Asgn_TAC_Stmt(tmp, place);
+        ans.push_back(shift);
+        place = tmp;
+    }
 
     return ans;
 }
@@ -554,6 +560,12 @@ std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
         place = temp;
     }
     place = std::make_shared<Pointer_Deref_TAC_Opd>(place);
+    if (ctx.isRhs) {
+        auto tmp = tac.genNewTemporary();
+        Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(tmp, place);
+        ans.push_back(stmt);
+        place = tmp;
+    }
     return ans;
 }
 
@@ -656,21 +668,16 @@ void Assignment_Stmt_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Assignment_Stmt_Ast::generateTAC(TAC &tac,
                                                          Context &ctx) {
+    ctx.isRhs = true;
     auto value_tac = value->generateTAC(tac, ctx);
+    ctx.isRhs = false;
+
     std::vector<TAC_Stmt *> result;
     for (auto s : value_tac)
         result.push_back(s);
-    auto target_tac = target->generateTAC(tac, ctx);
 
-    Asgn_TAC_Stmt *stmt;
-    if (target->place->get_opd_type() == OpdType::POINTER &&
-        value->place->get_opd_type() == OpdType::POINTER) {
-        auto temp = tac.genNewTemporary();
-        Asgn_TAC_Stmt *shift = new Asgn_TAC_Stmt(temp, value->place);
-        result.push_back(shift);
-        stmt = new Asgn_TAC_Stmt(target->place, temp);
-    } else
-        stmt = new Asgn_TAC_Stmt(target->place, value->place);
+    auto target_tac = target->generateTAC(tac, ctx);
+    Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(target->place, value->place);
 
     for (auto s : target_tac)
         result.push_back(s);

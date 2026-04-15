@@ -9,6 +9,7 @@ struct Context {
     std::stack<std::shared_ptr<Label_TAC_Opd>> loop_start;
     std::stack<std::shared_ptr<Label_TAC_Opd>> loop_end;
     unsigned int loop_depth = 0;
+    bool isRhs = false;
 };
 
 // abstract class

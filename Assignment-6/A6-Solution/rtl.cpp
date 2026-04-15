@@ -636,7 +636,17 @@ void Load_Address_RTL_Stmt::print(std::ostream &out) {
         << oper1->get_name() << std::endl;
 }
 
-void Load_Address_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {}
+void Load_Address_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    std::shared_ptr<ASM_Register_Opd> reg = std::make_shared<ASM_Register_Opd>(
+        std::dynamic_pointer_cast<RTL_Register_Opd>(result)->reg_desc);
+    std::shared_ptr<RTL_Var_Opd> var =
+        std::dynamic_pointer_cast<RTL_Var_Opd>(oper1);
+    std::shared_ptr<ASM_Mem_Opd> mem = std::make_shared<ASM_Mem_Opd>(
+        var->entry->stack_position, md->get_register(Register::fp));
+    std::shared_ptr<Load_Address_ASM_Stmt> stmt =
+        std::make_shared<Load_Address_ASM_Stmt>(reg, mem);
+    spim.addSPIM(stmt);
+}
 
 Indirect_Op_RTL_Stmt::Indirect_Op_RTL_Stmt(
     std::shared_ptr<RTL_Register_Opd> res,
@@ -651,7 +661,27 @@ void Indirect_Op_RTL_Stmt::print(std::ostream &out) {
         << result->get_name() << " <- " << oper1->get_name() << std::endl;
 }
 
-void Indirect_Op_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {}
+void Indirect_Op_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
+    if (isload) {
+        std::shared_ptr<ASM_Register_Opd> dst =
+            std::make_shared<ASM_Register_Opd>(
+                std::dynamic_pointer_cast<RTL_Register_Opd>(result)->reg_desc);
+        std::shared_ptr<ASM_Mem_Opd> src = std::make_shared<ASM_Mem_Opd>(
+            0, std::dynamic_pointer_cast<RTL_Register_Opd>(oper1)->reg_desc);
+        std::shared_ptr<Load_Mem_ASM_Stmt> stmt =
+            std::make_shared<Load_Mem_ASM_Stmt>(dst, src);
+        spim.addSPIM(stmt);
+    } else {
+        std::shared_ptr<ASM_Mem_Opd> dst = std::make_shared<ASM_Mem_Opd>(
+            0, std::dynamic_pointer_cast<RTL_Register_Opd>(result)->reg_desc);
+        std::shared_ptr<ASM_Register_Opd> src =
+            std::make_shared<ASM_Register_Opd>(
+                std::dynamic_pointer_cast<RTL_Register_Opd>(oper1)->reg_desc);
+        std::shared_ptr<Store_Mem_ASM_Stmt> stmt =
+            std::make_shared<Store_Mem_ASM_Stmt>(dst, src);
+        spim.addSPIM(stmt);
+    }
+}
 
 Push_RTL_Stmt::Push_RTL_Stmt(std::shared_ptr<RTL_Register_Opd> res,
                              unsigned int sz) {

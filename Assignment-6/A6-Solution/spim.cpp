@@ -291,6 +291,12 @@ Load_Address_ASM_Stmt::Load_Address_ASM_Stmt(
     dest = dst;
 }
 
+Load_Address_ASM_Stmt::Load_Address_ASM_Stmt(
+    std::shared_ptr<ASM_Register_Opd> dst, std::shared_ptr<ASM_Mem_Opd> src) {
+    source = src;
+    dest = dst;
+}
+
 void Load_Address_ASM_Stmt::print(std::ostream &out) {
     out << "\tla " << dest->get_name() << ", " << source->get_name()
         << std::endl;

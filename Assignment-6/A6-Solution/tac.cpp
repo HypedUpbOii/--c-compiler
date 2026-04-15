@@ -189,6 +189,12 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     bool is_oper1_func = oper1->get_opd_type() == OpdType::FUNCTION;
     bool is_oper1_address = oper1->get_opd_type() == OpdType::ADDRESS;
 
+    // Handle these 4 cases
+    // temp = address
+    // temp = pointer of something
+    // pointer of something = temp
+    // pointer of something = variable
+
     RegisterDescriptor *oper1_rd = nullptr;
     if (is_oper1_temp) {
         oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);

@@ -227,6 +227,8 @@ class Load_Address_ASM_Stmt : public Transfer_ASM_Stmt {
   public:
     Load_Address_ASM_Stmt(std::shared_ptr<ASM_Register_Opd>,
                           std::shared_ptr<ASM_String_Const_Opd>);
+    Load_Address_ASM_Stmt(std::shared_ptr<ASM_Register_Opd>,
+                          std::shared_ptr<ASM_Mem_Opd>);
     void print(std::ostream &) override;
 };
 
@@ -244,7 +246,8 @@ class Syscall_ASM_Stmt : public ASM_Stmt { // just syscall
 };
 
 class SPIM {
-  std::vector<std::shared_ptr<ASM_Stmt>> assembly_code;
+    std::vector<std::shared_ptr<ASM_Stmt>> assembly_code;
+
   public:
     void addSPIM(std::shared_ptr<ASM_Stmt> code);
     void print(std::ostream &);
