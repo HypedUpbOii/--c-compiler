@@ -188,12 +188,20 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     bool is_oper1_string_const = oper1->get_opd_type() == OpdType::STRING_CONST;
     bool is_oper1_func = oper1->get_opd_type() == OpdType::FUNCTION;
     bool is_oper1_address = oper1->get_opd_type() == OpdType::ADDRESS;
+    bool is_oper1_pointer = oper1->get_opd_type() == OpdType::POINTER;
 
     // Handle these 4 cases
-    // temp = address
+    // register here is always an int
+    // temp = address (always 4 bytes)
+
+    // register here can be a float
     // temp = pointer of something
     // pointer of something = temp
     // pointer of something = variable
+
+    // Order of stuff important in constructor
+    // Indirect Op for both is destination, source
+    // Handled appropriately
 
     RegisterDescriptor *oper1_rd = nullptr;
     if (is_oper1_temp) {
