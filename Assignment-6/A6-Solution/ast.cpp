@@ -305,8 +305,11 @@ void Boolean_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isrhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isrhs;
     place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Bool_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -352,9 +355,12 @@ void Arithmetic_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac,
                                                          Context &ctx) {
+    bool prev_isrhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
-    // may need float
+    ctx.isRhs = prev_isrhs;
+
     place = tac.genNewTemporary(leftOp->exprType);
     Compute_TAC_Stmt *stmt =
         new Arith_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -400,8 +406,11 @@ void Relational_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac,
                                                          Context &ctx) {
+    bool prev_isRhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isRhs;
     place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Rel_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
@@ -449,12 +458,15 @@ void Ternary_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isRhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto cond_tac = condition->generateTAC(tac, ctx);
     place = tac.genNewSTemporary(exprType, ctx.local);
     std::shared_ptr<Label_TAC_Opd> false_label = tac.genNewLabel();
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
     auto true_tac = trueExpr->generateTAC(tac, ctx);
     auto false_tac = falseExpr->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isRhs;
 
     std::shared_ptr<Temporary_TAC_Opd> opp_cond =
         tac.genNewTemporary(BaseType::BOOL);
@@ -599,7 +611,10 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isRhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto oper_tac = operand->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isRhs;
     // may need float
     place = tac.genNewTemporary(operand->exprType);
     Compute_TAC_Stmt *stmt =
@@ -635,7 +650,10 @@ void Not_Expr_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isRhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto oper_tac = operand->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isRhs;
     place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::NOT, operand->place);
@@ -903,7 +921,10 @@ void Read_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Read_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isRhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto target_tac = target->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isRhs;
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(false, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -933,7 +954,11 @@ void Return_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Return_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isrhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto ret_val_tac = return_value->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isrhs;
+
     Asgn_TAC_Stmt *set_stemp =
         new Asgn_TAC_Stmt(ctx.return_stemp, return_value->place);
     Goto_TAC_Stmt *go_func_end = new Goto_TAC_Stmt(ctx.return_label);
@@ -1128,7 +1153,10 @@ void Write_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Write_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
+    bool prev_isrhs = ctx.isRhs;
+    ctx.isRhs = true;
     auto target_tac = target->generateTAC(tac, ctx);
+    ctx.isRhs = prev_isrhs;
     IO_TAC_Stmt *stmt = new IO_TAC_Stmt(true, target->place);
 
     std::vector<TAC_Stmt *> result;
@@ -1237,6 +1265,8 @@ void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
         ret_statements.push_back(ret_stmt);
         tac.addTACStatements(ret_statements);
     }
+
+    tac.dead_code_elimination();
 }
 
 void Function_Ast::printTAC(std::ostream &out) {

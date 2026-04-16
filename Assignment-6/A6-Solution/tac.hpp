@@ -6,11 +6,16 @@ class TAC_Stmt {
     std::shared_ptr<TAC_Opd> result;
     std::shared_ptr<TAC_Opd> oper1;
     std::shared_ptr<TAC_Opd> oper2;
+    TacStmtType type;
 
   public:
     virtual ~TAC_Stmt() = default;
     virtual void print(std::ostream &) = 0;
     virtual void generateRTL(RTL &) = 0;
+    TacStmtType getStmtType() const;
+    std::shared_ptr<TAC_Opd> get_result() const;
+    std::shared_ptr<TAC_Opd> get_oper1() const;
+    std::shared_ptr<TAC_Opd> get_oper2() const;
 };
 
 class Asgn_TAC_Stmt : public TAC_Stmt {
@@ -141,5 +146,6 @@ class TAC {
     void print(std::ostream &);
     void generateRTL(RTL &);
     bool isEmpty();
+    void dead_code_elimination();
     ~TAC();
 };

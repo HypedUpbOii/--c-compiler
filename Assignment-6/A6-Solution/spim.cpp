@@ -5,9 +5,7 @@ ASM_Double_Const_Opd::ASM_Double_Const_Opd(double v) : value(v) {
 }
 
 std::string ASM_Double_Const_Opd::get_name() {
-    char buffer[64];
-    std::snprintf(buffer, sizeof(buffer), "%.2f", value);
-    return std::string(buffer);
+    return std::to_string(value);
 }
 
 ASM_Int_Const_Opd::ASM_Int_Const_Opd(int v) : value(v) {

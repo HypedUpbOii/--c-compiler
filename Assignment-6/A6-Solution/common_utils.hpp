@@ -85,6 +85,8 @@ enum class OpdType : int {
     REGISTER
 };
 
+enum class TacStmtType {Asgn, Call, Compute, Goto, IfGoto, IO, Label, Return};
+
 enum class Register : int {
     none,
     zero,

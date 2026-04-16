@@ -46,6 +46,96 @@ void TAC::generateRTL(RTL &rtl) {
         stmt->generateRTL(rtl);
 }
 
+void TAC::dead_code_elimination() {
+    int num_stmts = tac_code.size();
+
+    int function_start_stmt = 0;
+    int function_exit_stmt = num_stmts;
+
+    // iterate and find which label is at which index
+    std::map<int, int> label_to_stmt_num;
+
+    for (int i = 0; i < num_stmts; i++) {
+        TAC_Stmt *stmt = tac_code[i];
+
+        if (stmt->getStmtType() == TacStmtType::Label) {
+            Label_TAC_Stmt *label_stmt = (Label_TAC_Stmt *)stmt;
+            std::shared_ptr<Label_TAC_Opd> label_opd =
+                std::dynamic_pointer_cast<Label_TAC_Opd>(
+                    label_stmt->get_result());
+            int label_num = label_opd->get_label_num();
+
+            label_to_stmt_num[label_num] = i;
+        }
+    }
+
+    std::vector<std::vector<int>> adj_list(num_stmts + 1, std::vector<int>());
+
+    // every type except Goto, IfGoto, Return connects only to the next stmt
+    for (int i = 0; i < num_stmts; i++) {
+        TAC_Stmt *stmt = tac_code[i];
+
+        switch (stmt->getStmtType()) {
+            case TacStmtType::Asgn:
+            case TacStmtType::Call:
+            case TacStmtType::Compute:
+            case TacStmtType::IO:
+            case TacStmtType::Label:
+                adj_list[i].push_back(i + 1);
+                break;
+            case TacStmtType::Return:
+                adj_list[i].push_back(function_exit_stmt);
+                break;
+            case TacStmtType::Goto: {
+                Goto_TAC_Stmt *goto_stmt = (Goto_TAC_Stmt *)stmt;
+                std::shared_ptr<Label_TAC_Opd> label_opd =
+                    std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_result());
+                int label_num = label_opd->get_label_num();
+                adj_list[i].push_back(label_to_stmt_num[label_num]);
+                break;
+            }
+            case TacStmtType::IfGoto: {
+                If_Goto_TAC_Stmt * if_goto_stmt = (If_Goto_TAC_Stmt *) stmt;
+                std::shared_ptr<Label_TAC_Opd> label_opd =
+                    std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_oper1());
+                int label_num = label_opd->get_label_num();
+                adj_list[i].push_back(label_to_stmt_num[label_num]);
+                adj_list[i].push_back(i + 1);
+                break;
+            }
+        }
+    }
+
+    std::vector<bool> visited(num_stmts + 1, false);
+    std::vector<int> stack;
+
+    stack.push_back(0);
+    visited[0] = true;
+
+    while (!stack.empty()) {
+        int top = stack.back();
+        stack.pop_back();
+
+        for (int neigh : adj_list[top]) {
+            if (!visited[neigh]) {
+                visited[neigh] = true;
+                stack.push_back(neigh);
+            }
+        }
+    }
+
+    std::vector<TAC_Stmt *> result;
+    for (int i = 0; i < num_stmts; i++) {
+        if (visited[i]) result.push_back(tac_code[i]);
+        else {  
+            // otherwise leak
+            delete tac_code[i];
+        }
+    }
+
+    tac_code = result;
+}
+
 TAC::~TAC() {
     for (auto ptr : tac_code)
         delete ptr;
@@ -176,11 +266,21 @@ std::vector<std::shared_ptr<TAC_Opd>> Function_TAC_Opd::get_params() {
 
 // ------------------------------------------------------------------------------
 
+TacStmtType TAC_Stmt::getStmtType() const { return type; }
+
+std::shared_ptr<TAC_Opd> TAC_Stmt::get_result() const { return result; }
+
+std::shared_ptr<TAC_Opd> TAC_Stmt::get_oper1() const { return oper1; }
+
+std::shared_ptr<TAC_Opd> TAC_Stmt::get_oper2() const { return oper2; }
+
 Asgn_TAC_Stmt::Asgn_TAC_Stmt(std::shared_ptr<TAC_Opd> dest,
                              std::shared_ptr<TAC_Opd> src) {
     result = dest;
     oper1 = src;
     oper2 = nullptr;
+
+    type = TacStmtType::Asgn;
 }
 
 void Asgn_TAC_Stmt::print(std::ostream &out) {
@@ -527,6 +627,8 @@ Call_TAC_Stmt::Call_TAC_Stmt(std::shared_ptr<TAC_Opd> func) {
     result = func;
     oper1 = nullptr;
     oper2 = nullptr;
+
+    type = TacStmtType::Call;
 }
 
 void Call_TAC_Stmt::print(std::ostream &out) {
@@ -650,6 +752,8 @@ Bool_Comp_TAC_Stmt::Bool_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res,
     result = res;
     oper1 = op1;
     oper2 = op2;
+
+    type = TacStmtType::Compute;
 }
 
 void Bool_Comp_TAC_Stmt::print(std::ostream &out) {
@@ -731,6 +835,8 @@ Arith_Comp_TAC_Stmt::Arith_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res,
     result = res;
     oper1 = op1;
     oper2 = op2;
+
+    type = TacStmtType::Compute;
 }
 
 void Arith_Comp_TAC_Stmt::print(std::ostream &out) {
@@ -874,6 +980,8 @@ Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res,
     result = res;
     oper1 = op1;
     oper2 = op2;
+
+    type = TacStmtType::Compute;
 
     needfloat = op1->get_data_type().needFloatReg();
 }
@@ -1137,6 +1245,8 @@ Unary_Comp_TAC_Stmt::Unary_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res,
     result = res;
     oper1 = oper;
     oper2 = nullptr;
+
+    type = TacStmtType::Compute;
 }
 
 void Unary_Comp_TAC_Stmt::print(std::ostream &out) {
@@ -1268,6 +1378,8 @@ Goto_TAC_Stmt::Goto_TAC_Stmt(std::shared_ptr<Label_TAC_Opd> l) {
     result = l;
     oper1 = nullptr;
     oper2 = nullptr;
+
+    type = TacStmtType::Goto;
 }
 
 void Goto_TAC_Stmt::print(std::ostream &out) {
@@ -1289,6 +1401,8 @@ If_Goto_TAC_Stmt::If_Goto_TAC_Stmt(std::shared_ptr<TAC_Opd> cond,
     result = cond;
     oper1 = label;
     oper2 = nullptr;
+
+    type = TacStmtType::IfGoto;
 }
 
 void If_Goto_TAC_Stmt::print(std::ostream &out) {
@@ -1346,6 +1460,8 @@ IO_TAC_Stmt::IO_TAC_Stmt(bool write, std::shared_ptr<TAC_Opd> oper)
     result = oper;
     oper1 = nullptr;
     oper2 = nullptr;
+
+    type = TacStmtType::IO;
 }
 
 void IO_TAC_Stmt::print(std::ostream &out) {
@@ -1522,6 +1638,8 @@ Label_TAC_Stmt::Label_TAC_Stmt(std::shared_ptr<Label_TAC_Opd> label) {
     result = label;
     oper1 = nullptr;
     oper2 = nullptr;
+
+    type = TacStmtType::Label;
 }
 
 void Label_TAC_Stmt::print(std::ostream &out) {
@@ -1545,6 +1663,8 @@ Return_TAC_Stmt::Return_TAC_Stmt(std::shared_ptr<Variable_TAC_Opd> stemp,
     result = stemp;
     oper1 = nullptr;
     oper2 = nullptr;
+
+    type = TacStmtType::Return;
 }
 
 void Return_TAC_Stmt::print(std::ostream &out) {
