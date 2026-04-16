@@ -46,7 +46,7 @@ DataType &DataType::operator=(const BaseType &t) {
     return *this;
 }
 
-int DataType::size() {
+int DataType::size() const {
     if (pointer_level > 0)
         return 4;
     else if (array_dimensions.empty()) {
@@ -58,6 +58,10 @@ int DataType::size() {
         basesize *= sz;
     }
     return basesize;
+}
+
+bool DataType::needFloatReg() const {
+    return (*this == BaseType::FLOAT);
 }
 
 RelationalOperator anti_op(RelationalOperator op) {

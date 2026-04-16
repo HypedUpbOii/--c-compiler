@@ -5,10 +5,12 @@
 class TAC_Opd {
   protected:
     OpdType opd_type;
+    DataType type;
 
   public:
     virtual std::string get_name() = 0;
     OpdType get_opd_type() const;
+    DataType get_data_type() const;
 };
 
 class Double_Const_TAC_Opd : public TAC_Opd {
@@ -51,12 +53,13 @@ class Label_TAC_Opd : public TAC_Opd {
 };
 
 class Pointer_Deref_TAC_Opd : public TAC_Opd {
+  private:
     std::shared_ptr<TAC_Opd> operand;
 
   public:
-    // TODO: L6
     Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper);
     std::string get_name() override;
+    std::shared_ptr<TAC_Opd> get_operand();
 };
 
 class Address_Of_TAC_Opd : public TAC_Opd {
@@ -65,18 +68,17 @@ class Address_Of_TAC_Opd : public TAC_Opd {
   public:
     Address_Of_TAC_Opd(SymbolTableEntry *ste);
     std::string get_name() override;
+    SymbolTableEntry *get_ste();
 };
 
 class Temporary_TAC_Opd : public TAC_Opd {
   private:
     unsigned int temp_num;
-    bool needfloat;
 
   public:
-    Temporary_TAC_Opd(unsigned int num, bool need_float = false);
+    Temporary_TAC_Opd(unsigned int num, DataType type);
     std::string get_name() override;
     unsigned int get_temp_num() const;
-    bool get_need_float() const;
 };
 
 class Variable_TAC_Opd : public TAC_Opd {
@@ -100,5 +102,4 @@ class Function_TAC_Opd : public TAC_Opd {
     std::string get_name() override;
     SymbolTableFunction *get_sym_tab_func() const;
     std::vector<std::shared_ptr<TAC_Opd>> get_params();
-    bool get_need_float() const;
 };

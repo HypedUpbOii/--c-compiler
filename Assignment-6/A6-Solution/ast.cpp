@@ -40,8 +40,7 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<std::shared_ptr<TAC_Opd>> params;
     std::vector<TAC_Stmt *> result;
     if (funcEntry->get_return_type() != BaseType::VOID) {
-        bool needfloat = funcEntry->get_return_type() == BaseType::FLOAT;
-        place = tac.genNewTemporary(needfloat);
+        place = tac.genNewTemporary(funcEntry->get_return_type());
     }
 
     for (auto &ptr : arguments) {
@@ -225,7 +224,8 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
     for (int i = 0; i < num_dims - 1; i++) {
         std::shared_ptr<Int_Const_TAC_Opd> next_dim_tac_opd =
             std::make_shared<Int_Const_TAC_Opd>(sizes[i + 1]);
-        std::shared_ptr<Temporary_TAC_Opd> mult_temp = tac.genNewTemporary();
+        std::shared_ptr<Temporary_TAC_Opd> mult_temp =
+            tac.genNewTemporary(BaseType::INT);
         Arith_Comp_TAC_Stmt *mult_stmt = new Arith_Comp_TAC_Stmt(
             mult_temp, place, ArithmeticOperator::MULT, next_dim_tac_opd);
         ans.push_back(mult_stmt);
@@ -233,7 +233,8 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
         std::vector<TAC_Stmt *> dim_code = dims[i + 1]->generateTAC(tac, ctx);
         for (auto stmt : dim_code)
             ans.push_back(stmt);
-        std::shared_ptr<Temporary_TAC_Opd> add_temp = tac.genNewTemporary();
+        std::shared_ptr<Temporary_TAC_Opd> add_temp =
+            tac.genNewTemporary(BaseType::INT);
         Arith_Comp_TAC_Stmt *add_stmt = new Arith_Comp_TAC_Stmt(
             add_temp, mult_temp, ArithmeticOperator::PLUS, dims[i + 1]->place);
         ans.push_back(add_stmt);
@@ -244,26 +245,29 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
     int sz = (steEntry->get_type().base == BaseType::FLOAT) ? 8 : 4;
     std::shared_ptr<Int_Const_TAC_Opd> size_opd =
         std::make_shared<Int_Const_TAC_Opd>(sz);
-    std::shared_ptr<Temporary_TAC_Opd> offset = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> offset =
+        tac.genNewTemporary(BaseType::INT);
     Arith_Comp_TAC_Stmt *size_mult_stmt = new Arith_Comp_TAC_Stmt(
         offset, place, ArithmeticOperator::MULT, size_opd);
     ans.push_back(size_mult_stmt);
 
     std::shared_ptr<Address_Of_TAC_Opd> address_var_tac_opd =
         std::make_shared<Address_Of_TAC_Opd>(steEntry);
-    std::shared_ptr<Temporary_TAC_Opd> arr_loc_temp = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> arr_loc_temp =
+        tac.genNewTemporary(address_var_tac_opd->get_data_type());
     Asgn_TAC_Stmt *address_asgn =
         new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
     ans.push_back(address_asgn);
 
-    std::shared_ptr<Temporary_TAC_Opd> final_loc = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> final_loc =
+        tac.genNewTemporary(address_var_tac_opd->get_data_type());
     Arith_Comp_TAC_Stmt *add_offset_stmt = new Arith_Comp_TAC_Stmt(
         final_loc, arr_loc_temp, ArithmeticOperator::PLUS, offset);
     ans.push_back(add_offset_stmt);
 
     place = std::make_shared<Pointer_Deref_TAC_Opd>(final_loc);
     if (ctx.isRhs) {
-        auto tmp = tac.genNewTemporary();
+        auto tmp = tac.genNewTemporary(place->get_data_type());
         Asgn_TAC_Stmt *shift = new Asgn_TAC_Stmt(tmp, place);
         ans.push_back(shift);
         place = tmp;
@@ -303,7 +307,7 @@ void Boolean_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> Boolean_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
-    place = tac.genNewTemporary();
+    place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Bool_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
@@ -351,7 +355,7 @@ std::vector<TAC_Stmt *> Arithmetic_Expr_Ast::generateTAC(TAC &tac,
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
     // may need float
-    place = tac.genNewTemporary(leftOp->exprType.base == BaseType::FLOAT);
+    place = tac.genNewTemporary(leftOp->exprType);
     Compute_TAC_Stmt *stmt =
         new Arith_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
@@ -398,7 +402,7 @@ std::vector<TAC_Stmt *> Relational_Expr_Ast::generateTAC(TAC &tac,
                                                          Context &ctx) {
     auto left_tac = leftOp->generateTAC(tac, ctx);
     auto right_tac = rightOp->generateTAC(tac, ctx);
-    place = tac.genNewTemporary();
+    place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Rel_Comp_TAC_Stmt(place, leftOp->place, op, rightOp->place);
 
@@ -452,7 +456,8 @@ std::vector<TAC_Stmt *> Ternary_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     auto true_tac = trueExpr->generateTAC(tac, ctx);
     auto false_tac = falseExpr->generateTAC(tac, ctx);
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond =
+        tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_false = new If_Goto_TAC_Stmt(opp_cond, false_label);
@@ -507,7 +512,8 @@ std::vector<TAC_Stmt *> Address_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     std::vector<TAC_Stmt *> ans;
     std::shared_ptr<Address_Of_TAC_Opd> add_tac_opd =
         std::make_shared<Address_Of_TAC_Opd>(operand->steEntry);
-    std::shared_ptr<Temporary_TAC_Opd> new_temp = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> new_temp =
+        tac.genNewTemporary(add_tac_opd->get_data_type());
     place = new_temp;
 
     Asgn_TAC_Stmt *asgn_stmt = new Asgn_TAC_Stmt(new_temp, add_tac_opd);
@@ -554,14 +560,14 @@ std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
     for (int i = 0; i < pointerLevel - 1; i++) {
         std::shared_ptr<Pointer_Deref_TAC_Opd> deref =
             std::make_shared<Pointer_Deref_TAC_Opd>(place);
-        std::shared_ptr<Temporary_TAC_Opd> temp = tac.genNewTemporary();
+        std::shared_ptr<Temporary_TAC_Opd> temp = tac.genNewTemporary(deref->get_data_type());
         Asgn_TAC_Stmt *asgn = new Asgn_TAC_Stmt(temp, deref);
         ans.push_back(asgn);
         place = temp;
     }
     place = std::make_shared<Pointer_Deref_TAC_Opd>(place);
     if (ctx.isRhs) {
-        auto tmp = tac.genNewTemporary();
+        auto tmp = tac.genNewTemporary(place->get_data_type());
         Asgn_TAC_Stmt *stmt = new Asgn_TAC_Stmt(tmp, place);
         ans.push_back(stmt);
         place = tmp;
@@ -595,7 +601,7 @@ void UMinus_Expr_Ast::printTree(std::ostream &out, int tab) {
 std::vector<TAC_Stmt *> UMinus_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     auto oper_tac = operand->generateTAC(tac, ctx);
     // may need float
-    place = tac.genNewTemporary(operand->exprType.base == BaseType::FLOAT);
+    place = tac.genNewTemporary(operand->exprType);
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::UMINUS, operand->place);
 
@@ -630,7 +636,7 @@ void Not_Expr_Ast::printTree(std::ostream &out, int tab) {
 
 std::vector<TAC_Stmt *> Not_Expr_Ast::generateTAC(TAC &tac, Context &ctx) {
     auto oper_tac = operand->generateTAC(tac, ctx);
-    place = tac.genNewTemporary();
+    place = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *stmt =
         new Unary_Comp_TAC_Stmt(place, UnaryOperator::NOT, operand->place);
 
@@ -730,7 +736,7 @@ std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     ctx.loop_end.pop();
     ctx.loop_depth--;
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -849,7 +855,7 @@ std::vector<TAC_Stmt *> For_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     ctx.loop_end.pop();
     ctx.loop_depth--;
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -1024,7 +1030,7 @@ std::vector<TAC_Stmt *> Selection_Stmt_Ast::generateTAC(TAC &tac,
     auto cond_tac = condition->generateTAC(tac, ctx);
     auto then_tac = then_stmt->generateTAC(tac, ctx);
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary();
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_cond =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();

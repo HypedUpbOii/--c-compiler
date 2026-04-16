@@ -33,7 +33,8 @@ class DataType {
     bool operator!=(BaseType) const;
     DataType &operator=(const DataType &);
     DataType &operator=(const BaseType &);
-    int size();
+    int size() const;
+    bool needFloatReg() const;
 };
 
 std::string type_to_string(DataType t);

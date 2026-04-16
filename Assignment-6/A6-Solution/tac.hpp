@@ -133,7 +133,7 @@ class TAC {
     TAC();
     static std::shared_ptr<Label_TAC_Opd>
     getRetLabel();
-    std::shared_ptr<Temporary_TAC_Opd> genNewTemporary(bool need_float = false);
+    std::shared_ptr<Temporary_TAC_Opd> genNewTemporary(DataType dt);
     std::shared_ptr<Variable_TAC_Opd>
     genNewSTemporary(DataType dt, SymbolTable *local, bool is_ret = false);
     std::shared_ptr<Label_TAC_Opd> genNewLabel();

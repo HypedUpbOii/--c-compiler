@@ -632,8 +632,8 @@ Load_Address_RTL_Stmt::Load_Address_RTL_Stmt(
 }
 
 void Load_Address_RTL_Stmt::print(std::ostream &out) {
-    out << "\tload_addr:\t\t" << result->get_name() << " <- "
-        << oper1->get_name() << std::endl;
+    out << "\tload_addr:\t" << result->get_name() << " <- " << oper1->get_name()
+        << std::endl;
 }
 
 void Load_Address_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
@@ -657,8 +657,16 @@ Indirect_Op_RTL_Stmt::Indirect_Op_RTL_Stmt(
 }
 
 void Indirect_Op_RTL_Stmt::print(std::ostream &out) {
-    out << ((isload) ? "\tload_ind:\t\t" : "\tstore_ind:\t\t")
-        << result->get_name() << " <- " << oper1->get_name() << std::endl;
+    std::string ins_name = isload ? "load_ind" : "store_ind";
+    std::shared_ptr<RTL_Register_Opd> reg1 =
+        std::dynamic_pointer_cast<RTL_Register_Opd>(result);
+    std::shared_ptr<RTL_Register_Opd> reg2 =
+        std::dynamic_pointer_cast<RTL_Register_Opd>(oper1);
+    if (reg1->reg_desc->get_use_category() == RegisterUseCategory::float_reg ||
+        reg2->reg_desc->get_use_category() == RegisterUseCategory::float_reg)
+        ins_name += ".d";
+    out << "\t" << ins_name << ":\t" << result->get_name() << " <- "
+        << oper1->get_name() << std::endl;
 }
 
 void Indirect_Op_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {

@@ -7,8 +7,8 @@ std::shared_ptr<Label_TAC_Opd> TAC::getRetLabel() {
     return std::make_shared<Label_TAC_Opd>(label_number++);
 }
 
-std::shared_ptr<Temporary_TAC_Opd> TAC::genNewTemporary(bool need_float) {
-    return std::make_shared<Temporary_TAC_Opd>(temp_number++, need_float);
+std::shared_ptr<Temporary_TAC_Opd> TAC::genNewTemporary(DataType dt) {
+    return std::make_shared<Temporary_TAC_Opd>(temp_number++, dt);
 }
 
 std::shared_ptr<Variable_TAC_Opd>
@@ -53,8 +53,11 @@ TAC::~TAC() {
 
 OpdType TAC_Opd::get_opd_type() const { return opd_type; }
 
+DataType TAC_Opd::get_data_type() const { return type; }
+
 Double_Const_TAC_Opd::Double_Const_TAC_Opd(double val) : value(val) {
     opd_type = OpdType::DOUBLE_CONST;
+    type = BaseType::FLOAT;
 }
 
 std::string Double_Const_TAC_Opd::get_name() {
@@ -67,6 +70,7 @@ double Double_Const_TAC_Opd::get_value() const { return value; }
 
 Int_Const_TAC_Opd::Int_Const_TAC_Opd(int val) : value(val) {
     opd_type = OpdType::INT_CONST;
+    type = BaseType::INT;
 }
 
 std::string Int_Const_TAC_Opd::get_name() { return std::to_string(value); }
@@ -76,12 +80,14 @@ int Int_Const_TAC_Opd::get_value() const { return value; }
 String_Const_TAC_Opd::String_Const_TAC_Opd(const std::string &val)
     : value(val) {
     opd_type = OpdType::STRING_CONST;
+    type = BaseType::STRING;
 }
 
 std::string String_Const_TAC_Opd::get_name() { return value; }
 
 Label_TAC_Opd::Label_TAC_Opd(unsigned int num) : label_num(num) {
     opd_type = OpdType::LABEL;
+    type = BaseType::VOID;
 }
 
 std::string Label_TAC_Opd::get_name() {
@@ -93,24 +99,34 @@ unsigned int Label_TAC_Opd::get_label_num() const { return label_num; }
 Pointer_Deref_TAC_Opd::Pointer_Deref_TAC_Opd(std::shared_ptr<TAC_Opd> oper)
     : operand(oper) {
     opd_type = OpdType::POINTER;
+    DataType innertype = oper->get_data_type();
+    type = DataType(innertype.base, innertype.pointer_level - 1);
 }
 
 std::string Pointer_Deref_TAC_Opd::get_name() {
     return "* " + operand->get_name();
 }
 
+std::shared_ptr<TAC_Opd> Pointer_Deref_TAC_Opd::get_operand() {
+    return operand;
+}
+
 Address_Of_TAC_Opd::Address_Of_TAC_Opd(SymbolTableEntry *ste) : steEntry(ste) {
     opd_type = OpdType::ADDRESS;
+    DataType outertype = ste->get_type();
+    type = DataType(outertype.base, outertype.pointer_level + 1);
 }
 
 std::string Address_Of_TAC_Opd::get_name() {
     return "& " + steEntry->get_name();
 }
 
-Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, bool need_float)
+SymbolTableEntry *Address_Of_TAC_Opd::get_ste() { return steEntry; }
+
+Temporary_TAC_Opd::Temporary_TAC_Opd(unsigned int num, DataType typ)
     : temp_num(num) {
     opd_type = OpdType::TEMPORARY;
-    needfloat = need_float;
+    type = typ;
 }
 
 std::string Temporary_TAC_Opd::get_name() {
@@ -119,11 +135,10 @@ std::string Temporary_TAC_Opd::get_name() {
 
 unsigned int Temporary_TAC_Opd::get_temp_num() const { return temp_num; }
 
-bool Temporary_TAC_Opd::get_need_float() const { return needfloat; }
-
 Variable_TAC_Opd::Variable_TAC_Opd(SymbolTableEntry *entry)
     : symtab_entry(entry) {
     opd_type = OpdType::VARIABLE;
+    type = symtab_entry->get_type();
 }
 
 std::string Variable_TAC_Opd::get_name() { return symtab_entry->get_name(); }
@@ -136,6 +151,7 @@ Function_TAC_Opd::Function_TAC_Opd(SymbolTableFunction *entry,
                                    std::vector<std::shared_ptr<TAC_Opd>> args)
     : symtab_entry(entry), params(args) {
     opd_type = OpdType::FUNCTION;
+    type = symtab_entry->get_return_type();
 }
 
 std::string Function_TAC_Opd::get_name() {
@@ -156,10 +172,6 @@ SymbolTableFunction *Function_TAC_Opd::get_sym_tab_func() const {
 
 std::vector<std::shared_ptr<TAC_Opd>> Function_TAC_Opd::get_params() {
     return params;
-}
-
-bool Function_TAC_Opd::get_need_float() const {
-    return symtab_entry->get_return_type() == BaseType::FLOAT;
 }
 
 // ------------------------------------------------------------------------------
@@ -204,7 +216,56 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     // Handled appropriately
 
     RegisterDescriptor *oper1_rd = nullptr;
-    if (is_oper1_temp) {
+    RegisterDescriptor *res_rd;
+
+    if (is_oper1_address) {
+        res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+        std::shared_ptr<Address_Of_TAC_Opd> add =
+            std::dynamic_pointer_cast<Address_Of_TAC_Opd>(oper1);
+        std::shared_ptr<RTL_Var_Opd> var_opd =
+            std::make_shared<RTL_Var_Opd>(add->get_ste());
+        std::shared_ptr<RTL_Register_Opd> reg_opd =
+            std::make_shared<RTL_Register_Opd>(res_rd);
+        std::shared_ptr<Load_Address_RTL_Stmt> load_stmt =
+            std::make_shared<Load_Address_RTL_Stmt>(reg_opd, var_opd);
+        __rtl.addRTLStatement(load_stmt);
+        return; // early return, oper1_rd = nullptr anyway
+    } else if (is_oper1_pointer) {
+        std::shared_ptr<Pointer_Deref_TAC_Opd> point =
+            std::dynamic_pointer_cast<Pointer_Deref_TAC_Opd>(oper1);
+        if (point->get_operand()->get_opd_type() == OpdType::VARIABLE) {
+            oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(
+                point->get_operand());
+            std::shared_ptr<Variable_TAC_Opd> var_opd =
+                std::dynamic_pointer_cast<Variable_TAC_Opd>(
+                    point->get_operand());
+            std::shared_ptr<RTL_Var_Opd> rtl_var =
+                std::make_shared<RTL_Var_Opd>(var_opd->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> reg_opd =
+                std::make_shared<RTL_Register_Opd>(oper1_rd);
+
+            std::shared_ptr<Transfer_RTL_Stmt> trans_stmt =
+                std::make_shared<Transfer_RTL_Stmt>(reg_opd, rtl_var);
+            __rtl.addRTLStatement(trans_stmt);
+        } else {
+            oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(
+                point->get_operand());
+        }
+        res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(result);
+        std::shared_ptr<RTL_Register_Opd> res_reg =
+            std::make_shared<RTL_Register_Opd>(res_rd);
+        std::shared_ptr<RTL_Register_Opd> oper1_reg =
+            std::make_shared<RTL_Register_Opd>(oper1_rd);
+        std::shared_ptr<Indirect_Op_RTL_Stmt> shift =
+            std::make_shared<Indirect_Op_RTL_Stmt>(res_reg, oper1_reg, true);
+        __rtl.addRTLStatement(shift);
+
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
+        if (oper1_rd != nullptr)
+            oper1_rd->reset_used_for_expr_return();
+
+        return; // early return
+    } else if (is_oper1_temp) {
         oper1_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(oper1);
     } else if (is_oper1_var) {
         oper1_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(oper1);
@@ -364,8 +425,6 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
     std::shared_ptr<RTL_Register_Opd> oper1_reg_opd =
         std::make_shared<RTL_Register_Opd>(oper1_rd);
 
-    RegisterDescriptor *res_rd;
-
     if (is_oper1_func) {
         std::shared_ptr<Function_TAC_Opd> func_tac_opd =
             std::dynamic_pointer_cast<Function_TAC_Opd>(oper1);
@@ -425,6 +484,38 @@ void Asgn_TAC_Stmt::generateRTL(RTL &__rtl) {
         std::shared_ptr<Transfer_RTL_Stmt> assn_stmt =
             std::make_shared<Transfer_RTL_Stmt>(var_opd, oper1_reg_opd);
         __rtl.addRTLStatement(assn_stmt);
+    } else if (is_result_pointer) {
+        std::shared_ptr<Pointer_Deref_TAC_Opd> point =
+            std::dynamic_pointer_cast<Pointer_Deref_TAC_Opd>(result);
+        if (point->get_operand()->get_opd_type() == OpdType::VARIABLE) {
+            res_rd = __rtl.machine_descriptor->allocate_rd_for_tac_opd(
+                point->get_operand());
+            std::shared_ptr<Variable_TAC_Opd> var =
+                std::dynamic_pointer_cast<Variable_TAC_Opd>(
+                    point->get_operand());
+            std::shared_ptr<RTL_Var_Opd> res_var =
+                std::make_shared<RTL_Var_Opd>(var->get_sym_tab_entry());
+            std::shared_ptr<RTL_Register_Opd> res_reg =
+                std::make_shared<RTL_Register_Opd>(res_rd);
+            std::shared_ptr<Transfer_RTL_Stmt> load_stmt =
+                std::make_shared<Transfer_RTL_Stmt>(res_reg, res_var);
+            __rtl.addRTLStatement(load_stmt);
+        } else {
+            res_rd = __rtl.machine_descriptor->get_rd_for_tac_opd(
+                point->get_operand());
+        }
+
+        std::shared_ptr<RTL_Register_Opd> res_reg =
+            std::make_shared<RTL_Register_Opd>(res_rd);
+        std::shared_ptr<RTL_Register_Opd> oper_reg =
+            std::make_shared<RTL_Register_Opd>(oper1_rd);
+
+        std::shared_ptr<Indirect_Op_RTL_Stmt> shift =
+            std::make_shared<Indirect_Op_RTL_Stmt>(res_reg, oper_reg, false);
+        __rtl.addRTLStatement(shift);
+
+        __rtl.machine_descriptor->unset_rd_for_tac_opd(point->get_operand());
+        res_rd->reset_used_for_expr_return();
     }
 
     __rtl.machine_descriptor->unset_rd_for_tac_opd(oper1);
@@ -784,16 +875,7 @@ Rel_Comp_TAC_Stmt::Rel_Comp_TAC_Stmt(std::shared_ptr<TAC_Opd> res,
     oper1 = op1;
     oper2 = op2;
 
-    bool is_temp = op1->get_opd_type() == OpdType::TEMPORARY;
-    bool is_var = op1->get_opd_type() == OpdType::VARIABLE;
-    bool is_float_const = op1->get_opd_type() == OpdType::DOUBLE_CONST;
-
-    needfloat = (is_temp && (std::dynamic_pointer_cast<Temporary_TAC_Opd>(op1))
-                                ->get_need_float()) ||
-                (is_var && (std::dynamic_pointer_cast<Variable_TAC_Opd>(op1))
-                               ->get_sym_tab_entry()
-                               ->get_need_float()) ||
-                is_float_const;
+    needfloat = op1->get_data_type().needFloatReg();
 }
 
 void Rel_Comp_TAC_Stmt::print(std::ostream &out) {
@@ -1318,9 +1400,7 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
         std::shared_ptr<String_Const_TAC_Opd> string_const =
             std::dynamic_pointer_cast<String_Const_TAC_Opd>(result);
 
-        bool needfloat =
-            (is_var && var->get_sym_tab_entry()->get_need_float()) ||
-            (is_temp && temp->get_need_float()) || is_float_const;
+        bool needfloat = result->get_data_type().needFloatReg();
 
         // load correct value into v0
         std::shared_ptr<RTL_Int_Const_Opd> num;
