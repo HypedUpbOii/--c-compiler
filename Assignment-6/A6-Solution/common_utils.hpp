@@ -37,6 +37,8 @@ class DataType {
     bool needFloatReg() const;
 };
 
+bool param_type_equals(DataType a, DataType b);
+
 std::string type_to_string(DataType t);
 
 enum class BooleanOperator : int { OR, AND };

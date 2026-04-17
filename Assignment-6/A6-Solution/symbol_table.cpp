@@ -8,9 +8,7 @@ DataType SymbolTableEntry::get_type() const { return type; }
 
 std::string SymbolTableEntry::get_name() const { return name; }
 
-bool SymbolTableEntry::get_need_float() const {
-    return type.needFloatReg();
-}
+bool SymbolTableEntry::get_need_float() const { return type.needFloatReg(); }
 
 SymbolTableFunction::SymbolTableFunction(
     std::string n, DataType rt,
@@ -61,10 +59,22 @@ void SymbolTable::insert(std::string name, DataType dt, bool is_param) {
         return;
     }
 
+    if (!dt.array_dimensions.empty()) {
+        if (!is_param && dt.array_dimensions[0] <= 0)
+            exit_with_err_msg("sclp error: Tried to initialize an array "
+                              "with non positive dimension.");
+
+        for (int i = 1; i < dt.array_dimensions.size(); i++) {
+            if (dt.array_dimensions[i] <= 0)
+                exit_with_err_msg("sclp error: Tried to initialize an array "
+                                  "with non positive dimension.");
+        }
+    }
+
     int stack_pos = 0;
     if (is_param) {
         stack_pos = stackParams;
-        stackParams += dt.size();
+        stackParams += (dt.size() < 0) ? 4 : dt.size();
     } else {
         stackLocals -= dt.size();
         stack_pos = stackLocals;

@@ -60,8 +60,20 @@ int DataType::size() const {
     return basesize;
 }
 
-bool DataType::needFloatReg() const {
-    return (*this == BaseType::FLOAT);
+bool DataType::needFloatReg() const { return (*this == BaseType::FLOAT); }
+
+bool param_type_equals(DataType a, DataType b) {
+    if (a.base != b.base || a.pointer_level != b.pointer_level ||
+        a.array_dimensions.size() != b.array_dimensions.size()) {
+        return false;
+    }
+
+    for (int i = 1; i < a.array_dimensions.size(); ++i) {
+        if (a.array_dimensions[i] != b.array_dimensions[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 RelationalOperator anti_op(RelationalOperator op) {

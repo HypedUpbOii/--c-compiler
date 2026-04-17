@@ -21,8 +21,11 @@ void Function_Call_Ast::validateNode(Context &ctx) {
 
     for (int i = 0; i < arguments.size(); ++i) {
         arguments[i]->validateNode(ctx);
-        if (arguments[i]->exprType != funcEntry->get_params()[i].second)
+        // if we're passing in an array then we need a special check
+        if (!param_type_equals(arguments[i]->exprType,
+                               funcEntry->get_params()[i].second)) {
             exit_with_err_msg("sclp error: Argument type mismatch");
+        }
     }
     exprType = funcEntry->get_return_type();
 }
@@ -46,7 +49,27 @@ std::vector<TAC_Stmt *> Function_Call_Ast::generateTAC(TAC &tac, Context &ctx) {
     for (auto &ptr : arguments) {
         for (auto &stmt : ptr->generateTAC(tac, ctx))
             result.push_back(stmt);
-        params.push_back(ptr->place);
+        Name_Expr_Ast *nam = dynamic_cast<Name_Expr_Ast *>(ptr.get());
+        if (nam != nullptr) {
+            if (!(nam->steEntry->get_type().array_dimensions.empty()) &&
+                nam->steEntry->stack_position <= 0) {
+                // given param is an array
+                // we need to pass the address of it
+                // if array is a param here then it should just be passed
+                // normally since arrays in parameters are also addresses
+                std::shared_ptr<Address_Of_TAC_Opd> add =
+                    std::make_shared<Address_Of_TAC_Opd>(nam->steEntry);
+                std::shared_ptr<Temporary_TAC_Opd> tmp =
+                    tac.genNewTemporary(add->get_data_type());
+                Asgn_TAC_Stmt *asgn = new Asgn_TAC_Stmt(tmp, add);
+                result.push_back(asgn);
+                params.push_back(tmp);
+            } else {
+                params.push_back(ptr->place);
+            }
+        } else {
+            params.push_back(ptr->place);
+        }
     }
     func_call_place = std::make_shared<Function_TAC_Opd>(funcEntry, params);
     if (funcEntry->get_return_type() != BaseType::VOID) {
@@ -184,7 +207,12 @@ void Array_Access_Expr_Ast::validateNode(Context &ctx) {
         // they are valid (< size of that dim)
         Literal_Expr_Ast<int> *literal_ptr =
             dynamic_cast<Literal_Expr_Ast<int> *>(ptr.get());
-        if (literal_ptr && literal_ptr->value >= arr_dims[i])
+        if (!literal_ptr)
+            exit_with_err_msg(
+                "sclp error: array can only be indexed with int values");
+        if (ctx.local->lookup(name)->stack_position > 0 && i == 0)
+            continue;
+        if (literal_ptr->value >= arr_dims[i])
             exit_with_err_msg(
                 "sclp error: array access out of bounds at compile time");
     }
@@ -251,16 +279,27 @@ std::vector<TAC_Stmt *> Array_Access_Expr_Ast::generateTAC(TAC &tac,
         offset, place, ArithmeticOperator::MULT, size_opd);
     ans.push_back(size_mult_stmt);
 
-    std::shared_ptr<Address_Of_TAC_Opd> address_var_tac_opd =
-        std::make_shared<Address_Of_TAC_Opd>(steEntry);
-    std::shared_ptr<Temporary_TAC_Opd> arr_loc_temp =
-        tac.genNewTemporary(address_var_tac_opd->get_data_type());
-    Asgn_TAC_Stmt *address_asgn =
-        new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
-    ans.push_back(address_asgn);
+    // if parameter, then directly use value
+    // else get address
+    std::shared_ptr<TAC_Opd> arr_loc_temp;
+    std::shared_ptr<Temporary_TAC_Opd> final_loc;
+    if (steEntry->stack_position > 0) {
+        arr_loc_temp = std::make_shared<Variable_TAC_Opd>(steEntry);
+        DataType dt = arr_loc_temp->get_data_type();
+        dt.pointer_level += 1;
+        final_loc = tac.genNewTemporary(dt);
+    } else {
+        std::shared_ptr<Address_Of_TAC_Opd> address_var_tac_opd =
+            std::make_shared<Address_Of_TAC_Opd>(steEntry);
+        arr_loc_temp =
+            tac.genNewTemporary(address_var_tac_opd->get_data_type());
+        Asgn_TAC_Stmt *address_asgn =
+            new Asgn_TAC_Stmt(arr_loc_temp, address_var_tac_opd);
+        ans.push_back(address_asgn);
+        final_loc = tac.genNewTemporary(arr_loc_temp->get_data_type());
+    }
 
-    std::shared_ptr<Temporary_TAC_Opd> final_loc =
-        tac.genNewTemporary(address_var_tac_opd->get_data_type());
+    final_loc = tac.genNewTemporary(arr_loc_temp->get_data_type());
     Arith_Comp_TAC_Stmt *add_offset_stmt = new Arith_Comp_TAC_Stmt(
         final_loc, arr_loc_temp, ArithmeticOperator::PLUS, offset);
     ans.push_back(add_offset_stmt);
@@ -572,7 +611,8 @@ std::vector<TAC_Stmt *> Pointer_Deref_Expr_Ast::generateTAC(TAC &tac,
     for (int i = 0; i < pointerLevel - 1; i++) {
         std::shared_ptr<Pointer_Deref_TAC_Opd> deref =
             std::make_shared<Pointer_Deref_TAC_Opd>(place);
-        std::shared_ptr<Temporary_TAC_Opd> temp = tac.genNewTemporary(deref->get_data_type());
+        std::shared_ptr<Temporary_TAC_Opd> temp =
+            tac.genNewTemporary(deref->get_data_type());
         Asgn_TAC_Stmt *asgn = new Asgn_TAC_Stmt(temp, deref);
         ans.push_back(asgn);
         place = temp;
@@ -754,7 +794,8 @@ std::vector<TAC_Stmt *> While_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     ctx.loop_end.pop();
     ctx.loop_depth--;
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond =
+        tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -873,7 +914,8 @@ std::vector<TAC_Stmt *> For_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
     ctx.loop_end.pop();
     ctx.loop_depth--;
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond =
+        tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_stmt =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     If_Goto_TAC_Stmt *go_to_exit = new If_Goto_TAC_Stmt(opp_cond, exit_label);
@@ -1055,7 +1097,8 @@ std::vector<TAC_Stmt *> Selection_Stmt_Ast::generateTAC(TAC &tac,
     auto cond_tac = condition->generateTAC(tac, ctx);
     auto then_tac = then_stmt->generateTAC(tac, ctx);
 
-    std::shared_ptr<Temporary_TAC_Opd> opp_cond = tac.genNewTemporary(BaseType::BOOL);
+    std::shared_ptr<Temporary_TAC_Opd> opp_cond =
+        tac.genNewTemporary(BaseType::BOOL);
     Compute_TAC_Stmt *negate_cond =
         new Unary_Comp_TAC_Stmt(opp_cond, UnaryOperator::NOT, condition->place);
     std::shared_ptr<Label_TAC_Opd> exit_label = tac.genNewLabel();
@@ -1187,7 +1230,7 @@ void Call_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Call_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
-    std::vector<TAC_Stmt*> result = func_call->generateTAC(tac, ctx);
+    std::vector<TAC_Stmt *> result = func_call->generateTAC(tac, ctx);
     Call_TAC_Stmt *call_stmt = new Call_TAC_Stmt(func_call->place);
     result.push_back(call_stmt);
     return result;
