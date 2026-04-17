@@ -207,12 +207,9 @@ void Array_Access_Expr_Ast::validateNode(Context &ctx) {
         // they are valid (< size of that dim)
         Literal_Expr_Ast<int> *literal_ptr =
             dynamic_cast<Literal_Expr_Ast<int> *>(ptr.get());
-        if (!literal_ptr)
-            exit_with_err_msg(
-                "sclp error: array can only be indexed with int values");
         if (ctx.local->lookup(name)->stack_position > 0 && i == 0)
             continue;
-        if (literal_ptr->value >= arr_dims[i])
+        if (literal_ptr && literal_ptr->value >= arr_dims[i])
             exit_with_err_msg(
                 "sclp error: array access out of bounds at compile time");
     }
@@ -1439,16 +1436,20 @@ void Program::generateSPIM() {
         func->generateSPIM();
 }
 
+#include <iostream>
 void Program::printSPIM(std::ostream &out) {
     // print globals first
     out << std::endl;
     if (!global_vars.empty() || !string_consts.empty())
         out << "\t.data" << std::endl;
-    for (auto const &[dt, name] : global_vars) {
+    for (auto const &[dat, name] : global_vars) {
+        DataType dt = global->lookup(name + "_")->get_type();
         if (dt == BaseType::FLOAT)
             out << name << "_:\t.double 0.0" << std::endl;
-        else
+        else if (dt.array_dimensions.empty())
             out << name << "_:\t.word 0" << std::endl;
+        else
+            out << name << "_:\t.space " << dt.size() << std::endl;
     }
     int i = 0;
     for (auto const &str : string_consts)
