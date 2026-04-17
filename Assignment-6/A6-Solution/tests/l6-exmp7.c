@@ -18,5 +18,6 @@ int main()
 	print "\n";
 	z=d[a+b-2*c+3];
 	print z;	
+	print "\n";
 	return 0;
 }

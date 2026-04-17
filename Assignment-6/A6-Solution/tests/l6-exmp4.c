@@ -18,5 +18,17 @@ int main()
 		a[i]=a[i]-b[i];
 		i=i+1;
 	}
+
+	for (i = 0; i < 3; i = i + 1;) {
+		print a[i];
+		print " ";
+	}
+	print "\n";
+	for (i = 0; i < 3; i = i + 1;) {
+		print b[i];
+		print " ";
+	}
+	print "\n";
+
 	return 0;
 }

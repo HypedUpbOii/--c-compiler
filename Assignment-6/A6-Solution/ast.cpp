@@ -1436,7 +1436,6 @@ void Program::generateSPIM() {
         func->generateSPIM();
 }
 
-#include <iostream>
 void Program::printSPIM(std::ostream &out) {
     // print globals first
     out << std::endl;

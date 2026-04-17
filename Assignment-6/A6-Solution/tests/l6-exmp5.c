@@ -11,6 +11,14 @@ int main()
 	*p=*q+*r;
 	*r=*p-*q;
 	*q=*q/7;
+
+	print a;
+	print " ";
 	
+	print b;
+	print " ";
+	
+	print c;
+	print " ";
 	return 0;
 }

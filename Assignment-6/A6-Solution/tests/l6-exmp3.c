@@ -9,5 +9,7 @@ int main()
 	x="hello";
 	ptr=&x;
 	*ptr="g";
+
+	print *ptr;
 	return 0;
 }
