@@ -146,6 +146,6 @@ class TAC {
     void print(std::ostream &);
     void generateRTL(RTL &);
     bool isEmpty();
-    void dead_code_elimination();
+    void unreachable_code_elimination();
     ~TAC();
 };

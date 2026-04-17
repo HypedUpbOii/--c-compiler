@@ -641,8 +641,13 @@ void Load_Address_RTL_Stmt::generateSPIM(SPIM &spim, MachineDescriptor *md) {
         std::dynamic_pointer_cast<RTL_Register_Opd>(result)->reg_desc);
     std::shared_ptr<RTL_Var_Opd> var =
         std::dynamic_pointer_cast<RTL_Var_Opd>(oper1);
-    std::shared_ptr<ASM_Mem_Opd> mem = std::make_shared<ASM_Mem_Opd>(
-        var->entry->stack_position, md->get_register(Register::fp));
+    std::shared_ptr<ASM_Mem_Opd> mem;
+    if (var->entry->is_global) {
+        mem = std::make_shared<ASM_Mem_Opd>(var->entry->get_name());
+    } else {
+        mem = std::make_shared<ASM_Mem_Opd>(var->entry->stack_position,
+                                            md->get_register(Register::fp));
+    }
     std::shared_ptr<Load_Address_ASM_Stmt> stmt =
         std::make_shared<Load_Address_ASM_Stmt>(reg, mem);
     spim.addSPIM(stmt);

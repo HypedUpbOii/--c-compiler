@@ -79,6 +79,7 @@
 
 %type <DataType> param_type
 %type <DataType> named_type
+%type <DataType> complete_type
 %type <std::pair<DataType, std::string>> func_header
 %type <std::pair<std::string, DataType>> formal_param
 %type <std::vector<std::pair<std::string, DataType>>> formal_param_list
@@ -231,8 +232,17 @@ formal_param_list
 ;
 
 formal_param
-    : param_type NAME {
+    : complete_type NAME {
         $$ = std::make_pair($2, $1);
+    }
+;
+
+complete_type
+    : param_type {
+        $$ = $1;
+    }
+    | complete_type MULT {
+        $$ = DataType($1.base, $1.pointer_level + 1);
     }
 ;
 

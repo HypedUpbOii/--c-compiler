@@ -46,7 +46,7 @@ void TAC::generateRTL(RTL &rtl) {
         stmt->generateRTL(rtl);
 }
 
-void TAC::dead_code_elimination() {
+void TAC::unreachable_code_elimination() {
     int num_stmts = tac_code.size();
 
     int function_start_stmt = 0;
@@ -76,33 +76,33 @@ void TAC::dead_code_elimination() {
         TAC_Stmt *stmt = tac_code[i];
 
         switch (stmt->getStmtType()) {
-            case TacStmtType::Asgn:
-            case TacStmtType::Call:
-            case TacStmtType::Compute:
-            case TacStmtType::IO:
-            case TacStmtType::Label:
-                adj_list[i].push_back(i + 1);
-                break;
-            case TacStmtType::Return:
-                adj_list[i].push_back(function_exit_stmt);
-                break;
-            case TacStmtType::Goto: {
-                Goto_TAC_Stmt *goto_stmt = (Goto_TAC_Stmt *)stmt;
-                std::shared_ptr<Label_TAC_Opd> label_opd =
-                    std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_result());
-                int label_num = label_opd->get_label_num();
-                adj_list[i].push_back(label_to_stmt_num[label_num]);
-                break;
-            }
-            case TacStmtType::IfGoto: {
-                If_Goto_TAC_Stmt * if_goto_stmt = (If_Goto_TAC_Stmt *) stmt;
-                std::shared_ptr<Label_TAC_Opd> label_opd =
-                    std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_oper1());
-                int label_num = label_opd->get_label_num();
-                adj_list[i].push_back(label_to_stmt_num[label_num]);
-                adj_list[i].push_back(i + 1);
-                break;
-            }
+        case TacStmtType::Asgn:
+        case TacStmtType::Call:
+        case TacStmtType::Compute:
+        case TacStmtType::IO:
+        case TacStmtType::Label:
+            adj_list[i].push_back(i + 1);
+            break;
+        case TacStmtType::Return:
+            adj_list[i].push_back(function_exit_stmt);
+            break;
+        case TacStmtType::Goto: {
+            Goto_TAC_Stmt *goto_stmt = (Goto_TAC_Stmt *)stmt;
+            std::shared_ptr<Label_TAC_Opd> label_opd =
+                std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_result());
+            int label_num = label_opd->get_label_num();
+            adj_list[i].push_back(label_to_stmt_num[label_num]);
+            break;
+        }
+        case TacStmtType::IfGoto: {
+            If_Goto_TAC_Stmt *if_goto_stmt = (If_Goto_TAC_Stmt *)stmt;
+            std::shared_ptr<Label_TAC_Opd> label_opd =
+                std::dynamic_pointer_cast<Label_TAC_Opd>(stmt->get_oper1());
+            int label_num = label_opd->get_label_num();
+            adj_list[i].push_back(label_to_stmt_num[label_num]);
+            adj_list[i].push_back(i + 1);
+            break;
+        }
         }
     }
 
@@ -126,8 +126,9 @@ void TAC::dead_code_elimination() {
 
     std::vector<TAC_Stmt *> result;
     for (int i = 0; i < num_stmts; i++) {
-        if (visited[i]) result.push_back(tac_code[i]);
-        else {  
+        if (visited[i])
+            result.push_back(tac_code[i]);
+        else {
             // otherwise leak
             delete tac_code[i];
         }
@@ -1499,6 +1500,7 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
         bool is_int_const = result->get_opd_type() == OpdType::INT_CONST;
         bool is_float_const = result->get_opd_type() == OpdType::DOUBLE_CONST;
         bool is_string_const = result->get_opd_type() == OpdType::STRING_CONST;
+
         bool is_string_var =
             ((result->get_opd_type() == OpdType::VARIABLE) &&
              (std::dynamic_pointer_cast<Variable_TAC_Opd>(result)
@@ -1517,6 +1519,8 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
             std::dynamic_pointer_cast<String_Const_TAC_Opd>(result);
 
         bool needfloat = result->get_data_type().needFloatReg();
+        bool isString = result->get_data_type() == BaseType::STRING;
+        bool isInt = result->get_data_type() == BaseType::INT;
 
         // load correct value into v0
         std::shared_ptr<RTL_Int_Const_Opd> num;
@@ -1524,9 +1528,9 @@ void IO_TAC_Stmt::generateRTL(RTL &__rtl) {
             std::make_shared<RTL_Register_Opd>(rd);
         if (needfloat) {
             num = std::make_shared<RTL_Int_Const_Opd>(3);
-        } else if (is_var || is_temp || is_int_const) {
+        } else if (isInt) {
             num = std::make_shared<RTL_Int_Const_Opd>(1);
-        } else if (is_string_const || is_string_var) {
+        } else if (isString) {
             num = std::make_shared<RTL_Int_Const_Opd>(4);
         }
 

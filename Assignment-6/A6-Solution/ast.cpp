@@ -1187,9 +1187,9 @@ void Call_Stmt_Ast::printTree(std::ostream &out, int tab) {
 }
 
 std::vector<TAC_Stmt *> Call_Stmt_Ast::generateTAC(TAC &tac, Context &ctx) {
-    func_call->generateTAC(tac, ctx);
+    std::vector<TAC_Stmt*> result = func_call->generateTAC(tac, ctx);
     Call_TAC_Stmt *call_stmt = new Call_TAC_Stmt(func_call->place);
-    std::vector<TAC_Stmt *> result = {call_stmt};
+    result.push_back(call_stmt);
     return result;
 }
 
@@ -1266,7 +1266,7 @@ void Function_Ast::generateTAC(std::shared_ptr<Label_TAC_Opd> return_label) {
         tac.addTACStatements(ret_statements);
     }
 
-    tac.dead_code_elimination();
+    tac.unreachable_code_elimination();
 }
 
 void Function_Ast::printTAC(std::ostream &out) {
