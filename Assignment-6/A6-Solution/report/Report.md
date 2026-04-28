@@ -125,7 +125,7 @@ for (<init_stmt>; <boolean_expr>; <update_stmt>;) {
 ```
 Also works with a singular statement in the body :
 ```c
-for (<init_stmt>; <boolean_expr>; <update_stmt>)
+for (<init_stmt>; <boolean_expr>; <update_stmt>;)
     <stmt>;
 ```
 
